@@ -45,7 +45,7 @@ parse1 s = go SeachingForMulOrDont s "" ""
     go _ [] _ _
         = Val 0
     go SeachingForMulOrDont xs@(x:xsTail) argStr1 argStr2
-        = if and (zipWith (==) "mul(" xs)
+        = if "mul(" `isPrefixOf` xs
             then go UpToOpenBracFoundOfMul (drop (length "mul(") xs) argStr1 argStr2
             else go SeachingForMulOrDont xsTail "" ""
     go UpToOpenBracFoundOfMul xs@(x:xsTail) argStr1 argStr2
@@ -76,19 +76,19 @@ parse2 s = go SeachingForMulOrDont s "" ""
     go _ [] _ _
         = Val 0
     go SeachingForMulOrDont xs@(x:xsTail) argStr1 argStr2
-        = if and (zipWith (==) "mul(" xs)
+        = if "mul(" `isPrefixOf` xs
             then go UpToOpenBracFoundOfMul (drop (length "mul(") xs) argStr1 argStr2
-            else if and (zipWith (==) "don't()" xs)
+            else if "don't()" `isPrefixOf` xs
                     then go MulDisabledSearchingForDo (drop (length "don't()") xs) argStr1 argStr2
                     else go SeachingForMulOrDont xsTail "" ""
     go MulDisabledSearchingForDo xs@(x:xsTail) argStr1 argStr2
-        = if and (zipWith (==) "do()" xs)
+        = if "do()" `isPrefixOf` xs
             then go SeachingForMulOrDont (drop (length "do()") xs) argStr1 argStr2
             else go MulDisabledSearchingForDo xsTail "" ""
     go UpToOpenBracFoundOfMul xs@(x:xsTail) argStr1 argStr2
         = if isDigit x
             then go ArgStr1DigitFoundOfMul xsTail (argStr1++[x]) argStr2
-            else if and (zipWith (==) "don't()" xs)
+            else if "don't()" `isPrefixOf` xs
                     then go MulDisabledSearchingForDo (drop (length "don't()") xs) argStr1 argStr2
                     else go SeachingForMulOrDont xsTail "" ""
     go ArgStr1DigitFoundOfMul xs@(x:xsTail) argStr1 argStr2
@@ -96,13 +96,13 @@ parse2 s = go SeachingForMulOrDont s "" ""
             then go ArgStr1DigitFoundOfMul xsTail (argStr1++[x]) argStr2
             else if x == ','
                     then go CommaFoundOfMul xsTail argStr1 argStr2
-                    else if and (zipWith (==) "don't()" xs)
+                    else if "don't()" `isPrefixOf` xs
                             then go MulDisabledSearchingForDo (drop (length "don't()") xs) argStr1 argStr2
                             else go SeachingForMulOrDont xsTail "" ""
     go CommaFoundOfMul xs@(x:xsTail) argStr1 argStr2
         = if isDigit x
             then go ArgStr2DigitFoundOfMul xsTail argStr1 (argStr2++[x])
-            else if and (zipWith (==) "don't()" xs)
+            else if "don't()" `isPrefixOf` xs
                     then go MulDisabledSearchingForDo (drop (length "don't()") xs) argStr1 argStr2
                     else go SeachingForMulOrDont xsTail "" ""
     go ArgStr2DigitFoundOfMul xs@(x:xsTail) argStr1 argStr2
@@ -110,7 +110,7 @@ parse2 s = go SeachingForMulOrDont s "" ""
             then go ArgStr2DigitFoundOfMul xsTail argStr1 (argStr2++[x])
             else if x == ')'
                     then Plus (Mul (Val $ read argStr1) (Val $ read argStr2)) (go SeachingForMulOrDont xsTail "" "")
-                    else if and (zipWith (==) "don't()" xs)
+                    else if "don't()" `isPrefixOf` xs
                             then go MulDisabledSearchingForDo (drop (length "don't()") xs) argStr1 argStr2
                             else go SeachingForMulOrDont xsTail "" ""
 

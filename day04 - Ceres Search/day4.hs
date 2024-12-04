@@ -24,10 +24,6 @@
 -------------
 -- Imports --
 -------------
-import Data.Char (isDigit)
-import Data.List (tails, isPrefixOf, transpose, sort)
-import Data.Map as M hiding (map, filter, drop)
-import Data.Maybe (fromJust)
 import Data.Array as A (Array, (!), listArray)
 import Control.Monad (guard)
 
@@ -67,7 +63,7 @@ day4part1 = do
             
             guard (not . offWorldEdge $ fourthCharPos)
             
-            let isXmas = and (zipWith (==) "XMAS" [grid A.! (wordStart `addV2` v) :: Char | s <- [0,1,2,3], let v = scaleV2 s dir])
+            let isXmas = [grid A.! (wordStart `addV2` v) :: Char | s <- [0,1,2,3], let v = scaleV2 s dir] == "XMAS"
             
             guard (isXmas)
             
