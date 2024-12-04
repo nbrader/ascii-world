@@ -33,7 +33,7 @@ import Data.Maybe (fromJust)
 -------------
 -- Program --
 -------------
-main = day3part1
+main = day3part2
 
 data ParserState = SeachingForMulOrDont | MulDisabledSearchingForDo | DFoundOfDo | OFoundOfDo | OpenBracFoundOfDo | DFoundOfDont | OFoundOfDont | NFoundOfDont | AposFoundOfDont | TFoundOfDont | OpenBracFoundOfDont | MFoundOfMul | UFoundOfMul | LFoundOfMul | OpenBracFoundOfMul | ArgStr1DigitFoundOfMul | CommaFoundOfMul | ArgStr2DigitFoundOfMul
 data Expr = Mul Expr Expr | Plus Expr Expr | Val Int deriving (Show)
