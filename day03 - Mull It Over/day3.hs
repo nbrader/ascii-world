@@ -35,59 +35,59 @@ import Data.Maybe (fromJust)
 -------------
 main = day3part1
 
-data ParserState = SeachingForM | MFound | UFound | LFound | OpenBracFound | ArgStr1DigitFound | CommaFound | ArgStr2DigitFound
+data ParserState = SeachingForMOrD | MulDisabled | MFound | UFound | LFound | OpenBracFound | ArgStr1DigitFound | CommaFound | ArgStr2DigitFound
 data Expr = Mul Expr Expr | Plus Expr Expr | Val Int deriving (Show)
 
 parse :: String -> Expr
-parse s = go SeachingForM s "" ""
+parse s = go SeachingForMOrD s "" ""
   where
     go :: ParserState -> String -> String -> String -> Expr
     go _ [] _ _
         = Val 0
     
-    go SeachingForM (x:xs) argStr1 argStr2
+    go SeachingForMOrD (x:xs) argStr1 argStr2
         = case x of
             'm' -> go MFound xs argStr1 argStr2
-            _   -> go SeachingForM xs "" ""
+            _   -> go SeachingForMOrD xs "" ""
     
     go MFound (x:xs) argStr1 argStr2
         = case x of
             'u' -> go UFound xs argStr1 argStr2
-            _   -> go SeachingForM xs "" ""
+            _   -> go SeachingForMOrD xs "" ""
     
     go UFound (x:xs) argStr1 argStr2
         = case x of
             'l' -> go LFound xs argStr1 argStr2
-            _   -> go SeachingForM xs "" ""
+            _   -> go SeachingForMOrD xs "" ""
     
     go LFound (x:xs) argStr1 argStr2
         = case x of
             '(' -> go OpenBracFound xs argStr1 argStr2
-            _   -> go SeachingForM xs "" ""
+            _   -> go SeachingForMOrD xs "" ""
     
     go OpenBracFound (x:xs) argStr1 argStr2
         = if isDigit x
             then go ArgStr1DigitFound xs (argStr1++[x]) argStr2
-            else go SeachingForM xs "" ""
+            else go SeachingForMOrD xs "" ""
     
     go ArgStr1DigitFound (x:xs) argStr1 argStr2
         = if isDigit x
             then go ArgStr1DigitFound xs (argStr1++[x]) argStr2
             else if x == ','
                     then go CommaFound xs argStr1 argStr2
-                    else go SeachingForM xs "" ""
+                    else go SeachingForMOrD xs "" ""
     
     go CommaFound (x:xs) argStr1 argStr2
         = if isDigit x
             then go ArgStr2DigitFound xs argStr1 (argStr2++[x])
-            else go SeachingForM xs "" ""
+            else go SeachingForMOrD xs "" ""
     
     go ArgStr2DigitFound (x:xs) argStr1 argStr2
         = if isDigit x
             then go ArgStr2DigitFound xs argStr1 (argStr2++[x])
             else if x == ')'
-                    then Plus (Mul (Val $ read argStr1) (Val $ read argStr2)) (go SeachingForM xs "" "")
-                    else go SeachingForM xs "" ""
+                    then Plus (Mul (Val $ read argStr1) (Val $ read argStr2)) (go SeachingForMOrD xs "" "")
+                    else go SeachingForMOrD xs "" ""
 
 evaluate :: Expr -> Int
 evaluate (Mul x y) = evaluate x * evaluate y
