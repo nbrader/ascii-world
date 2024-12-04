@@ -52,7 +52,7 @@ parse s = go SeachingForMulOrDont s "" ""
                     else go SeachingForMulOrDont xsTail "" ""
     go MulDisabledSearchingForDo xs@(x:xsTail) argStr1 argStr2
         = if and (zipWith (==) "do()" xs)
-            then go UpToOpenBracFoundOfMul (drop (length "do()") xs) argStr1 argStr2
+            then go SeachingForMulOrDont (drop (length "do()") xs) argStr1 argStr2
             else go MulDisabledSearchingForDo xsTail "" ""
     go UpToOpenBracFoundOfMul xs@(x:xsTail) argStr1 argStr2
         = if isDigit x
@@ -91,4 +91,4 @@ evaluate (Val x) = x
 day3part2 = do
   contents <- readFile "day3 (data).csv"
   let result = parse contents
-  print result
+  print $ evaluate result
