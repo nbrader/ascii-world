@@ -94,9 +94,9 @@ day4part2 = do
             
             guard (all (not . offWorldEdge) [wordStart `addV2` v | v <- [(-1,-1), (1,1)]])
             
-            let isMas = or [all (== "MAS") [[grid A.! (wordStart `addV2` v) :: Char | s <- [-1,0,1], let v = scaleV2 s dir] | dir <- dirPair] | dirPair <- dirPairs]
+            let isMasX = or [all (== "MAS") [[grid A.! (wordStart `addV2` v) :: Char | s <- [-1,0,1], let v = scaleV2 s dir] | dir <- dirPair] | dirPair <- dirPairs]
             
-            guard (isMas)
+            guard (isMasX)
             
             return ()
     
