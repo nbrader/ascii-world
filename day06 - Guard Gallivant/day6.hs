@@ -76,7 +76,6 @@ day6part2 = do
                     -- putStrLn $ showWorld (dims w) w newPathPoints) cycleWorlds
 
 addV2 (x1,y1) (x2,y2) = (x1+x2, y1+y2)
-subV2 (x1,y1) (x2,y2) = (x1-x2, y1-y2)
 
 type Point = (Integer, Integer)
 data World = World {
@@ -114,22 +113,12 @@ readWorld rows = foldl' insertFloorOrWall emptyWorldWithStart floorAndWalls
         insertFloorOrWall world (Right w) = world {walls  = H.insert w $ walls  world}
 
 data Dir = R | U | L | D deriving (Show, Eq)
-rotL90, rotR90 :: Dir -> Dir
-
-rotL90 R = U
-rotL90 U = L
-rotL90 L = D
-rotL90 D = R
+rotR90 :: Dir -> Dir
 
 rotR90 R = D
 rotR90 U = R
 rotR90 L = U
 rotR90 D = L
-
-opposite R = L
-opposite U = D
-opposite L = R
-opposite D = U
 
 fromDir R = ( 1, 0)
 fromDir U = ( 0,-1)
@@ -139,14 +128,6 @@ fromDir D = ( 0, 1)
 inWorld :: Point -> World -> Bool
 inWorld pos world = (   pos `H.member` walls  world
                      || pos `H.member` floors world )
-
-everyWorldsAfterAddingAWall :: World -> [World]
-everyWorldsAfterAddingAWall world = do
-    newWall <- H.toList $ floors world
-    return $ world {
-        floors = H.delete newWall $ floors world,
-        walls  = H.insert newWall $ walls world
-        }
 
 everyWorldsAfterAddingAWallFromList :: World -> [Point] -> [World]
 everyWorldsAfterAddingAWallFromList world possibleNewWalls = do
