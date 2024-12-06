@@ -61,7 +61,7 @@ day6part2 = do
     let pathPoints = nub $ map fst (walkPath world)
         
     let worlds = everyWorldsAfterAddingAWallFromList world pathPoints
-        cycleWorlds = filter walkPathReachesCycle worlds
+        cycleWorlds = filter walkedPathReachesCycle worlds
     
     print $ length cycleWorlds
     -- putStrLn ""
@@ -153,8 +153,8 @@ walkPathUntilExitOrReachesCycle world = pathUpToExitOrLoop
         
         pathUpToExitOrLoop = until (\((pos,dir):tailPath) -> not (pos `inWorld` world) || (pos,dir) `elem` tailPath) doMove [(start world, U)]
 
-walkPathReachesCycle :: World -> Bool
-walkPathReachesCycle world = fst (head pathUpToExitOrLoop) `inWorld` world
+walkedPathReachesCycle :: World -> Bool
+walkedPathReachesCycle world = fst (head pathUpToExitOrLoop) `inWorld` world
   where doMove path@((pos,dir):_) = let newPosIgnoringWalls = pos `addV2` fromDir dir
                                     in  if newPosIgnoringWalls `H.member` walls world
                                         then (pos, rotR90 dir):path
