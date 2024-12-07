@@ -52,6 +52,15 @@ day6part1 = do
     -- putStrLn ""
     -- putStrLn $ showWorld (dims world) world pathPoints
 
+-- TO DO: A faster way of calculating the looping worlds would be to first generate the original walkedPath and feed this
+--          into a function which, if it's the empty path returns the empty list and otherwise concat the following:
+--              1. if the head position of the path doesn't exist earlier in that path and if the list the continuation
+--                         of the walk of the tail loops in a world where a wall is where the head was then a singleton
+--                         list of that continued path and the world with the new world.
+--                         Otherwise return the empty list.
+--              2. itself applied to the tail
+-- 
+--        This should result in a list of all worlds that obstructed the original path with a single new wall
 day6part2 = do
     contents <- readFile "day6 (example).csv"
     let fileRows  = lines contents
