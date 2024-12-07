@@ -53,7 +53,7 @@ day6part1 = do
     -- putStrLn $ showWorld (dims world) world pathPoints
 
 day6part2 = do
-    contents <- readFile "day6 (data).csv"
+    contents <- readFile "day6 (example).csv"
     let fileRows  = lines contents
     let world :: World
         world = readWorld fileRows
@@ -79,7 +79,7 @@ addV2 (x1,y1) (x2,y2) = (x1+x2, y1+y2)
 
 type Point = (Integer, Integer)
 data World = World {
-    start  :: Point,
+    guard  :: (Point, Dir),
     floors :: H.HashSet Point,
     walls  :: H.HashSet Point,
     dims   :: (Integer, Integer)} deriving (Show)
@@ -96,7 +96,7 @@ readWorld rows = foldl' insertFloorOrWall emptyWorldWithStart floorAndWalls
         
         emptyWorldWithStart :: World
         emptyWorldWithStart = World {
-            start  = head $ rights floorAndWallsAndStart,
+            guard  = (head $ rights floorAndWallsAndStart, U),
             floors = H.fromList [],
             walls  = H.fromList [],
             dims   = (genericLength (head rows), genericLength rows)
@@ -138,7 +138,7 @@ everyWorldsAfterAddingAWallFromList world possibleNewWalls = do
         }
 
 walkPath :: World -> [(Point,Dir)]
-walkPath world = takeWhile ((`inWorld` world) . fst) $ iterate doMove (start world, U)
+walkPath world = takeWhile ((`inWorld` world) . fst) $ iterate doMove (guard world)
   where doMove (pos,dir) =  let newPosIgnoringWalls = pos `addV2` fromDir dir
                             in  if newPosIgnoringWalls `H.member` walls world
                                 then (pos, rotR90 dir)
@@ -151,7 +151,7 @@ walkPathUntilExitOrReachesCycle world = pathUpToExitOrLoop
                                         then (pos, rotR90 dir):path
                                         else (newPosIgnoringWalls, dir):path
         
-        pathUpToExitOrLoop = until (\((pos,dir):tailPath) -> not (pos `inWorld` world) || (pos,dir) `elem` tailPath) doMove [(start world, U)]
+        pathUpToExitOrLoop = until (\((pos,dir):tailPath) -> not (pos `inWorld` world) || (pos,dir) `elem` tailPath) doMove [(guard world)]
 
 walkedPathReachesCycle :: World -> Bool
 walkedPathReachesCycle world = fst (head pathUpToExitOrLoop) `inWorld` world
@@ -160,7 +160,7 @@ walkedPathReachesCycle world = fst (head pathUpToExitOrLoop) `inWorld` world
                                         then (pos, rotR90 dir):path
                                         else (newPosIgnoringWalls, dir):path
         
-        pathUpToExitOrLoop = until (\((pos,dir):tailPath) -> not (pos `inWorld` world) || (pos,dir) `elem` tailPath) doMove [(start world, U)]
+        pathUpToExitOrLoop = until (\((pos,dir):tailPath) -> not (pos `inWorld` world) || (pos,dir) `elem` tailPath) doMove [(guard world)]
 
 
 showWorld (dimX,dimY) world pathPoints = intercalate "\n" . reverse $ [[case find ((==(x,y)) . fst) (reverse pathPoints) of
