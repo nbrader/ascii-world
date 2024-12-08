@@ -27,11 +27,9 @@
 import Data.List
 import Prelude hiding (readFile)
 import System.IO.Strict (readFile)
-import qualified Data.HashMap.Strict as Map
 import Data.HashSet (HashSet)
 import Data.HashSet as H hiding (map, foldl', filter)
 import Data.Either (lefts, rights)
-import Debug.Trace (trace)
 
 
 -------------
