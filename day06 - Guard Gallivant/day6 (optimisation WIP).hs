@@ -208,6 +208,6 @@ showWorld world = ("\n" ++) $ intercalate "\n" . reverse $ [[case find ((==(x,y)
                                                                             Just (_,U) -> '^'
                                                                             Just (_,L) -> '<'
                                                                             Just (_,D) -> 'V'
-                                                                            Nothing -> (if (x,y) `H.member` floors world then '.' else (if (x,y) `H.member` initWalls world then '#' else (if (x,y) `H.member` extraWalls world then '#' else ' '))) | x <- [0..(dimX-1)]] | y <- reverse [0..(dimY-1)]]
+                                                                            Nothing -> (if (x,y) `H.member` floors world then '.' else (if (x,y) `H.member` initWalls world then '#' else (if (x,y) `H.member` extraWalls world then 'O' else ' '))) | x <- [0..(dimX-1)]] | y <- reverse [0..(dimY-1)]]
   where pathPoints = guardHistory world
         (dimX, dimY) = dims world
