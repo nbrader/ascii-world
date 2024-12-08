@@ -15,10 +15,10 @@
 -- Output --
 ------------
 -- *Main> day8part1
--- 
+-- 392
 
 -- *Main> day8part2
--- 
+-- 1235
 
 
 -------------
@@ -34,12 +34,13 @@ import Data.HashSet as H hiding (map, foldl', filter)
 import Data.Either (lefts, rights)
 import Data.Maybe (fromJust, catMaybes)
 import Control.Monad (guard, forM, forM_)
+import Data.Ratio
 
 
 -------------
 -- Program --
 -------------
-main = day8part1
+main = day8part2
 
 day8part1 = do
     contents <- readFile "day8 (data).csv"
@@ -70,6 +71,35 @@ day8part1 = do
     -- print antinodes
     
     print $ length antinodes
+
+day8part2 = do
+    contents <- readFile "day8 (data).csv"
+    
+    let rows = Prelude.lines $ contents
+        width  = genericLength (head rows)
+        height = genericLength rows
+        
+        antennas = readAntennasAsMap rows
+    
+    -- forM_ (Map.keys antennas) $ \c -> do
+        -- putStrLn [c]
+        -- print $ fromJust $ Map.lookup c antennas
+        -- putStrLn ""
+        
+        -- mapM_ print $ nub $ calcAntinodes $ fromJust $ Map.lookup c antennas
+        -- putStrLn ""
+    
+    let antennaGroups = map (\c -> fromJust $ Map.lookup c antennas) (Map.keys antennas) 
+        antinodeGroups = map (calcHarmonicAntinodes (width,height)) antennaGroups
+        antinodes = nub $ concat antinodeGroups
+    
+    -- print antennaGroups
+    -- print antinodeGroups_IgnoringWorldEdge
+    -- print antinodeGroups
+    -- print antinodes
+    
+    print $ length antinodes
+    -- mapM_ print antinodes
     
 
 addV2 (x1,y1) (x2,y2) = (x1+x2, y1+y2)
@@ -82,8 +112,20 @@ type Point = (Integer, Integer)
 type Antinode = Point
 
 calcAntinodes :: [Point] -> [Point]
-calcAntinodes xs = concat [[x1 `addV2` (x1 `subV2` x2),
-                            x2 `addV2` (x2 `subV2` x1)] | let n = length xs, let indices = [0 .. (n-1)], i <- indices, j <- indices, i < j, let x1 = xs !! i, let x2 = xs !! j]
+calcAntinodes xs
+    = concat [[x1 `addV2` (x1 `subV2` x2),
+               x2 `addV2` (x2 `subV2` x1)] | let n = length xs, let indices = [0 .. (n-1)], i <- indices, j <- indices, i < j, let x1 = xs !! i, let x2 = xs !! j]
+
+calcHarmonicAntinodes :: (Integer,Integer) -> [Point] -> [Point]
+calcHarmonicAntinodes (width,height) ps
+    = concat [calculateLinePoints p1 p2 | let n = length ps, let indices = [0 .. (n-1)], i <- indices, j <- indices, i < j, let p1 = ps !! i, let p2 = ps !! j]
+  where calculateLinePoints :: (Integer,Integer) -> (Integer,Integer) -> [Point]
+        calculateLinePoints (x1,y1) (x2,y2) = nub $ xPoints ++ yPoints
+          where rx1, ry1, rx2, ry2 :: Rational
+                [rx1, ry1, rx2, ry2] = map fromInteger [x1, y1, x2, y2]
+                [rWidth, rHeight] = map fromInteger [width, height]
+                xPoints = [(numerator x, numerator y) | x <- [0..(rWidth-1)], let d = rx2-rx1, d /= 0, let m = (ry2-ry1) / d, let c = ry1-rx1*m, let y = m*x+c, y >= 0 && y < rHeight, denominator y == 1]
+                yPoints = [(numerator x, numerator y) | y <- [0..(rHeight-1)], let d = ry2-ry1, d /= 0, let m = (rx2-rx1) / d, let c = rx1-ry1*m, let x = m*y+c, x >= 0 && x < rWidth,  denominator x == 1]
 
 readAntennasAsMap :: [String] -> Map.HashMap Char [Point]
 readAntennasAsMap = foldl' up Map.empty . readAntennas
