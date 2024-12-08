@@ -31,6 +31,7 @@ import qualified Data.HashMap.Strict as Map
 import Data.HashSet (HashSet)
 import Data.HashSet as H hiding (map, foldl', filter)
 import Data.Either (lefts, rights)
+import Debug.Trace (trace)
 
 
 -------------
@@ -44,35 +45,27 @@ day6part1 = do
     let world :: World
         world = readWorld fileRows
     
-    let pathPoints = walkPath world
+    let walkedWorld = walkPath world
     
-    let uniquePoints = nub $ map fst pathPoints
+    let uniquePoints = nub $ map fst (guardHistory walkedWorld)
     
     print $ length uniquePoints
     -- putStrLn ""
     -- putStrLn $ showWorld (dims world) world pathPoints
 
--- TO DO: A faster way of calculating the looping worlds would be to first generate the original walkedPath and feed this
---          into a function which, if it's the empty path returns the empty list and otherwise concat the following:
---              1. if the head position of the path doesn't exist earlier in that path and if the list the continuation
---                         of the walk of the tail loops in a world where a wall is where the head was then a singleton
---                         list of that continued path and the world with the new world.
---                         Otherwise return the empty list.
---              2. itself applied to the tail
--- 
---        This should result in a list of all worlds that obstructed the original path with a single new wall
 day6part2 = do
-    contents <- readFile "day6 (example).csv"
+    contents <- readFile "day6 (data).csv"
     let fileRows  = lines contents
     let world :: World
         world = readWorld fileRows
     
-    let pathPoints = nub $ map fst (walkPath world)
+    let walkedWorldWithoutExtraWall = walkPath world
         
-    let worlds = everyWorldsAfterAddingAWallFromList world pathPoints
-        cycleWorlds = filter walkedPathReachesCycle worlds
+    let blockedWorldsWithCycles = everyBlockedWorldWithCycle (getPrevWorld walkedWorldWithoutExtraWall)
     
-    print $ length cycleWorlds
+    -- print walkedWorldWithoutExtraWall
+    print $ length blockedWorldsWithCycles
+    -- mapM_ print $ zipWith const [0..] $ blockedWorldsWithCycles
     -- putStrLn ""
     
     -- print $ length pathPoints
@@ -84,14 +77,54 @@ day6part2 = do
                     -- putStrLn ""
                     -- putStrLn $ showWorld (dims w) w newPathPoints) cycleWorlds
 
+-- everyPathAndWorldWithCycle:
+--      A faster way of calculating the looping worlds would be to first generate the original walkedPath and feed this
+--          into a function which, if it's the empty path returns the empty list and otherwise concat the following:
+--              1. if the head position of the path doesn't exist earlier in that path and if the list the continuation
+--                         of the walk of the tail loops in a world where a wall is where the head was then a singleton
+--                         list of that continued path and the world with the new world.
+--                         Otherwise return the empty list.
+--              2. itself applied to the tail
+-- 
+--        This should result in a list of all worlds that obstructed the original path with a single new wall
+everyBlockedWorldWithCycle :: World -> [World]
+everyBlockedWorldWithCycle world
+    | guardHistory prevWorld == [] = []
+    | otherwise = first ++ second
+  where path = guardHistory world
+        pathHead = head path
+        pathTail = tail path
+        pathTailHead = head pathTail
+        
+        pathHeadPos = fst pathHead
+        pathTailPositions = map fst pathTail
+        
+        blockedWorld = (floorToExtraWall pathHeadPos world) {guardHistory = tail path}
+        prevWorld = getPrevWorld world
+        
+        (walkedWorldBlockedWorld, blockedWorldReachesCycle) = walkedWorldAndWhetherReachesCycle blockedWorld
+        
+        first | not (pathHeadPos `elem` pathTailPositions) && blockedWorldReachesCycle = {-trace (showWorld walkedWorldBlockedWorld) $-} [walkedWorldBlockedWorld]
+              | blockedWorldReachesCycle = {-trace ("\nCan't block here without blocking earlier:" ++ showWorld walkedWorldBlockedWorld) $-} []
+              | otherwise = {-trace ("\nDoesn't Cycle:" ++ showWorld world) $-} []
+        
+        second = everyBlockedWorldWithCycle prevWorld
+
+getPrevWorld :: World -> World
+getPrevWorld w = w {guardHistory = tail $ guardHistory w}
+
 addV2 (x1,y1) (x2,y2) = (x1+x2, y1+y2)
 
 type Point = (Integer, Integer)
 data World = World {
-    guard  :: (Point, Dir),
+    guardHistory  :: [(Point, Dir)],
     floors :: H.HashSet Point,
-    walls  :: H.HashSet Point,
+    initWalls  :: H.HashSet Point,
+    extraWalls :: H.HashSet Point,
     dims   :: (Integer, Integer)} deriving (Show)
+
+walls :: World -> H.HashSet Point
+walls w = initWalls w `H.union` extraWalls w
 
 type Floor = Point
 type Wall  = Point
@@ -105,9 +138,10 @@ readWorld rows = foldl' insertFloorOrWall emptyWorldWithStart floorAndWalls
         
         emptyWorldWithStart :: World
         emptyWorldWithStart = World {
-            guard  = (head $ rights floorAndWallsAndStart, U),
+            guardHistory  = [(head $ rights floorAndWallsAndStart, U)],
             floors = H.fromList [],
-            walls  = H.fromList [],
+            initWalls  = H.fromList [],
+            extraWalls = H.fromList [],
             dims   = (genericLength (head rows), genericLength rows)
             }
         
@@ -118,8 +152,8 @@ readWorld rows = foldl' insertFloorOrWall emptyWorldWithStart floorAndWalls
                 readChar '^' pos = [Left (Left pos), Right pos]
         
         insertFloorOrWall :: World -> Either Floor Wall -> World
-        insertFloorOrWall world (Left  f) = world {floors = H.insert f $ floors world}
-        insertFloorOrWall world (Right w) = world {walls  = H.insert w $ walls  world}
+        insertFloorOrWall world (Left  f) = world {floors    = H.insert f $ floors    world}
+        insertFloorOrWall world (Right w) = world {initWalls = H.insert w $ initWalls world}
 
 data Dir = R | U | L | D deriving (Show, Eq)
 rotR90 :: Dir -> Dir
@@ -135,46 +169,48 @@ fromDir L = (-1, 0)
 fromDir D = ( 0, 1)
 
 inWorld :: Point -> World -> Bool
-inWorld pos world = (   pos `H.member` walls  world
-                     || pos `H.member` floors world )
+inWorld pos world = (   pos `H.member` floors    world
+                     || pos `H.member` initWalls world
+                     || pos `H.member` extraWalls world )
 
-everyWorldsAfterAddingAWallFromList :: World -> [Point] -> [World]
-everyWorldsAfterAddingAWallFromList world possibleNewWalls = do
-    newWall <- possibleNewWalls
-    return $ world {
-        floors = H.delete newWall $ floors world,
-        walls  = H.insert newWall $ walls world
+floorToExtraWall :: Point -> World -> World
+floorToExtraWall extraWall world
+    = world {
+        floors     = H.delete extraWall $ floors world,
+        extraWalls = H.insert extraWall $ extraWalls world
         }
 
-walkPath :: World -> [(Point,Dir)]
-walkPath world = takeWhile ((`inWorld` world) . fst) $ iterate doMove (guard world)
-  where doMove (pos,dir) =  let newPosIgnoringWalls = pos `addV2` fromDir dir
-                            in  if newPosIgnoringWalls `H.member` walls world
-                                then (pos, rotR90 dir)
-                                else (newPosIgnoringWalls, dir)
+walkPath :: World -> World
+walkPath world = until guardNotInWorld doMove world
+  where doMove w =  let (pos,dir) = head $ guardHistory w
+                        newPosIgnoringWalls = pos `addV2` fromDir dir
+                        newGuard = if newPosIgnoringWalls `H.member` walls world
+                                    then (pos, rotR90 dir)
+                                    else (newPosIgnoringWalls, dir)
+                    in w {guardHistory = newGuard : guardHistory w}
 
-walkPathUntilExitOrReachesCycle :: World -> [(Point,Dir)]
-walkPathUntilExitOrReachesCycle world = pathUpToExitOrLoop
-  where doMove path@((pos,dir):_) = let newPosIgnoringWalls = pos `addV2` fromDir dir
-                                    in  if newPosIgnoringWalls `H.member` walls world
-                                        then (pos, rotR90 dir):path
-                                        else (newPosIgnoringWalls, dir):path
+walkedWorldAndWhetherReachesCycle :: World -> (World, Bool)
+walkedWorldAndWhetherReachesCycle world = (worldAtExitOrLoop, not $ guardNotInWorld worldAtExitOrLoop)
+  where doMove w =  let (pos,dir) = head $ guardHistory w
+                        newPosIgnoringWalls = pos `addV2` fromDir dir
+                        newGuard = if newPosIgnoringWalls `H.member` walls world
+                                    then (pos, rotR90 dir)
+                                    else (newPosIgnoringWalls, dir)
+                    in w {guardHistory = newGuard : guardHistory w}
         
-        pathUpToExitOrLoop = until (\((pos,dir):tailPath) -> not (pos `inWorld` world) || (pos,dir) `elem` tailPath) doMove [(guard world)]
+        worldAtExitOrLoop = until guardNotInWorldOrReachesCycle doMove world
 
-walkedPathReachesCycle :: World -> Bool
-walkedPathReachesCycle world = fst (head pathUpToExitOrLoop) `inWorld` world
-  where doMove path@((pos,dir):_) = let newPosIgnoringWalls = pos `addV2` fromDir dir
-                                    in  if newPosIgnoringWalls `H.member` walls world
-                                        then (pos, rotR90 dir):path
-                                        else (newPosIgnoringWalls, dir):path
-        
-        pathUpToExitOrLoop = until (\((pos,dir):tailPath) -> not (pos `inWorld` world) || (pos,dir) `elem` tailPath) doMove [(guard world)]
+guardNotInWorld :: World -> Bool
+guardNotInWorld world = (\((pos,dir):tailPath) -> not (pos `inWorld` world)) . guardHistory $ world
 
+guardNotInWorldOrReachesCycle :: World -> Bool
+guardNotInWorldOrReachesCycle world = (\((pos,dir):tailPath) -> not (pos `inWorld` world) || (pos,dir) `elem` tailPath) . guardHistory $ world
 
-showWorld (dimX,dimY) world pathPoints = intercalate "\n" . reverse $ [[case find ((==(x,y)) . fst) (reverse pathPoints) of
+showWorld world = ("\n" ++) $ intercalate "\n" . reverse $ [[case find ((==(x,y)) . fst) pathPoints of
                                                                             Just (_,R) -> '>'
                                                                             Just (_,U) -> '^'
                                                                             Just (_,L) -> '<'
                                                                             Just (_,D) -> 'V'
-                                                                            Nothing -> (if (x,y) `H.member` floors world then '.' else (if (x,y) `H.member` walls world then '#' else ' ')) | x <- [0..(dimX-1)]] | y <- reverse [0..(dimY-1)]]
+                                                                            Nothing -> (if (x,y) `H.member` floors world then '.' else (if (x,y) `H.member` initWalls world then '#' else (if (x,y) `H.member` extraWalls world then 'O' else ' '))) | x <- [0..(dimX-1)]] | y <- reverse [0..(dimY-1)]]
+  where pathPoints = guardHistory world
+        (dimX, dimY) = dims world
