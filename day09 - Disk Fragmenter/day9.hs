@@ -32,87 +32,108 @@ import qualified Data.HashMap.Strict as Map
 import Data.HashSet (HashSet)
 import Data.HashSet as H hiding (map, foldl', filter)
 import Data.Either (lefts, rights)
-import Data.Maybe (fromJust, catMaybes)
+import Data.Maybe (fromJust, catMaybes, fromMaybe)
 import Control.Monad (guard, forM, forM_)
 import Data.Ratio
+import Debug.Trace (trace)
+import Data.Ord (comparing)
 
 
 -------------
 -- Program --
 -------------
-main = day9part1
+main = day9part2
 
 readDiskMap :: String -> [Int]
 readDiskMap = map (read . (:[]))
 
-blocksStringFromDiskMap :: [Int] -> String
-blocksStringFromDiskMap diskMap = concat $ zipWith (\isFileBlock (id, blockLength) -> let char = if isFileBlock then head (show id) else '.' in replicate blockLength char) isFileBlockPredList (zip idList diskMap)
-  where idList = concat $ map (replicate 2) [0..]
+blocksStringFromDiskMap :: [Int] -> [[Maybe Int]]
+blocksStringFromDiskMap diskMap = zipWith (\isFileBlock (blockID, blockLength) -> let char = if isFileBlock then Just blockID else Nothing in genericReplicate blockLength char) isFileBlockPredList (zip idList diskMap)
+  where idList = concat $ map (genericReplicate 2) [0..]
         
         isFileBlockPredList :: [Bool]
         isFileBlockPredList = cycle [True,False]
 
-defrag :: String -> String
-defrag inputStr
-    = (take lengthWithoutSpaces $ fill withSpaces reversedAndWithoutSpaces) ++ (replicate (lengthWithSpaces - lengthWithoutSpaces) '.')
-  where withSpaces = inputStr
-        reversedAndWithoutSpaces = reverse . filter (not . (=='.')) $ inputStr
+defrag1 :: [Maybe Int] -> [Maybe Int]
+defrag1 input
+    = (take lengthWithoutSpaces $ fill withSpaces reversedAndWithoutSpaces) ++ (replicate (lengthWithSpaces - lengthWithoutSpaces) Nothing)
+  where withSpaces = input
+        reversedAndWithoutSpaces = reverse . map Just . catMaybes $ input
         
-        lengthWithSpaces    = length inputStr
+        lengthWithSpaces    = length input
         lengthWithoutSpaces = length reversedAndWithoutSpaces
         
-        fill [] ys = ys
+        fill :: [Maybe a] -> [Maybe a] -> [Maybe a]
+        fill [] ys = reverse ys
         fill xs [] = xs
-        fill ('.':xs) (y:ys) = y : fill xs    ys
+        fill (Nothing:xs) (y:ys) = y : fill xs    ys
         fill   (x:xs) (y:ys) = x : fill xs (y:ys)
 
-checksum = sum . zipWith (*) [0..] . map ((read :: String -> Integer) . (:[])) . filter (not . (=='.'))
+filesAndSpacesFromDiskMap :: [Int] -> ([(Int,Int)], [(Int,Int)], Int)
+filesAndSpacesFromDiskMap blockLengths = foldl' updateLists ([],[],0) $ zip3 isFileBlockPredList idList blockLengths
+  where idList = concat $ map (genericReplicate 2) [0..]
+        isFileBlockPredList = cycle [True,False]
+        
+        updateLists (filePosAndSizeList, spacePosAndSizeList, currSize) (isFileBlock, blockID, blockLength)
+            = if isFileBlock
+                then (newEntry : filePosAndSizeList,
+                                 spacePosAndSizeList,
+                                 newLength)
+                else (           filePosAndSizeList,
+                      newEntry : spacePosAndSizeList,
+                                 newLength)
+          where newEntry = (currSize, blockLength)
+                newLength = currSize + blockLength
+
+replaceNth :: Int -> a -> [a] -> [a]
+replaceNth _ _ [] = []
+replaceNth n newVal (x:xs)
+    | n == 0 = newVal:xs
+    | otherwise = x:replaceNth (n-1) newVal xs
+
+defrag2 :: ([(Int,Int)], [(Int,Int)], Int) -> ([(Int,Int)], [(Int,Int)], Int)
+defrag2 (filesDescending, spacesDescending, size)
+    = until (\(_, _, processed) -> processed >= 10) go (filesDescending, reverse spacesDescending, 0)
+  where go (files, spaces, processed)
+            = let (filePos,  fileSize) = {-trace ("length files = " ++ show (length files) ++ ", processed = " ++ show processed) $-} files !! processed
+                  isFittingIndex = (\n -> let (spacePos, spaceSize) = {-trace ("length spaces = " ++ show (length spaces) ++ ", n = " ++ show n) $-} spaces !! n
+                                          in spaceSize >= fileSize)
+              in case find isFittingIndex [0..(length spaces - 1)] of
+                    Nothing -> (files, spaces, processed+1)
+                    Just n  -> let (spacePos, spaceSize) = {-trace ("length spaces = " ++ show (length spaces) ++ ", n = " ++ show n) $-} spaces !! n
+                               in (replaceNth processed (spacePos, fileSize) files,
+                                   replaceNth n (spacePos+fileSize, spaceSize-fileSize) spaces,
+                                   processed+1)
+
+toBlocks :: ([(Int,Int)], [(Int,Int)], Int) -> [[Maybe Int]]
+toBlocks (files, spaces, size) = zipWith pad startDistances
+                                . map (\((filePos, fileSize), fileID) -> replicate fileSize fileID) $ sortedFilesWithIDs
+-- toBlocks (files, spaces, size) = sortedFilesWithIDs
+  where sortedFilesWithIDs :: [((Int,Int),Int)]
+        sortedFilesWithIDs = sortBy (comparing (\((filePos, fileSize), fileID) -> filePos)) $ zip files [9,8..]
+  
+        starts :: [Int]
+        starts = map (fst . fst) sortedFilesWithIDs
+        
+        finalFileSize :: Int
+        finalFileSize = snd (last sortedFilesWithIDs)
+        
+        startDistances :: [Int]
+        startDistances = zipWith (\x y -> y - x) starts (tail starts) ++ [finalFileSize]
+        
+        pad :: Int -> [Int] -> [Maybe Int]
+        pad startDistance blocks = let justBlocks = map Just blocks :: [Maybe Int]
+                                       padding = replicate (startDistance - length blocks) Nothing
+                                   in justBlocks ++ padding
+
+checksum = sum . zipWith (*) [0..] . map (fromMaybe 0)
 
 day9part1 = do
     contents <- readFile "day9 (data).csv"
-    
-    let diskMap = readDiskMap contents
-    let blocksStr = blocksStringFromDiskMap diskMap
-    let defragged = defrag blocksStr
-    
-    -- print diskMap
-    -- print blocksStr
-    -- print defragged
-    print . checksum $ defragged
+    print . checksum . defrag1 . concat . blocksStringFromDiskMap . readDiskMap $ contents
 
-
-addV2 (x1,y1) (x2,y2) = (x1+x2, y1+y2)
-subV2 (x1,y1) (x2,y2) = (x1-x2, y1-y2)
-scaleV2 s (x,y) = (s*x, s*y)
-rot90V2 (x,y) = (y, -x)
-invRot90V2 (x,y) = (-y, x)
-
-type Point = (Integer, Integer)
-type Antinode = Point
-
-calcAntinodes :: [Point] -> [Point]
-calcAntinodes xs
-    = concat [[x1 `addV2` (x1 `subV2` x2),
-               x2 `addV2` (x2 `subV2` x1)] | let n = length xs, let indices = [0 .. (n-1)], i <- indices, j <- indices, i < j, let x1 = xs !! i, let x2 = xs !! j]
-
-calcHarmonicAntinodes :: (Integer,Integer) -> [Point] -> [Point]
-calcHarmonicAntinodes (width,height) ps
-    = concat [calculateLinePoints p1 p2 | let n = length ps, let indices = [0 .. (n-1)], i <- indices, j <- indices, i < j, let p1 = ps !! i, let p2 = ps !! j]
-  where calculateLinePoints :: (Integer,Integer) -> (Integer,Integer) -> [Point]
-        calculateLinePoints (x1,y1) (x2,y2) = nub $ xPoints ++ yPoints
-          where rx1, ry1, rx2, ry2 :: Rational
-                [rx1, ry1, rx2, ry2] = map fromInteger [x1, y1, x2, y2]
-                [rWidth, rHeight] = map fromInteger [width, height]
-                xPoints = [(numerator x, numerator y) | x <- [0..(rWidth-1)], let d = rx2-rx1, d /= 0, let m = (ry2-ry1) / d, let c = ry1-rx1*m, let y = m*x+c, y >= 0 && y < rHeight, denominator y == 1]
-                yPoints = [(numerator x, numerator y) | y <- [0..(rHeight-1)], let d = ry2-ry1, d /= 0, let m = (rx2-rx1) / d, let c = rx1-ry1*m, let x = m*y+c, x >= 0 && x < rWidth,  denominator x == 1]
-
-readAntennasAsMap :: [String] -> Map.HashMap Char [Point]
-readAntennasAsMap = foldl' up Map.empty . readAntennas
-
-up :: Map.HashMap Char [Point] -> (Char, Point) -> Map.HashMap Char [Point]
-up = (\m (k,v) -> Map.insertWith (++) k [v] m)
-
-readAntennas :: [String] -> [(Char,Point)]
-readAntennas rows = concat [readChar c (colNum, rowNum) | (rowNum, row) <- zip [0..] rows, (colNum,c) <- zip [0..] row, case c of {' ' -> False; _ -> True}]
-  where readChar c@'.' pos = []
-        readChar c pos = [(c,pos)]
+day9part2 = do
+    contents <- readFile "day9 (example).csv"
+    print . readDiskMap $ contents
+    print . map (maybe '.' (head . show)) . concat . toBlocks . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
+    print . checksum . concat . toBlocks . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
