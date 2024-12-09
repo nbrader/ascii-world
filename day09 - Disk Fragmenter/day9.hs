@@ -91,6 +91,11 @@ replaceNth n newVal (x:xs)
     | n == 0 = newVal:xs
     | otherwise = x:replaceNth (n-1) newVal xs
 
+removeNth :: Int -> [a] -> [a]
+removeNth _ [] = []
+removeNth 0 (x:xs) = xs
+removeNth n (x:xs) = x : removeNth (n-1) (xs)
+
 defrag2 :: ([(Int,Int)], [(Int,Int)], Int) -> ([(Int,Int)], [(Int,Int)], Int)
 defrag2 (filesDescending, spacesDescending, size)
     = until (\(_, _, processed) -> processed >= length filesDescending) go (filesDescending, reverse spacesDescending, 0)
@@ -101,12 +106,12 @@ defrag2 (filesDescending, spacesDescending, size)
               in case find isFittingIndex [0..(length spaces - 1)] of
                     Nothing -> (files, spaces, processed+1)
                     Just n  -> let (spacePos, spaceSize) = {-trace ("length spaces = " ++ show (length spaces) ++ ", n = " ++ show n) $-} spaces !! n
-                               in (replaceNth processed (spacePos, fileSize) files,
-                                   replaceNth n (spacePos+fileSize, spaceSize-fileSize) spaces,
+                               in {-(\x -> trace (showFilesAndSpaces x) x) $-} (replaceNth processed (spacePos, fileSize) files,
+                                   let newSpaceSize = spaceSize-fileSize in if newSpaceSize == 0 then removeNth n spaces else replaceNth n (spacePos+fileSize, spaceSize-fileSize) spaces,
                                    processed+1)
 
 toBlocks :: ([(Int,Int)], [(Int,Int)], Int) -> [[Maybe Int]]
-toBlocks (files, spaces, size) = zipWith pad startDistances
+toBlocks (files, spaces, size) = zipWith pad fileLengthPlusGapLength
                                 . map (\((filePos, fileSize), fileID) -> replicate fileSize fileID) $ sortedFilesWithIDs
 -- toBlocks (files, spaces, size) = sortedFilesWithIDs
   where sortedFilesWithIDs :: [((Int,Int),Int)]
@@ -115,25 +120,30 @@ toBlocks (files, spaces, size) = zipWith pad startDistances
         starts :: [Int]
         starts = map (fst . fst) sortedFilesWithIDs
         
-        finalFileSize :: Int
-        finalFileSize = snd (last sortedFilesWithIDs)
-        
-        startDistances :: [Int]
-        startDistances = zipWith (\x y -> y - x) starts (tail starts) ++ [finalFileSize]
+        fileLengthPlusGapLength :: [Int]
+        fileLengthPlusGapLength = zipWith (\x y -> y - x) starts (tail starts) ++ [0]
         
         pad :: Int -> [Int] -> [Maybe Int]
         pad startDistance blocks = let justBlocks = map Just blocks :: [Maybe Int]
                                        padding = replicate (startDistance - length blocks) Nothing
                                    in justBlocks ++ padding
 
-checksum = sum . zipWith (*) [0..] . map (fromMaybe 0)
+checksum = sum . zipWith (*) [0..] . concat . map (map (fromMaybe 0))
 
-day9part1 = do
-    contents <- readFile "day9 (data).csv"
-    print . checksum . defrag1 . concat . blocksStringFromDiskMap . readDiskMap $ contents
+-- day9part1 = do
+    -- contents <- readFile "day9 (data).csv"
+    -- print . checksum . defrag1 . concat . blocksStringFromDiskMap . readDiskMap $ contents
 
+showFilesAndSpacesFull = concatMap (maybe "." (\x -> "(" ++ show x ++ ")")) . concat . toBlocks
+showFilesAndSpaces = take 75 . dropWhile (/='.') . showFilesAndSpacesFull
+
+-- The answer is between 1071092292836 and 8582381894860 ...
 day9part2 = do
-    contents <- readFile "day9 (example).csv"
-    -- print . readDiskMap $ contents
-    -- print . map (maybe '.' (head . show)) . concat . toBlocks . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
-    mapM_ (print . checksum) . inits . concat . toBlocks . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
+    contents <- readFile "day9 (data).csv"
+    -- putStrLn . showFilesAndSpaces . filesAndSpacesFromDiskMap . readDiskMap $ contents
+    -- print . length . (\(x,_,_) -> x) . filesAndSpacesFromDiskMap . readDiskMap $ contents
+    let defragged = defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
+    -- print . showFilesAndSpacesFull $ defragged
+    -- print . showFilesAndSpaces $ defragged
+    print . checksum . toBlocks $ defragged
+    -- print . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
