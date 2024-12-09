@@ -93,7 +93,7 @@ replaceNth n newVal (x:xs)
 
 defrag2 :: ([(Int,Int)], [(Int,Int)], Int) -> ([(Int,Int)], [(Int,Int)], Int)
 defrag2 (filesDescending, spacesDescending, size)
-    = until (\(_, _, processed) -> processed >= 10) go (filesDescending, reverse spacesDescending, 0)
+    = until (\(_, _, processed) -> processed >= length filesDescending) go (filesDescending, reverse spacesDescending, 0)
   where go (files, spaces, processed)
             = let (filePos,  fileSize) = {-trace ("length files = " ++ show (length files) ++ ", processed = " ++ show processed) $-} files !! processed
                   isFittingIndex = (\n -> let (spacePos, spaceSize) = {-trace ("length spaces = " ++ show (length spaces) ++ ", n = " ++ show n) $-} spaces !! n
@@ -110,7 +110,7 @@ toBlocks (files, spaces, size) = zipWith pad startDistances
                                 . map (\((filePos, fileSize), fileID) -> replicate fileSize fileID) $ sortedFilesWithIDs
 -- toBlocks (files, spaces, size) = sortedFilesWithIDs
   where sortedFilesWithIDs :: [((Int,Int),Int)]
-        sortedFilesWithIDs = sortBy (comparing (\((filePos, fileSize), fileID) -> filePos)) $ zip files [9,8..]
+        sortedFilesWithIDs = sortBy (comparing (\((filePos, fileSize), fileID) -> filePos)) $ zip files [(length files - 1),(length files - 2)..]
   
         starts :: [Int]
         starts = map (fst . fst) sortedFilesWithIDs
@@ -134,6 +134,6 @@ day9part1 = do
 
 day9part2 = do
     contents <- readFile "day9 (example).csv"
-    print . readDiskMap $ contents
-    print . map (maybe '.' (head . show)) . concat . toBlocks . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
-    print . checksum . concat . toBlocks . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
+    -- print . readDiskMap $ contents
+    -- print . map (maybe '.' (head . show)) . concat . toBlocks . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
+    mapM_ (print . checksum) . inits . concat . toBlocks . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
