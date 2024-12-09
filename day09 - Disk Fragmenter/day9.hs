@@ -70,11 +70,11 @@ defrag1 input
         fill   (x:xs) (y:ys) = x : fill xs (y:ys)
 
 filesAndSpacesFromDiskMap :: [Int] -> ([(Int,Int)], [(Int,Int)], Int)
-filesAndSpacesFromDiskMap blockLengths = foldl' updateLists ([],[],0) $ zip3 isFileBlockPredList idList blockLengths
+filesAndSpacesFromDiskMap blockLengths = foldl' updateLists ([],[],0) $ zip isFileBlockPredList blockLengths
   where idList = concat $ map (genericReplicate 2) [0..]
         isFileBlockPredList = cycle [True,False]
         
-        updateLists (filePosAndSizeList, spacePosAndSizeList, currSize) (isFileBlock, blockID, blockLength)
+        updateLists (filePosAndSizeList, spacePosAndSizeList, currSize) (isFileBlock, blockLength)
             = if isFileBlock
                 then (newEntry : filePosAndSizeList,
                                  spacePosAndSizeList,
