@@ -15,10 +15,10 @@
 -- Output --
 ------------
 -- *Main> day9part1
--- 
+-- 6382875730645
 
 -- *Main> day9part2
--- 
+-- 6420913943576
 
 
 -------------
@@ -46,6 +46,35 @@ main = day9part2
 
 readDiskMap :: String -> [Int]
 readDiskMap = map (read . (:[]))
+
+blocksStringFromDiskMap :: [Int] -> [[Maybe Int]]
+blocksStringFromDiskMap diskMap = zipWith (\isFileBlock (blockID, blockLength) -> let char = if isFileBlock then Just blockID else Nothing in genericReplicate blockLength char) isFileBlockPredList (zip idList diskMap)
+  where idList = concat $ map (genericReplicate 2) [0..]
+        
+        isFileBlockPredList :: [Bool]
+        isFileBlockPredList = cycle [True,False]
+
+defrag1 :: [Maybe Int] -> [Maybe Int]
+defrag1 input
+    = (take lengthWithoutSpaces $ fill withSpaces reversedAndWithoutSpaces) ++ (replicate (lengthWithSpaces - lengthWithoutSpaces) Nothing)
+  where withSpaces = input
+        reversedAndWithoutSpaces = reverse . map Just . catMaybes $ input
+        
+        lengthWithSpaces    = length input
+        lengthWithoutSpaces = length reversedAndWithoutSpaces
+        
+        fill :: [Maybe a] -> [Maybe a] -> [Maybe a]
+        fill [] ys = reverse ys
+        fill xs [] = xs
+        fill (Nothing:xs) (y:ys) = y : fill xs    ys
+        fill   (x:xs) (y:ys) = x : fill xs (y:ys)
+
+checksum1 = sum . zipWith (*) [0..] . map (fromMaybe 0)
+
+day9part1 = do
+    contents <- readFile "day9 (data).csv"
+    print . checksum1 . defrag1 . concat . blocksStringFromDiskMap . readDiskMap $ contents
+
 
 filesAndSpacesFromDiskMap :: [Int] -> ([(Int,Int)], [(Int,Int)], Int)
 filesAndSpacesFromDiskMap blockLengths = foldl' updateLists ([],[],0) $ zip isFileBlockPredList blockLengths
