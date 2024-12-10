@@ -118,15 +118,16 @@ defrag2 (filesDescending, spacesDescending, size)
             $ (\x -> trace (showFilesAndSpacesFull x) x)
             $ let (filePos,  fileSize) = files !! processed
                   isFittingIndex = (\n -> let (spacePos, spaceSize) = spaces !! n
-                                          in spaceSize >= fileSize)
+                                          in spaceSize >= fileSize && spacePos < filePos)
               in case find isFittingIndex [0..(length spaces - 1)] of
                     Nothing -> (files, spaces, processed+1)
-                    Just n  -> let (spacePos, spaceSize) = spaces !! n
+                    Just n  -> trace ("n = " ++ show n ++ "\n")
+                             $ let (spacePos, spaceSize) = spaces !! n
                                in (replaceNth processed (spacePos, fileSize) files,
                                    let newSpaceSize = spaceSize-fileSize
-                                       spacesAfterShrinkingSpaceAtDest = if newSpaceSize == 0 then removeNth n spaces else replaceSpaceAt n (spacePos+fileSize, spaceSize-fileSize) spaces
+                                       spacesAfterShrinkingSpaceAtDest = if newSpaceSize == 0 then removeNth n spaces else replaceSpaceAt n (spacePos+fileSize, newSpaceSize) spaces
                                        spacesAfterAddingSpaceAtSource = insertInSpaces (filePos, fileSize) $ spacesAfterShrinkingSpaceAtDest
-                                   in spacesAfterAddingSpaceAtSource,
+                                   in sortBy (comparing fst) spacesAfterAddingSpaceAtSource,
                                    processed+1)
 
 toBlocks :: ([(Int,Int)], [(Int,Int)], Int) -> [[Maybe Int]]
