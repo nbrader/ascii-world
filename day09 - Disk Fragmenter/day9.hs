@@ -54,13 +54,14 @@ filesAndSpacesFromDiskMap blockLengths = foldl' updateLists ([],[],0) $ zip isFi
         
         updateLists (filePosAndSizeList, spacePosAndSizeList, currSize) (isFileBlock, blockLength)
             = if isFileBlock
-                then (newEntry : filePosAndSizeList,
+                then (newFile : filePosAndSizeList,
                                  spacePosAndSizeList,
                                  newLength)
                 else (           filePosAndSizeList,
-                      newEntry : spacePosAndSizeList,
+                      newSpace ++ spacePosAndSizeList,
                                  newLength)
-          where newEntry = (currSize, blockLength)
+          where newFile = (currSize, blockLength)
+                newSpace = if blockLength == 0 then [] else [(currSize, blockLength)]
                 newLength = currSize + blockLength
 
 insertInSpaces (pos,size) spaces
@@ -113,14 +114,19 @@ defrag2 :: ([(Int,Int)], [(Int,Int)], Int) -> ([(Int,Int)], [(Int,Int)], Int)
 defrag2 (filesDescending, spacesDescending, size)
     = until (\(_, _, processed) -> processed >= length filesDescending) go (filesDescending, reverse spacesDescending, 0)
   where go (files, spaces, processed)
-            = let (filePos,  fileSize) = {-trace ("length files = " ++ show (length files) ++ ", processed = " ++ show processed) $-} files !! processed
-                  isFittingIndex = (\n -> let (spacePos, spaceSize) = {-trace ("length spaces = " ++ show (length spaces) ++ ", n = " ++ show n) $-} spaces !! n
+            = trace ("\n" ++ "files = " ++ show files ++ "\n" ++ "spaces = " ++ show spaces ++ "\n" ++ "processed = " ++ show processed ++ "\n")
+            $ (\x -> trace (showFilesAndSpacesFull x) x)
+            $ let (filePos,  fileSize) = files !! processed
+                  isFittingIndex = (\n -> let (spacePos, spaceSize) = spaces !! n
                                           in spaceSize >= fileSize)
               in case find isFittingIndex [0..(length spaces - 1)] of
                     Nothing -> (files, spaces, processed+1)
-                    Just n  -> let (spacePos, spaceSize) = {-trace ("length spaces = " ++ show (length spaces) ++ ", n = " ++ show n) $-} spaces !! n
-                               in (\x -> trace (showFilesAndSpaces x) x) $ (replaceNth processed (spacePos, fileSize) files,
-                                   let newSpaceSize = spaceSize-fileSize in if newSpaceSize == 0 then removeNth n spaces else replaceSpaceAt spacePos (spacePos+fileSize, spaceSize-fileSize) $ insertInSpaces (filePos, fileSize) $ spaces,
+                    Just n  -> let (spacePos, spaceSize) = spaces !! n
+                               in (replaceNth processed (spacePos, fileSize) files,
+                                   let newSpaceSize = spaceSize-fileSize
+                                       spacesAfterShrinkingSpaceAtDest = if newSpaceSize == 0 then removeNth n spaces else replaceSpaceAt n (spacePos+fileSize, spaceSize-fileSize) spaces
+                                       spacesAfterAddingSpaceAtSource = insertInSpaces (filePos, fileSize) $ spacesAfterShrinkingSpaceAtDest
+                                   in spacesAfterAddingSpaceAtSource,
                                    processed+1)
 
 toBlocks :: ([(Int,Int)], [(Int,Int)], Int) -> [[Maybe Int]]
@@ -150,7 +156,7 @@ checksum = sum . zipWith (*) [0..] . concat . map (map (fromMaybe 0))
 -- The answer is between 1071092292836 and 8582381894860 ...
 day9part2 = do
     contents <- readFile "day9 (example).csv"
-    -- putStrLn . showFilesAndSpaces . filesAndSpacesFromDiskMap . readDiskMap $ contents
+    putStrLn . showFilesAndSpacesFull . filesAndSpacesFromDiskMap . readDiskMap $ contents
     -- print . length . (\(x,_,_) -> x) . filesAndSpacesFromDiskMap . readDiskMap $ contents
     let defragged = defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
     -- print . showFilesAndSpacesFull $ defragged
