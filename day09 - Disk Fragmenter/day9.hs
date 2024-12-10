@@ -30,7 +30,7 @@ import Prelude hiding (readFile)
 import System.IO.Strict (readFile)
 import qualified Data.HashMap.Strict as Map
 import Data.HashSet (HashSet)
-import Data.HashSet as H hiding (map, foldl', filter)
+import Data.HashSet as H hiding (map, foldl', filter, null)
 import Data.Either (lefts, rights)
 import Data.Maybe (fromJust, catMaybes, fromMaybe)
 import Control.Monad (guard, forM, forM_)
@@ -46,28 +46,6 @@ main = day9part2
 
 readDiskMap :: String -> [Int]
 readDiskMap = map (read . (:[]))
-
-blocksStringFromDiskMap :: [Int] -> [[Maybe Int]]
-blocksStringFromDiskMap diskMap = zipWith (\isFileBlock (blockID, blockLength) -> let char = if isFileBlock then Just blockID else Nothing in genericReplicate blockLength char) isFileBlockPredList (zip idList diskMap)
-  where idList = concat $ map (genericReplicate 2) [0..]
-        
-        isFileBlockPredList :: [Bool]
-        isFileBlockPredList = cycle [True,False]
-
-defrag1 :: [Maybe Int] -> [Maybe Int]
-defrag1 input
-    = (take lengthWithoutSpaces $ fill withSpaces reversedAndWithoutSpaces) ++ (replicate (lengthWithSpaces - lengthWithoutSpaces) Nothing)
-  where withSpaces = input
-        reversedAndWithoutSpaces = reverse . map Just . catMaybes $ input
-        
-        lengthWithSpaces    = length input
-        lengthWithoutSpaces = length reversedAndWithoutSpaces
-        
-        fill :: [Maybe a] -> [Maybe a] -> [Maybe a]
-        fill [] ys = reverse ys
-        fill xs [] = xs
-        fill (Nothing:xs) (y:ys) = y : fill xs    ys
-        fill   (x:xs) (y:ys) = x : fill xs (y:ys)
 
 filesAndSpacesFromDiskMap :: [Int] -> ([(Int,Int)], [(Int,Int)], Int)
 filesAndSpacesFromDiskMap blockLengths = foldl' updateLists ([],[],0) $ zip isFileBlockPredList blockLengths
@@ -85,16 +63,51 @@ filesAndSpacesFromDiskMap blockLengths = foldl' updateLists ([],[],0) $ zip isFi
           where newEntry = (currSize, blockLength)
                 newLength = currSize + blockLength
 
-replaceNth :: Int -> a -> [a] -> [a]
-replaceNth _ _ [] = []
-replaceNth n newVal (x:xs)
-    | n == 0 = newVal:xs
-    | otherwise = x:replaceNth (n-1) newVal xs
+insertInSpaces (pos,size) spaces
+    | not (null pre) && not (null post)
+        = let   initPre = init pre
+                lastPre = last pre
+                headPost = head post
+                tailPost = tail post
+                mid = let (prevPos, prevSize) = lastPre
+                          (nextPos, nextSize) = headPost
+                          
+                          combineWithPrev = pos == prevPos + prevSize
+                          combineWithNext = pos + size == nextPos
+                      in if (combineWithPrev && combineWithNext)
+                          then [(prevPos, prevSize + size + nextSize)]
+                          else if combineWithPrev
+                                then [(prevPos, prevSize + size), headPost]
+                                else if combineWithNext
+                                      then [lastPre, (pos, size + nextSize)]
+                                      else [lastPre, (pos, size), headPost]
+          in initPre ++ mid ++ tailPost
+    | null pre
+        = let   headPost = head post
+                tailPost = tail post
+                mid = let (nextPos, nextSize) = headPost
+                          combineWithNext = pos + size == nextPos
+                      in if combineWithNext
+                          then [(pos, size + nextSize)]
+                          else [(pos, size), headPost]
+          in mid ++ tailPost
+    | null post
+        = let   initPre = init pre
+                lastPre = last pre
+                mid = let (prevPos, prevSize) = lastPre
+                          combineWithPrev = pos == prevPos + prevSize
+                      in if combineWithPrev
+                                then [(prevPos, prevSize + size)]
+                                else [lastPre, (pos, size)]
+          in initPre ++ mid
+    | otherwise
+        = let mid = [(pos, size)]
+          in mid
+  where (pre,post) = span ((< pos) . fst) spaces
 
-removeNth :: Int -> [a] -> [a]
-removeNth _ [] = []
-removeNth 0 (x:xs) = xs
-removeNth n (x:xs) = x : removeNth (n-1) (xs)
+replaceSpaceAt :: Int -> (Int,Int) -> [(Int,Int)] -> [(Int,Int)]
+replaceSpaceAt startOfToBeReplaced newSpace spaces = pre ++ (newSpace:post)
+  where (pre,x:post) = span ((< startOfToBeReplaced) . fst) spaces
 
 defrag2 :: ([(Int,Int)], [(Int,Int)], Int) -> ([(Int,Int)], [(Int,Int)], Int)
 defrag2 (filesDescending, spacesDescending, size)
@@ -106,8 +119,8 @@ defrag2 (filesDescending, spacesDescending, size)
               in case find isFittingIndex [0..(length spaces - 1)] of
                     Nothing -> (files, spaces, processed+1)
                     Just n  -> let (spacePos, spaceSize) = {-trace ("length spaces = " ++ show (length spaces) ++ ", n = " ++ show n) $-} spaces !! n
-                               in {-(\x -> trace (showFilesAndSpaces x) x) $-} (replaceNth processed (spacePos, fileSize) files,
-                                   let newSpaceSize = spaceSize-fileSize in if newSpaceSize == 0 then removeNth n spaces else replaceNth n (spacePos+fileSize, spaceSize-fileSize) spaces,
+                               in (\x -> trace (showFilesAndSpaces x) x) $ (replaceNth processed (spacePos, fileSize) files,
+                                   let newSpaceSize = spaceSize-fileSize in if newSpaceSize == 0 then removeNth n spaces else replaceSpaceAt spacePos (spacePos+fileSize, spaceSize-fileSize) $ insertInSpaces (filePos, fileSize) $ spaces,
                                    processed+1)
 
 toBlocks :: ([(Int,Int)], [(Int,Int)], Int) -> [[Maybe Int]]
@@ -134,12 +147,9 @@ checksum = sum . zipWith (*) [0..] . concat . map (map (fromMaybe 0))
     -- contents <- readFile "day9 (data).csv"
     -- print . checksum . defrag1 . concat . blocksStringFromDiskMap . readDiskMap $ contents
 
-showFilesAndSpacesFull = concatMap (maybe "." (\x -> "(" ++ show x ++ ")")) . concat . toBlocks
-showFilesAndSpaces = take 75 . dropWhile (/='.') . showFilesAndSpacesFull
-
 -- The answer is between 1071092292836 and 8582381894860 ...
 day9part2 = do
-    contents <- readFile "day9 (data).csv"
+    contents <- readFile "day9 (example).csv"
     -- putStrLn . showFilesAndSpaces . filesAndSpacesFromDiskMap . readDiskMap $ contents
     -- print . length . (\(x,_,_) -> x) . filesAndSpacesFromDiskMap . readDiskMap $ contents
     let defragged = defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
@@ -147,3 +157,17 @@ day9part2 = do
     -- print . showFilesAndSpaces $ defragged
     print . checksum . toBlocks $ defragged
     -- print . defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
+
+showFilesAndSpacesFull = concatMap (maybe "." (\x -> "(" ++ show x ++ ")")) . concat . toBlocks
+showFilesAndSpaces = take 75 . dropWhile (/='.') . showFilesAndSpacesFull
+
+replaceNth :: Int -> a -> [a] -> [a]
+replaceNth _ _ [] = []
+replaceNth n newVal (x:xs)
+    | n == 0 = newVal:xs
+    | otherwise = x:replaceNth (n-1) newVal xs
+
+removeNth :: Int -> [a] -> [a]
+removeNth _ [] = []
+removeNth 0 (x:xs) = xs
+removeNth n (x:xs) = x : removeNth (n-1) (xs)
