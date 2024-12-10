@@ -114,18 +114,18 @@ defrag2 :: ([(Int,Int)], [(Int,Int)], Int) -> ([(Int,Int)], [(Int,Int)], Int)
 defrag2 (filesDescending, spacesDescending, size)
     = until (\(_, _, processed) -> processed >= length filesDescending) go (filesDescending, reverse spacesDescending, 0)
   where go (files, spaces, processed)
-            = trace ("\n" ++ "files = " ++ show files ++ "\n" ++ "spaces = " ++ show spaces ++ "\n" ++ "processed = " ++ show processed ++ "\n")
+            = {-trace ("\n" ++ "files = " ++ show files ++ "\n" ++ "spaces = " ++ show spaces ++ "\n" ++ "processed = " ++ show processed ++ "\n")
             $ (\x -> trace (showFilesAndSpacesFull x) x)
-            $ let (filePos,  fileSize) = files !! processed
+          $-} let (filePos,  fileSize) = files !! processed
                   isFittingIndex = (\n -> let (spacePos, spaceSize) = spaces !! n
                                           in spaceSize >= fileSize && spacePos < filePos)
               in case find isFittingIndex [0..(length spaces - 1)] of
                     Nothing -> (files, spaces, processed+1)
-                    Just n  -> trace ("n = " ++ show n ++ "\n")
-                             $ let (spacePos, spaceSize) = spaces !! n
+                    Just n  -> {-trace ("n = " ++ show n ++ "\n")
+                           $-} let (spacePos, spaceSize) = spaces !! n
                                in (replaceNth processed (spacePos, fileSize) files,
                                    let newSpaceSize = spaceSize-fileSize
-                                       spacesAfterShrinkingSpaceAtDest = if newSpaceSize == 0 then removeNth n spaces else replaceSpaceAt n (spacePos+fileSize, newSpaceSize) spaces
+                                       spacesAfterShrinkingSpaceAtDest = if newSpaceSize == 0 then removeNth n spaces else replaceNth n (spacePos+fileSize, newSpaceSize) spaces
                                        spacesAfterAddingSpaceAtSource = insertInSpaces (filePos, fileSize) $ spacesAfterShrinkingSpaceAtDest
                                    in sortBy (comparing fst) spacesAfterAddingSpaceAtSource,
                                    processed+1)
@@ -156,9 +156,8 @@ checksum = sum . zipWith (*) [0..] . concat . map (map (fromMaybe 0))
 
 -- The answer is between 1071092292836 and 8582381894860 ...
 day9part2 = do
-    contents <- readFile "day9 (example).csv"
-    putStrLn . showFilesAndSpacesFull . filesAndSpacesFromDiskMap . readDiskMap $ contents
-    -- print . length . (\(x,_,_) -> x) . filesAndSpacesFromDiskMap . readDiskMap $ contents
+    contents <- readFile "day9 (data).csv"
+    -- putStrLn . showFilesAndSpacesFull . filesAndSpacesFromDiskMap . readDiskMap $ contents
     let defragged = defrag2 . filesAndSpacesFromDiskMap . readDiskMap $ contents
     -- print . showFilesAndSpacesFull $ defragged
     -- print . showFilesAndSpaces $ defragged
