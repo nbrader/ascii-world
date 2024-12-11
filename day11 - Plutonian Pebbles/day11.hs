@@ -41,12 +41,16 @@ main = day11part2
 readStones :: String -> [Int]
 readStones = map read . words
 
-splitDigits :: Int -> (Int,Int)
-splitDigits x = (read lStr, read rStr)
-  where str = show x
-        n = length str
-        halfN = n `div` 2
-        (lStr,rStr) = splitAt halfN str
+splitDigits :: Int -> (Int, Int)
+splitDigits x 
+    | x < 10    = (0, x)
+    | otherwise = (left, right)
+  where
+    len = 1 + floor (log (fromIntegral x) / log 10)
+    halfLen = len `div` 2
+    divisor = floor (10 ** fromIntegral halfLen)
+    left = x `div` divisor
+    right = x `mod` divisor
 
 numDigits x = floor (log x / log 10)
 
