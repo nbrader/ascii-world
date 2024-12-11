@@ -52,6 +52,9 @@ numDigits x = floor (log x / log 10)
 
 isEven x = x `mod` 2 == 0
 
+blink :: [Int] -> [Int]
+blink stones = concatMap blinkStoneStep stones
+
 -- Memoized blinkStoneStep function
 blinkStoneStep :: Int -> [Int]
 blinkStoneStep x
