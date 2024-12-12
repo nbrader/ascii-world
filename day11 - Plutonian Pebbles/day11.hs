@@ -90,7 +90,67 @@ day11part1 = do
 day11part2 = do
     contents <- readFile "day11 (data).csv"
     
-    let initStones = readStones contents
-        finalStonesLists = map (\n -> concatMap (flip nthBlink n) initStones) [0..75]
+    let numOfBlinks = 75
+        initStones = readStones contents
     
-    mapM_ print . map length $ finalStonesLists
+    printExpandData numOfBlinks initStones
+
+printExpandData numOfBlinks initStones = do
+    let expanded = expand numOfBlinks initStones
+    
+    putStrLn "ed_Seen expanded = "
+    mapM_ print $ ed_Seen expanded
+    putStrLn ""
+    
+    putStrLn "ed_Repeats expanded = "
+    mapM_ print $ ed_Repeats expanded
+    putStrLn ""
+    
+    putStrLn "ed_StoneChildren expanded = "
+    mapM_ print $ ed_StoneChildren expanded
+    putStrLn ""
+    
+    putStrLn "ed_NextStones expanded = "
+    mapM_ print $ ed_NextStones expanded
+    putStrLn ""
+
+data ExpandData = ExpandData {
+    ed_Seen :: [Int],
+    ed_Repeats :: [Repeat],
+    ed_StoneChildren :: [ChildRelation],
+    ed_NextStones :: [Int],
+    ed_BlinksRemaining :: Int
+    } deriving Show
+
+data Repeat = Repeat {
+    repeatValueSeen :: Int,
+    repeatBlinksRemainingWhenSeenAgain :: Int
+    } deriving Show
+
+data ChildRelation = ChildRelation {
+    relationParent :: Int,
+    relationChildren :: [Int]
+    } deriving Show
+
+expand :: Int -> [Int] -> ExpandData
+expand blinksRemaining stoneNums = until ((==0) . ed_BlinksRemaining) go (ExpandData {ed_Seen = stoneNums, ed_Repeats = [], ed_StoneChildren = [], ed_NextStones = stoneNums, ed_BlinksRemaining = blinksRemaining})
+  where go :: ExpandData -> ExpandData
+        go prevData
+            = let
+                newBlinksRemaining = ed_BlinksRemaining prevData - 1
+                newChildren
+                    | ed_BlinksRemaining prevData == 0 = []
+                    | otherwise = map (\p -> ChildRelation {relationParent = p, relationChildren = blinkStoneStep p}) (ed_NextStones prevData)
+                groupedNewChildren = group $ sort $ concatMap relationChildren $ newChildren
+                repeatsRepeatingStonesInThisStep = concat $ map (drop 1) $ groupedNewChildren
+                uniqueInThisStep = map head $ filter ((== 1) . length) $ groupedNewChildren
+                repeatsRepeatingStonesInPrevSteps = uniqueInThisStep `intersect` ed_Seen prevData
+                newRepeats = map (\val -> Repeat {repeatValueSeen = val, repeatBlinksRemainingWhenSeenAgain = newBlinksRemaining}) $ (repeatsRepeatingStonesInThisStep `union` repeatsRepeatingStonesInPrevSteps)
+                nextStones = filter (not . (`elem` ed_Seen prevData)) (concatMap (take 1) groupedNewChildren)
+              in ExpandData {
+                    ed_Seen    = ed_Seen prevData ++ nextStones,
+                    ed_Repeats = ed_Repeats prevData ++ newRepeats,
+                    ed_StoneChildren = ed_StoneChildren prevData ++ newChildren,
+                    ed_NextStones = nextStones,
+                    ed_BlinksRemaining = newBlinksRemaining
+                    }
