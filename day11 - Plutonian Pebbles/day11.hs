@@ -92,21 +92,56 @@ day11part1 = do
     print $ length finalStones
 
 day11part2 = do
-    contents <- readFile "day11 (example).csv"
+    contents <- readFile "day11 (data).csv"
     
-    let numOfBlinks = 6
+    let numOfBlinks = 75
         initStones = readStones contents
         expanded = expand numOfBlinks initStones
         
         initMapOfStoneCountFromInitAndBlinks :: Map.HashMap InitAndBlinks Int
-        initMapOfStoneCountFromInitAndBlinks = Map.fromList $ map (\stone -> (InitAndBlinks {initAndBlinks_Init = stone, initAndBlinks_Blinks = 0}, 1)) (ed_NextStones expanded)
+        initMapOfStoneCountFromInitAndBlinks = Map.fromList $ map (\stone -> (InitAndBlinks {initAndBlinks_Init = stone, initAndBlinks_BlinksRemaining = 0}, 1)) (ed_NextStones expanded)
     
-    printExpandData numOfBlinks initStones
-    print initMapOfStoneCountFromInitAndBlinks
+    -- printExpandData numOfBlinks initStones
+    -- printMapOfStoneCountFromInitAndBlinks initMapOfStoneCountFromInitAndBlinks
+    
+    let -- lookupStoneCountForcingResultAndCaching can calculate a total but in this case we throw it away because we just want the map
+        (countsMapWithRepeatsPrecalc, _) = foldl' (\(countsMap, _) rep -> lookupStoneCountForcingResultAndCaching rep countsMap (ed_StoneChildren expanded)) (initMapOfStoneCountFromInitAndBlinks, 0) (ed_Repeats expanded)
+    
+    -- mapM_ print $ Map.toList countsMap
+    
+    let (_, total) = foldl' (\(countsMap, total) initStone -> let (newCountsMap, newSubtotal) = lookupStoneCountForcingResultAndCaching (InitAndBlinks {initAndBlinks_Init = initStone, initAndBlinks_BlinksRemaining = numOfBlinks}) countsMap (ed_StoneChildren expanded)
+                                                              in (newCountsMap, total + newSubtotal)) (countsMapWithRepeatsPrecalc, 0) initStones
+    
+    print total
 
-data InitAndBlinks = InitAndBlinks {initAndBlinks_Init :: Int, initAndBlinks_Blinks :: Int} deriving (Show, Eq, Generic)
+data InitAndBlinks = InitAndBlinks {
+    initAndBlinks_Init :: Int,
+    initAndBlinks_BlinksRemaining :: Int
+    } deriving (Show, Eq, Generic)
 
 instance Hashable InitAndBlinks
+
+-- lookupStoneCount is currently unused but it could be useful for more efficient program if lookupStoneCountForcingResultAndCaching is overzealous at calculating results it doesn't have in it's map
+lookupStoneCount :: InitAndBlinks -> Map.HashMap InitAndBlinks Int -> Maybe Int
+lookupStoneCount (InitAndBlinks _ 0) m = Just 1
+lookupStoneCount k m = Map.lookup k m
+
+lookupStoneCountForcingResultAndCaching :: InitAndBlinks -> Map.HashMap InitAndBlinks Int -> Map.HashMap Int [Int] -> (Map.HashMap InitAndBlinks Int, Int)
+lookupStoneCountForcingResultAndCaching (InitAndBlinks _ 0) countsMap childrenMap
+    = (countsMap, 1)
+lookupStoneCountForcingResultAndCaching k@(InitAndBlinks initStone blinksRemaining) countsMap childrenMap
+    = case Map.lookup k countsMap of
+        Nothing -> let children = fromJust $ Map.lookup initStone childrenMap
+                       (newCountsMap, newCount)
+                            = foldl' (\(countsMap', total) child -> let (newCountsMap', newCount) = lookupStoneCountForcingResultAndCaching (InitAndBlinks child (blinksRemaining-1)) countsMap' childrenMap
+                                                                    in (newCountsMap', total + newCount)) (countsMap, 0) children
+                   in (Map.insert k newCount newCountsMap, newCount)
+        Just count -> (countsMap, count)
+
+printMapOfStoneCountFromInitAndBlinks m = do
+    putStrLn "MapOfStoneCountFromInitAndBlinks = "
+    mapM_ print $ Map.toList m
+    putStrLn ""
 
 printExpandData numOfBlinks initStones = do
     let expanded = expand numOfBlinks initStones
@@ -129,41 +164,31 @@ printExpandData numOfBlinks initStones = do
 
 data ExpandData = ExpandData {
     ed_Seen :: [Int],
-    ed_Repeats :: [Repeat],
-    ed_StoneChildren :: [ChildRelation],
+    ed_Repeats :: [InitAndBlinks],
+    ed_StoneChildren :: Map.HashMap Int [Int],
     ed_NextStones :: [Int],
     ed_BlinksRemaining :: Int
     } deriving Show
 
-data Repeat = Repeat {
-    repeatValueSeen :: Int,
-    repeatBlinksRemainingWhenSeenAgain :: Int
-    } deriving Show
-
-data ChildRelation = ChildRelation {
-    relationParent :: Int,
-    relationChildren :: [Int]
-    } deriving Show
-
 expand :: Int -> [Int] -> ExpandData
-expand blinksRemaining stoneNums = until ((==0) . ed_BlinksRemaining) go (ExpandData {ed_Seen = stoneNums, ed_Repeats = [], ed_StoneChildren = [], ed_NextStones = stoneNums, ed_BlinksRemaining = blinksRemaining})
+expand blinksRemaining stoneNums = until ((==0) . ed_BlinksRemaining) go (ExpandData {ed_Seen = stoneNums, ed_Repeats = [], ed_StoneChildren = Map.empty, ed_NextStones = stoneNums, ed_BlinksRemaining = blinksRemaining})
   where go :: ExpandData -> ExpandData
         go prevData
             = let
                 newBlinksRemaining = ed_BlinksRemaining prevData - 1
                 newChildren
                     | ed_BlinksRemaining prevData == 0 = []
-                    | otherwise = map (\p -> ChildRelation {relationParent = p, relationChildren = blinkStoneStep p}) (ed_NextStones prevData)
-                groupedNewChildren = group $ sort $ concatMap relationChildren $ newChildren
+                    | otherwise = map (\p -> (p, blinkStoneStep p)) (ed_NextStones prevData)
+                groupedNewChildren = group $ sort $ concatMap snd $ newChildren
                 repeatsRepeatingStonesInThisStep = concat $ map (drop 1) $ groupedNewChildren
                 uniqueInThisStep = map head $ filter ((== 1) . length) $ groupedNewChildren
                 repeatsRepeatingStonesInPrevSteps = uniqueInThisStep `intersect` ed_Seen prevData
-                newRepeats = map (\val -> Repeat {repeatValueSeen = val, repeatBlinksRemainingWhenSeenAgain = newBlinksRemaining}) $ (repeatsRepeatingStonesInThisStep `union` repeatsRepeatingStonesInPrevSteps)
+                newRepeats = map (\val -> InitAndBlinks {initAndBlinks_Init = val, initAndBlinks_BlinksRemaining = newBlinksRemaining}) $ (repeatsRepeatingStonesInThisStep `union` repeatsRepeatingStonesInPrevSteps)
                 nextStones = filter (not . (`elem` ed_Seen prevData)) (concatMap (take 1) groupedNewChildren)
               in ExpandData {
                     ed_Seen    = ed_Seen prevData ++ nextStones,
                     ed_Repeats = ed_Repeats prevData ++ newRepeats,
-                    ed_StoneChildren = ed_StoneChildren prevData ++ newChildren,
+                    ed_StoneChildren = ed_StoneChildren prevData `Map.union` Map.fromList newChildren,
                     ed_NextStones = nextStones,
                     ed_BlinksRemaining = newBlinksRemaining
                     }
