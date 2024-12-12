@@ -62,7 +62,7 @@ readPlots :: String -> [[Char]]
 readPlots = lines
 
 day12part1 = do
-    contents <- readFile "day12 (example 3).csv"
+    contents <- readFile "day12 (data).csv"
     let rows = lines contents
         height = length rows
         width = length $ head rows
@@ -90,21 +90,24 @@ day12part1 = do
         initRegionRepGrid :: Array (V2 Int) (Maybe (V2 Int))
         initRegionRepGrid = listArray ((V2 0 0), V2 (width - 1) (height - 1)) $ repeat Nothing
         
-        -- regionRepGridWithNeighbourReps = foldl' makeNeighboursRep initRegionRepGrid (indices initRegionRepGrid)
-          -- where makeNeighboursRep :: RegionRepGrid -> V2 Int -> RegionRepGrid
-                -- makeNeighboursRep regionRepGrid p
-                  -- = let ns = upAndLeftConnectedNeighbours p
-                    -- in case ns of
-                        -- [] -> regionRepGrid
-                        -- (neighbour:ns) -> regionRepGrid // ((p, Just neighbour) : [(theirUltRep, Just neighbour) | n <- ns, let theirUltRep = case (ultimateRep n regionRepGrid) of {Just r -> r; Nothing -> n}, neighbour /= theirUltRep])
-        
         regionRepGridWithNeighbourReps = foldl' makeNeighboursRep initRegionRepGrid (indices initRegionRepGrid)
           where makeNeighboursRep :: RegionRepGrid -> V2 Int -> RegionRepGrid
                 makeNeighboursRep regionRepGrid p
                   = let ns = upAndLeftConnectedNeighbours p
                     in case ns of
                         [] -> regionRepGrid
-                        (newRep:ns) -> regionRepGrid // ((p, Just newRep) : [(n, Just newRep) | n <- ns])
+                        (neighbour:ns) -> let regionRepGridAfterWeSetRep = regionRepGrid // [(p, Just neighbour)]
+                                              ourUltRep = fromJust $ ultimateRep p regionRepGridAfterWeSetRep
+                                          in regionRepGridAfterWeSetRep // [(theirUltRep, Just ourUltRep) | n <- ns, let theirUltRep = case (ultimateRep n regionRepGridAfterWeSetRep) of {Just r -> r; Nothing -> n}, theirUltRep /= ourUltRep]
+        -- I'm trying to get the above to not infinitely loop while also setting the ultimateReprenstative of neighbours to match the ultimate representative
+        
+        -- regionRepGridWithNeighbourReps = foldl' makeNeighboursRep initRegionRepGrid (indices initRegionRepGrid)
+          -- where makeNeighboursRep :: RegionRepGrid -> V2 Int -> RegionRepGrid
+                -- makeNeighboursRep regionRepGrid p
+                  -- = let ns = upAndLeftConnectedNeighbours p
+                    -- in case ns of
+                        -- [] -> regionRepGrid
+                        -- (newRep:ns) -> regionRepGrid // ((p, Just newRep) : [(n, Just newRep) | n <- ns])
         
         regionRepGridWithUltimateReps = foldl' makeRepUltimate regionRepGridWithNeighbourReps (indices regionRepGridWithNeighbourReps)
           where makeRepUltimate :: RegionRepGrid -> V2 Int -> RegionRepGrid
@@ -147,15 +150,16 @@ day12part1 = do
     
     -- print numFencesGrid
     -- print $ charGrid A.! (V2 3 0)
-    mapM_ print $ repMapList
-    putStrLn ""
-    mapM_ print $ repUltMapList
-    putStrLn ""
-    mapM_ print $ zipWith (\x y -> (x,y)) repChars repPositions
-    putStrLn ""
+    -- mapM_ print $ repMapList
+    -- putStrLn ""
+    -- mapM_ print $ repUltMapList
+    -- putStrLn ""
+    -- mapM_ print $ zipWith (\x y -> (x,y)) repChars repPositions
+    -- putStrLn ""
     -- print $ repAreas
     -- print $ repPerims
-    mapM_ print $ zipWith (\x y -> (x,y)) repChars (zipWith (\x y -> (x,y)) repPerims repAreas)
+    print $ sum $ zipWith (*) repPerims repAreas
+    -- mapM_ print $ zipWith (\x y -> (x,y)) repChars (zipWith (\x y -> (x,y)) repPerims repAreas)
 
 -- A region of R plants with price 12 * 18 = 216.
 -- A region of I plants with price 4 * 8 = 32.
