@@ -1,5 +1,7 @@
 #!/usr/bin/env stack
--- stack --resolver lts-18.22 ghci --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1 --package array-0.5.4.0 --package memoize-1.1.2
+-- stack --resolver lts-18.22 ghci --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1 --package array-0.5.4.0 --package memoize-1.1.2 --package hashable-1.3.0.0
+
+{-# LANGUAGE DeriveGeneric #-}
 
 -------------------------------------
 -------------------------------------
@@ -8,7 +10,7 @@
 -------------------------------------
 {-
     To build, run the following shell command in this directory:
-        stack --resolver lts-20.5 ghc --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1 --package array-0.5.4.0 --package memoize-1.1.2 -- '.\day11.hs' -O2
+        stack --resolver lts-20.5 ghc --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1 --package array-0.5.4.0 --package memoize-1.1.2 --package hashable-1.3.0.0 -- '.\day11.hs' -O2
 -}
 
 ------------
@@ -31,6 +33,8 @@ import Data.List
 import Data.Maybe
 import qualified Data.HashMap.Strict as Map
 import Data.Function.Memoize
+import GHC.Generics (Generic)
+import Data.Hashable
 
 
 -------------
@@ -88,12 +92,21 @@ day11part1 = do
     print $ length finalStones
 
 day11part2 = do
-    contents <- readFile "day11 (data).csv"
+    contents <- readFile "day11 (example).csv"
     
-    let numOfBlinks = 75
+    let numOfBlinks = 6
         initStones = readStones contents
+        expanded = expand numOfBlinks initStones
+        
+        initMapOfStoneCountFromInitAndBlinks :: Map.HashMap InitAndBlinks Int
+        initMapOfStoneCountFromInitAndBlinks = Map.fromList $ map (\stone -> (InitAndBlinks {initAndBlinks_Init = stone, initAndBlinks_Blinks = 0}, 1)) (ed_NextStones expanded)
     
     printExpandData numOfBlinks initStones
+    print initMapOfStoneCountFromInitAndBlinks
+
+data InitAndBlinks = InitAndBlinks {initAndBlinks_Init :: Int, initAndBlinks_Blinks :: Int} deriving (Show, Eq, Generic)
+
+instance Hashable InitAndBlinks
 
 printExpandData numOfBlinks initStones = do
     let expanded = expand numOfBlinks initStones
