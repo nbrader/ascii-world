@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-18.22 ghci --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1 --package array-0.5.4.0 --package memoize-1.1.2 --package hashable-1.3.0.0
+-- stack --resolver lts-18.22 ghci --package split --package strict --package unordered-containers --package array --package memoize --package hashable
 
 {-# LANGUAGE DeriveGeneric #-}
 
@@ -10,7 +10,7 @@
 -------------------------------------
 {-
     To build, run the following shell command in this directory:
-        stack --resolver lts-20.5 ghc --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1 --package array-0.5.4.0 --package memoize-1.1.2 --package hashable-1.3.0.0 -- '.\day11.hs' -O2
+        stack --resolver lts-20.5 ghc --package split --package strict --package unordered-containers --package array --package memoize --package hashable -- '.\day11.hs' -O2
 -}
 
 ------------
