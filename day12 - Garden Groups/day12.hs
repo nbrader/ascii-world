@@ -99,15 +99,6 @@ day12part1 = do
                         (neighbour:ns) -> let regionRepGridAfterWeSetRep = regionRepGrid // [(p, Just neighbour)]
                                               ourUltRep = fromJust $ ultimateRep p regionRepGridAfterWeSetRep
                                           in regionRepGridAfterWeSetRep // [(theirUltRep, Just ourUltRep) | n <- ns, let theirUltRep = case (ultimateRep n regionRepGridAfterWeSetRep) of {Just r -> r; Nothing -> n}, theirUltRep /= ourUltRep]
-        -- I'm trying to get the above to not infinitely loop while also setting the ultimateReprenstative of neighbours to match the ultimate representative
-        
-        -- regionRepGridWithNeighbourReps = foldl' makeNeighboursRep initRegionRepGrid (indices initRegionRepGrid)
-          -- where makeNeighboursRep :: RegionRepGrid -> V2 Int -> RegionRepGrid
-                -- makeNeighboursRep regionRepGrid p
-                  -- = let ns = upAndLeftConnectedNeighbours p
-                    -- in case ns of
-                        -- [] -> regionRepGrid
-                        -- (newRep:ns) -> regionRepGrid // ((p, Just newRep) : [(n, Just newRep) | n <- ns])
         
         regionRepGridWithUltimateReps = foldl' makeRepUltimate regionRepGridWithNeighbourReps (indices regionRepGridWithNeighbourReps)
           where makeRepUltimate :: RegionRepGrid -> V2 Int -> RegionRepGrid
