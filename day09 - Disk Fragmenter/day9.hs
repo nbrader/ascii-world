@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-18.22 ghci --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1
+-- stack --resolver lts-18.22 ghci --package strict-0.4.0.1
 
 -----------------------------------
 -----------------------------------
@@ -8,7 +8,7 @@
 -----------------------------------
 {-
     To build, run the following shell command in this directory:
-        stack --resolver lts-20.5 ghc --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1 -- '.\day9.hs' -O2
+        stack --resolver lts-20.5 ghc --package split-0.2.3.5 --package strict-0.4.0.1 -- '.\day9.hs' -O2
 -}
 
 ------------
@@ -25,17 +25,9 @@
 -- Imports --
 -------------
 import Data.List
-import Data.List.Split
 import Prelude hiding (readFile)
 import System.IO.Strict (readFile)
-import qualified Data.HashMap.Strict as Map
-import Data.HashSet (HashSet)
-import Data.HashSet as H hiding (map, foldl', filter, null)
-import Data.Either (lefts, rights)
-import Data.Maybe (fromJust, catMaybes, fromMaybe)
-import Control.Monad (guard, forM, forM_)
-import Data.Ratio
-import Debug.Trace (trace)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Ord (comparing)
 
 

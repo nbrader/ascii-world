@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-18.22 ghci --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1 --package array-0.5.4.0
+-- stack --resolver lts-18.22 ghci --package unordered-containers-0.2.19.1 --package array-0.5.4.0
 
 ---------------------------
 ---------------------------
@@ -8,7 +8,7 @@
 ---------------------------
 {-
     To build, run the following shell command in this directory:
-        stack --resolver lts-20.5 ghc --package split-0.2.3.5 --package strict-0.4.0.1 --package unordered-containers-0.2.19.1 --package array-0.5.4.0 -- '.\day10.hs' -O2
+        stack --resolver lts-20.5 ghc --package unordered-containers-0.2.19.1 --package array-0.5.4.0 -- '.\day10.hs' -O2
 -}
 
 ------------
@@ -26,9 +26,7 @@
 -------------
 import Data.Array as A (Array, (!), listArray)
 import Data.Char (digitToInt)
-import Control.Monad (guard)
 import Data.List
-import Data.Maybe
 import qualified Data.HashMap.Strict as Map
 
 

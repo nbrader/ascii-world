@@ -1,7 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-18.22 ghci --package strict --package memoize --package linear --package split --package parallel --package array --package search-algorithms --package unordered-containers --package hashable
-
-{-# LANGUAGE DeriveGeneric #-}
+-- stack --resolver lts-18.22 ghci --package linear --package array
 
 ---------------------------------
 ---------------------------------
@@ -10,14 +8,14 @@
 ---------------------------------
 {-
     To build, run the following shell command in this directory:
-        stack --resolver lts-20.5 ghc --package strict --package memoize --package linear --package split --package parallel --package array --package search-algorithms --package unordered-containers --package hashable -- '.\day12.hs' -O2
+        stack --resolver lts-20.5 ghc --package linear --package array -- '.\day12.hs' -O2
 -}
 
 ------------
 -- Output --
 ------------
 -- *Main> day12part1
--- 
+-- 216042
 
 -- *Main> day12part2
 -- 
@@ -26,25 +24,10 @@
 -------------
 -- Imports --
 -------------
-import Data.Char (digitToInt, ord)
-import Control.Monad (guard)
-import qualified Data.HashMap.Strict as Map
-import Data.Function.Memoize
-import GHC.Generics (Generic)
-import Data.List.Split (splitOn, chunksOf)
-import Data.Maybe (fromJust, maybeToList, catMaybes, isJust, isNothing)
+import Data.Maybe (fromJust, isNothing)
 import Linear hiding (trace)
-import qualified Linear
-import Linear.V2
-import Control.Parallel.Strategies
-import Data.Bits
-import Data.HashSet as H hiding (foldl')
-import Algorithm.Search
-import Data.List as L (sort, intersperse, foldl', findIndex, map, delete, null, concatMap, minimumBy, filter, transpose)
+import Data.List as L (foldl', transpose)
 import Data.Array as A
-import Data.Ix
-import Data.Hashable
-import Data.Function (on)
 
 
 -------------

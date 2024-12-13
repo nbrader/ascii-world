@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-18.22 ghci --package split --package strict --package unordered-containers --package array --package memoize --package hashable
+-- stack --resolver lts-18.22 ghci --package unordered-containers --package memoize --package hashable
 
 {-# LANGUAGE DeriveGeneric #-}
 
@@ -10,7 +10,7 @@
 -------------------------------------
 {-
     To build, run the following shell command in this directory:
-        stack --resolver lts-20.5 ghc --package split --package strict --package unordered-containers --package array --package memoize --package hashable -- '.\day11.hs' -O2
+        stack --resolver lts-20.5 ghc --package unordered-containers --package memoize --package hashable -- '.\day11.hs' -O2
 -}
 
 ------------
@@ -26,9 +26,6 @@
 -------------
 -- Imports --
 -------------
-import Data.Array as A
-import Data.Char (digitToInt)
-import Control.Monad (guard)
 import Data.List
 import Data.Maybe
 import qualified Data.HashMap.Strict as Map

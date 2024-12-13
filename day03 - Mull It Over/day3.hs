@@ -25,9 +25,7 @@
 -- Imports --
 -------------
 import Data.Char (isDigit)
-import Data.List (tails, isPrefixOf, transpose, sort)
-import Data.Map as M hiding (map, filter, drop)
-import Data.Maybe (fromJust)
+import Data.List
 
 
 -------------
