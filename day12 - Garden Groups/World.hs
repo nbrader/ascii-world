@@ -107,16 +107,16 @@ printWorld height charZOrder world = putStrLn $ showWorld height charZOrder worl
 
 -- Testing
 exampleWorld1 :: World
-exampleWorld1 = World '.' (M.fromList [('U',9),('Z',1)]) (M.fromList [('V',(1,0))]) 10
+exampleWorld1 = World '.' (M.fromList [('U',3)]) (M.fromList [('U',(7,7))]) 10
 
 exampleWorld2 :: World
-exampleWorld2 = World '.' (M.fromList [('U',20),('Z',1)]) (M.fromList [('V',(3,3))]) 10
+exampleWorld2 = World '.' (M.fromList [('U',96)]) (M.fromList [('U',(0,6))]) 10
 
 exampleWorld3 :: World
-exampleWorld3 = moveLayerInWorld 'U' (-1,-1) $ exampleWorld2
+exampleWorld3 = exampleWorld1 `combineTwoWorlds` exampleWorld2
 
 exampleWorld4 :: World
-exampleWorld4 = exampleWorld1 `combineTwoWorlds` exampleWorld2
+exampleWorld4 = movePointInWorld 'U' (1,1) $ exampleWorld3
 
 examplePrint1 = printWorld 10 (comparing id) exampleWorld1
 examplePrint2 = printWorld 10 (comparing id) exampleWorld2
