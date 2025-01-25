@@ -212,7 +212,7 @@ exampleLWorld1 :: LWorld
 exampleLWorld1 = LWorld '.' (M.fromList [('U', simpleLayer 3)]) (M.fromList [('U',(7,7))]) exampleWorldWidth exampleWorldHeight
 
 exampleLWorld2 :: LWorld
-exampleLWorld2 = LWorld '.' (M.fromList [('U', simpleLayer 96)]) (M.fromList [('U',(0,6))]) exampleWorldWidth exampleWorldHeight
+exampleLWorld2 = LWorld '.' (M.fromList [('U', let lyr = simpleLayer 5 in lyr { lyrLSBPosition = (0,0) }), ('V', simpleLayer 4)]) (M.fromList []) exampleWorldWidth exampleWorldHeight
 
 exampleLWorld3 :: LWorld
 exampleLWorld3 = exampleLWorld1 `combineTwoLWorlds` exampleLWorld2
@@ -302,6 +302,6 @@ isOverlappingLayers c1 c2 w = fromMaybe False $ do
         u1 < d2 || u2 < d1     -- vertical non-overlap
     
     let worldWidth = lWorldWidth w
-        blittedLayer1 = blitToLayer layer1 layer2
+        blittedLayer1 = blitToLayer layer1 (layer2 { lyrBitMask = 0 })
     
     return $ lyrBitMask blittedLayer1 `isOverlapping` lyrBitMask layer2
