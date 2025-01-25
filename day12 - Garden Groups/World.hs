@@ -9,12 +9,12 @@ module World ( World(..)
              , combineTwoWorlds
              , combineWorlds
              , hasPoint
-             , moveLayerInWorld
+             , moveBitMaskInWorld
              , movePointInWorld
-             , cutLayerWithLayer
+             , cutBitMaskWithBitMask
              , setPoint
-             , insertLayerAtPoint
-             , isOverlappingLayers ) where
+             , insertBitMaskAtPoint
+             , isOverlappingBitMasks ) where
 
 -------------
 -- Imports --
@@ -32,13 +32,13 @@ import Data.Foldable
 import Safe (atMay)
 
 import Util (replace)
-import Layer (SingularPoint, Layer, pointToIndex, pointToLayer, moveLayer, movePoint, isOverlapping, diff, up, dn, lt, rt, allDirs)
+import BitMask (SingularPoint, BitMask, pointToIndex, pointToBitMask, moveBitMask, movePoint, isOverlapping, diff, up, dn, lt, rt, allDirs)
 
 -- Each obj has a shape encoded as bits of an Integer.
 
 data World
     = World { worldBG :: Char
-            , worldLayers :: M.Map Char Layer
+            , worldBitMasks :: M.Map Char BitMask
             , worldPoints :: M.Map Char SingularPoint
             , worldWidth :: Int } deriving (Show)
 
@@ -51,7 +51,7 @@ readWorld :: Char -> [Char] -> String -> (Int,World)
 readWorld bgChar singularChars inStr
     = ( height
       , World { worldBG = bgChar,
-                worldLayers = foldr addToLayer M.empty $ filter (\(char,_) -> not (char `elem` singularChars)) char2Ds,
+                worldBitMasks = foldr addToBitMask M.empty $ filter (\(char,_) -> not (char `elem` singularChars)) char2Ds,
                 worldPoints = singularPoints,
                 worldWidth = width } )
        
@@ -76,21 +76,21 @@ readWorld bgChar singularChars inStr
             
             return (char, (x, y))
 
-        addToLayer :: (Char, (Int, Int)) -> M.Map Char Layer -> M.Map Char Layer
-        addToLayer (char, (x, y)) = M.alter (setBitInLayer (x, y)) char
+        addToBitMask :: (Char, (Int, Int)) -> M.Map Char BitMask -> M.Map Char BitMask
+        addToBitMask (char, (x, y)) = M.alter (setBitInBitMask (x, y)) char
 
-        setBitInLayer :: (Int, Int) -> Maybe Layer -> Maybe Layer
-        setBitInLayer (x, y) maybeLayer = Just $ setBit (fromMaybe 0 maybeLayer) (y * width + x)
+        setBitInBitMask :: (Int, Int) -> Maybe BitMask -> Maybe BitMask
+        setBitInBitMask (x, y) maybeBitMask = Just $ setBit (fromMaybe 0 maybeBitMask) (y * width + x)
 
 
 showWorld :: Int -> (Char -> Char -> Ordering) -> World -> String
-showWorld height charZOrder world = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromLayersAndPoints
+showWorld height charZOrder world = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromBitMasksAndPoints
   where (World bgChar layers points width) = world
-        listsOfMaybeCharsFromLayers = prioritize charZOrder $ M.mapWithKey (\c n -> layerToMaybeChars c n) layers
-        listOfMaybeCharsFromLayers = combineMaybeCharLists listsOfMaybeCharsFromLayers
+        listsOfMaybeCharsFromBitMasks = prioritize charZOrder $ M.mapWithKey (\c n -> layerToMaybeChars c n) layers
+        listOfMaybeCharsFromBitMasks = combineMaybeCharLists listsOfMaybeCharsFromBitMasks
         charsAndPoints = map head . groupBy ((==) `on` snd) . sortBy (\(aChar,aPos) (bChar,bPos) -> compare aPos bPos <> compare aChar bChar) . M.toList $ points
         charsAndIndices = map (fmap (pointToIndex width)) charsAndPoints
-        listOfMaybeCharsFromLayersAndPoints = foldr (\(c,i) acc -> let maybeOld = join (acc `atMay` i) in replace acc (i, Just $ minimum $ catMaybes [maybeOld, Just c])) listOfMaybeCharsFromLayers charsAndIndices
+        listOfMaybeCharsFromBitMasksAndPoints = foldr (\(c,i) acc -> let maybeOld = join (acc `atMay` i) in replace acc (i, Just $ minimum $ catMaybes [maybeOld, Just c])) listOfMaybeCharsFromBitMasks charsAndIndices
         
         combineMaybeCharLists :: [[Maybe a]] -> [Maybe a]
         combineMaybeCharLists = map (getFirst . fold . map First) . transpose
@@ -128,10 +128,10 @@ examplePrint4 = printWorld 10 (comparing id) exampleWorld4
 -- Left-biased such that the background character and any singular points they share are taken from the left
 combineTwoWorlds :: World -> World -> World
 combineTwoWorlds w1 w2
-    = w1 { worldLayers = M.unionWith combineLayers (worldLayers w1) (worldLayers w2),
+    = w1 { worldBitMasks = M.unionWith combineBitMasks (worldBitMasks w1) (worldBitMasks w2),
            worldPoints = M.unionWith combinePoints (worldPoints w1) (worldPoints w2) }
-  where combineLayers :: Layer -> Layer -> Layer
-        combineLayers points1 points2 = points1 .|. points2
+  where combineBitMasks :: BitMask -> BitMask -> BitMask
+        combineBitMasks points1 points2 = points1 .|. points2
         
         combinePoints :: SingularPoint -> SingularPoint -> SingularPoint
         combinePoints point1 _ = point1
@@ -140,47 +140,47 @@ combineWorlds :: [World] -> World
 combineWorlds = foldr1 combineTwoWorlds
 
 hasPoint :: Char -> SingularPoint -> World -> Bool
-hasPoint char point world = inSingularPoints || inLayers
+hasPoint char point world = inSingularPoints || inBitMasks
   where
     inSingularPoints = case M.lookup char (worldPoints world) of
         Just p -> p == point
         Nothing -> False
 
-    inLayers = case M.lookup char (worldLayers world) of
+    inBitMasks = case M.lookup char (worldBitMasks world) of
         Just bits -> testBit bits (pointToIndex (worldWidth world) point)
         Nothing -> False
 
-moveLayerInWorld :: Char -> (Int,Int) -> World -> World
-moveLayerInWorld c (dx,dy) w = w {worldLayers = M.update (\pts -> Just $ moveLayer width (dx,dy) pts) c (worldLayers w)}
+moveBitMaskInWorld :: Char -> (Int,Int) -> World -> World
+moveBitMaskInWorld c (dx,dy) w = w {worldBitMasks = M.update (\pts -> Just $ moveBitMask width (dx,dy) pts) c (worldBitMasks w)}
   where width = worldWidth w
 
 movePointInWorld :: Char -> (Int,Int) -> World -> World
 movePointInWorld c (dx,dy) w = w {worldPoints = M.update (\pt -> Just $ movePoint width (dx,dy) pt) c (worldPoints w)}
   where width = worldWidth w
 
-cutLayerWithLayer :: Char -> Char -> World -> World
-cutLayerWithLayer targetChar cuttingChar w
-    |   targetChar  `M.member` worldLayers w
-     && cuttingChar `M.member` worldLayers w = w {worldLayers = M.insert targetChar newLayer (worldLayers w)}
+cutBitMaskWithBitMask :: Char -> Char -> World -> World
+cutBitMaskWithBitMask targetChar cuttingChar w
+    |   targetChar  `M.member` worldBitMasks w
+     && cuttingChar `M.member` worldBitMasks w = w {worldBitMasks = M.insert targetChar newBitMask (worldBitMasks w)}
     | otherwise = w
-  where targetLayer  = fromJust $ M.lookup targetChar  (worldLayers w)
-        cuttingLayer = fromJust $ M.lookup cuttingChar (worldLayers w)
-        newLayer = targetLayer `diff` cuttingLayer
+  where targetBitMask  = fromJust $ M.lookup targetChar  (worldBitMasks w)
+        cuttingBitMask = fromJust $ M.lookup cuttingChar (worldBitMasks w)
+        newBitMask = targetBitMask `diff` cuttingBitMask
 
 setPoint :: Char -> (Int,Int) -> World -> World
 setPoint c (x,y) w = w {worldPoints = M.insert c (x,y) (worldPoints w)}
 
-insertLayerAtPoint :: Char -> Char -> World -> Maybe World
-insertLayerAtPoint layerChar pointChar w = do
+insertBitMaskAtPoint :: Char -> Char -> World -> Maybe World
+insertBitMaskAtPoint layerChar pointChar w = do
     point <- M.lookup pointChar (worldPoints w)
-    let newLayer = pointToLayer width point
-    return $ w {worldLayers = M.insert layerChar newLayer (worldLayers w)}
+    let newBitMask = pointToBitMask width point
+    return $ w {worldBitMasks = M.insert layerChar newBitMask (worldBitMasks w)}
   where width = worldWidth w
 
-isOverlappingLayers :: Char -> Char -> World -> Bool
-isOverlappingLayers c1 c2 w
+isOverlappingBitMasks :: Char -> Char -> World -> Bool
+isOverlappingBitMasks c1 c2 w
     = fromMaybe False $ do
-        points1 <- M.lookup c1 (worldLayers w)
-        points2 <- M.lookup c2 (worldLayers w)
+        points1 <- M.lookup c1 (worldBitMasks w)
+        points2 <- M.lookup c2 (worldBitMasks w)
         
         return $ points1 `isOverlapping` points2
