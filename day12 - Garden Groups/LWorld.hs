@@ -32,7 +32,7 @@ import Data.Foldable
 import Safe (atMay)
 
 import Util (replace)
-import BitMask (Point, BitMask, pointToIndex, pointToBitMask, moveBitMask, movePoint, isOverlapping, diff, up, dn, lt, rt, allDirs)
+import BitMask (Point, BitMask, pointToIndex, pointToBitMask, moveBitMask, movePoint, isOverlapping, diff, up, dn, lt, rt, allDirs, combineBitMasks)
 
 -- Each obj has a shape encoded as bits of an Integer referred to as a bitMask which is interpreted in 2D by stacking upwards rows of a given width.
 
@@ -110,11 +110,73 @@ readLWorld boundsMode bgChar singularChars inStr
                 newBitMask = setBit (fromMaybe emptyBitMask maybeOldBitMask) (y * width + x)
                 newLayer   = Layer { lyrLSBPosition = (0,0), lyrWindowLRDU = (0,width,0,height), lyrBitMask = newBitMask }
 
-blitToLayer :: Layer -> Layer -> Layer
-blitToLayer sourceLayer destLayer = undefined
+diffVec2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
+diffVec2  (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 
+-- Applies a bitmask shift and sets bits in a new mask
+applyBitMaskShift :: BitMask -> Int -> Int -> (Int, Int) -> (Int, Int) -> BitMask
+applyBitMaskShift srcMask srcWidth destWidth (dx, dy) (maxX, maxY) =
+    let
+        setBits :: BitMask -> Int -> Int -> BitMask
+        setBits acc x y
+            | x >= srcWidth = acc  -- Stop at the right boundary
+            | otherwise =
+                let bitIndex = pointToIndex srcWidth (x, y)
+                    newX = x + dx
+                    newY = y + dy
+                    newIndex = pointToIndex destWidth (newX, newY)
+                    bitIsSet = testBit srcMask bitIndex
+                    newMask = if bitIsSet && newX >= 0 && newY >= 0 && newX < maxX && newY < maxY
+                              then setBit acc newIndex
+                              else acc
+                in setBits newMask (x + 1) y
+    in foldl (\mask y -> setBits mask 0 y) zeroBits [0 .. maxY - 1]
+
+-- Blit a layer onto another layer
+blitToLayer :: Layer -> Layer -> Layer
+blitToLayer src dest =
+    let destLSB = lyrLSBPosition dest
+        destWidth = lyrBitMaskWidth dest
+        srcLSB = lyrLSBPosition src
+        srcWidth = lyrBitMaskWidth src
+        srcMask = lyrBitMask src
+        destMask = lyrBitMask dest
+
+        -- Compute height of the source layer
+        (_, _, _, srcHeight) = lyrWindowLRDU src
+
+        -- Compute coordinate shift
+        shift = srcLSB `diffVec2` destLSB
+
+        -- Shift bitmask
+        srcMask_Shifted = applyBitMaskShift srcMask srcWidth destWidth shift (destWidth, srcHeight)
+
+    in dest { lyrBitMask = combineBitMasks destMask srcMask_Shifted }
+
+-- Blit a layer onto a world
 blitToWorld :: Layer -> LWorld -> Layer
-blitToWorld sourceLayer world = undefined
+blitToWorld layer world =
+    let worldWidth  = lWorldWidth world
+        worldHeight = lWorldHeight world
+        layerLSB = lyrLSBPosition layer
+        layerWidth = lyrBitMaskWidth layer
+        layerBitMask = lyrBitMask layer
+
+        -- Compute height of the layer
+        (_, _, _, layerHeight) = lyrWindowLRDU layer
+
+        -- Compute shift (layer LSB to (0,0) in world space)
+        shift = layerLSB `diffVec2` (0, 0)
+
+        -- Shift bitmask
+        newBitMask = applyBitMaskShift layerBitMask layerWidth worldWidth shift (worldWidth, worldHeight)
+
+    in Layer
+        { lyrLSBPosition = (0, 0)
+        , lyrWindowLRDU = (0, worldWidth, 0, worldHeight)
+        , lyrBitMaskWidth = worldWidth
+        , lyrBitMask = newBitMask
+        }
 
 showLWorld :: Int -> (Char -> Char -> Ordering) -> LWorld -> String
 showLWorld height charZOrder lWorld = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromBitMasksAndPoints
@@ -168,7 +230,7 @@ examplePrint4 = printLWorld exampleWorldWidth (comparing id) exampleLWorld4
 -- Left-biased such that the background character and any singular points they share are taken from the left
 combineTwoLWorlds :: LWorld -> LWorld -> LWorld
 combineTwoLWorlds w1 w2
-    = w1 { lWorldLayers = M.unionWith combineBitMasks (lWorldLayers w1) (lWorldLayers w2),
+    = w1 { lWorldLayers = M.unionWith blitToLayer (lWorldLayers w1) (lWorldLayers w2),
            lWorldPoints = M.unionWith combinePoints (lWorldPoints w1) (lWorldPoints w2) }
   where combineBitMasks :: BitMask -> BitMask -> BitMask
         combineBitMasks points1 points2 = points1 .|. points2

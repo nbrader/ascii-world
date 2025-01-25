@@ -44,3 +44,6 @@ rt = (  1 ,   0 )
 
 allDirs :: (Integral a) => [(a,a)]
 allDirs = [up,dn,lt,rt]
+
+combineBitMasks :: BitMask -> BitMask -> BitMask
+combineBitMasks x y = x .|. y
