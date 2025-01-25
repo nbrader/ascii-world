@@ -212,7 +212,7 @@ exampleLWorld1 :: LWorld
 exampleLWorld1 = LWorld '.' (M.fromList [('U', simpleLayer 3)]) (M.fromList [('U',(7,7))]) exampleWorldWidth exampleWorldHeight
 
 exampleLWorld2 :: LWorld
-exampleLWorld2 = LWorld '.' (M.fromList [('U', let lyr = simpleLayer 5 in lyr { lyrLSBPosition = (0,0) }), ('V', simpleLayer 4)]) (M.fromList []) exampleWorldWidth exampleWorldHeight
+exampleLWorld2 = LWorld '.' (M.fromList [('U', let lyr = simpleLayer 5 in lyr { lyrLSBPosition = (0,0) }), ('V', simpleLayer 4)]) (M.fromList [('S',(2,1))]) exampleWorldWidth exampleWorldHeight
 
 exampleLWorld3 :: LWorld
 exampleLWorld3 = exampleLWorld1 `combineTwoLWorlds` exampleLWorld2
@@ -277,12 +277,12 @@ setPoint c (x,y) w = w {lWorldPoints = M.insert c (x,y) (lWorldPoints w)}
 
 insertBitMaskAtPoint :: Char -> Char -> LWorld -> Maybe LWorld
 insertBitMaskAtPoint bitMaskChar pointChar w = do
-    point <- M.lookup pointChar (lWorldPoints w)
+    point@(x,y) <- M.lookup pointChar (lWorldPoints w)
     let newLayer = Layer 
             { lyrLSBPosition = point
-            , lyrWindowLRDU = (0, width, 0, height)
+            , lyrWindowLRDU = (x, x, y, y)
             , lyrBitMaskWidth = width
-            , lyrBitMask = pointToBitMask width point 
+            , lyrBitMask = 1
             }
     return $ w {lWorldLayers = M.insert bitMaskChar newLayer (lWorldLayers w)}
   where 
