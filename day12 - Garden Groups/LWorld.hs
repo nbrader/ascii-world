@@ -14,7 +14,7 @@ module LWorld ( LWorld(..)
               , cutBitMaskWithBitMask
               , setPoint
               , insertBitMaskAtPoint
-              , isOverlappingBitMasks ) where
+              , isOverlappingLayers ) where
 
 -------------
 -- Imports --
@@ -289,10 +289,19 @@ insertBitMaskAtPoint bitMaskChar pointChar w = do
     width = lWorldWidth w
     height = lWorldHeight w
 
-isOverlappingBitMasks :: Char -> Char -> LWorld -> Bool
-isOverlappingBitMasks c1 c2 w
-    = fromMaybe False $ do
-        layer1 <- M.lookup c1 (lWorldLayers w)
-        layer2 <- M.lookup c2 (lWorldLayers w)
+isOverlappingLayers :: Char -> Char -> LWorld -> Bool
+isOverlappingLayers c1 c2 w = fromMaybe False $ do
+    layer1 <- M.lookup c1 (lWorldLayers w)
+    layer2 <- M.lookup c2 (lWorldLayers w)
+    
+    let (l1, r1, d1, u1) = lyrWindowLRDU layer1
+        (l2, r2, d2, u2) = lyrWindowLRDU layer2
         
-        return $ lyrBitMask layer1 `isOverlapping` lyrBitMask layer2
+    guard $ not $ 
+        r1 < l2 || l1 > r2 ||  -- horizontal non-overlap 
+        u1 < d2 || d1 > u2     -- vertical non-overlap
+    
+    let worldWidth = lWorldWidth w
+        blittedLayer1 = blitToLayer layer1 layer2
+    
+    return $ lyrBitMask blittedLayer1 `isOverlapping` lyrBitMask layer2
