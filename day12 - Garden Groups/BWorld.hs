@@ -32,14 +32,14 @@ import Data.Foldable
 import Safe (atMay)
 
 import Util (replace)
-import BitMask (SingularPoint, BitMask, pointToIndex, pointToBitMask, moveBitMask, movePoint, isOverlapping, diff, up, dn, lt, rt, allDirs)
+import BitMask (Point, BitMask, pointToIndex, pointToBitMask, moveBitMask, movePoint, isOverlapping, diff, up, dn, lt, rt, allDirs)
 
 -- Each obj has a shape encoded as bits of an Integer.
 
 data BWorld
     = BWorld { bWorldBG :: Char
              , bWorldBitMasks :: M.Map Char BitMask
-             , bWorldPoints :: M.Map Char SingularPoint
+             , bWorldPoints :: M.Map Char Point
              , bWorldWidth :: Int } deriving (Show)
 
 emptyBWorld :: Char -> Int -> BWorld
@@ -133,16 +133,16 @@ combineTwoBWorlds w1 w2
   where combineBitMasks :: BitMask -> BitMask -> BitMask
         combineBitMasks points1 points2 = points1 .|. points2
         
-        combinePoints :: SingularPoint -> SingularPoint -> SingularPoint
+        combinePoints :: Point -> Point -> Point
         combinePoints point1 _ = point1
 
 combineBWorlds :: [BWorld] -> BWorld
 combineBWorlds = foldr1 combineTwoBWorlds
 
-hasPoint :: Char -> SingularPoint -> BWorld -> Bool
-hasPoint char point bWorld = inSingularPoints || inBitMasks
+hasPoint :: Char -> Point -> BWorld -> Bool
+hasPoint char point bWorld = inPoints || inBitMasks
   where
-    inSingularPoints = case M.lookup char (bWorldPoints bWorld) of
+    inPoints = case M.lookup char (bWorldPoints bWorld) of
         Just p -> p == point
         Nothing -> False
 

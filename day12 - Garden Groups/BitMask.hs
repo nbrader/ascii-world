@@ -9,14 +9,14 @@ module BitMask where
 import Data.Bits
 
 -- Each obj has a shape encoded as bits of an Integer.
-type SingularPoint = (Int,Int)
+type Point = (Int,Int)
 type BitMask = Integer
 
 -- Converts a 2D point to a 1D index
-pointToIndex :: Int -> SingularPoint -> Int
+pointToIndex :: Int -> Point -> Int
 pointToIndex width (x, y) = y * width + x
 
-pointToBitMask :: Int -> SingularPoint -> BitMask
+pointToBitMask :: Int -> Point -> BitMask
 pointToBitMask width (x,y) = moveBitMask width (x,y) 1
 
 moveBitMask :: Int -> (Int,Int) -> BitMask -> BitMask
