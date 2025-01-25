@@ -42,8 +42,8 @@ import BitMask (Point, BitMask, pointToIndex, pointToBitMask, moveBitMask, moveP
 data Layer
     = Layer { lyrLSBPosition :: Point
             , lyrWindowLRDU :: (Int,Int,Int,Int)
-            , lyrBitMask :: BitMask
-            , lyrBitMaskWidth :: Int } deriving (Show)
+            , lyrBitMaskWidth :: Int
+            , lyrBitMask :: BitMask } deriving (Show)
 lyrWidth  lyr = let (l,r,d,u) = lyrWindowLRDU lyr in r-l
 lyrHeight lyr = let (l,r,d,u) = lyrWindowLRDU lyr in u-d
 
@@ -140,11 +140,17 @@ printLWorld height charZOrder lWorld = putStrLn $ showLWorld height charZOrder l
 
 
 -- Testing
+exampleWorldWidth = 10
+exampleWorldHeight = 10
+exampleWindow = (0,exampleWorldWidth,0,exampleWorldHeight)
+exampleMaskWidth = 10
+simpleLayer bitMask = Layer (0,0) exampleWindow exampleMaskWidth bitMask
+
 exampleLWorld1 :: LWorld
-exampleLWorld1 = LWorld '.' (M.fromList [('U', Layer (0,0) (0,0,1,1)3)]) (M.fromList [('U',(7,7))]) 10
+exampleLWorld1 = LWorld '.' (M.fromList [('U', simpleLayer 3)]) (M.fromList [('U',(7,7))]) exampleWorldWidth exampleWorldHeight
 
 exampleLWorld2 :: LWorld
-exampleLWorld2 = LWorld '.' (M.fromList [('U',96)]) (M.fromList [('U',(0,6))]) 10
+exampleLWorld2 = LWorld '.' (M.fromList [('U', simpleLayer 96)]) (M.fromList [('U',(0,6))]) exampleWorldWidth exampleWorldHeight
 
 exampleLWorld3 :: LWorld
 exampleLWorld3 = exampleLWorld1 `combineTwoLWorlds` exampleLWorld2
@@ -152,10 +158,10 @@ exampleLWorld3 = exampleLWorld1 `combineTwoLWorlds` exampleLWorld2
 exampleLWorld4 :: LWorld
 exampleLWorld4 = movePointInLWorld 'U' (1,1) $ exampleLWorld3
 
-examplePrint1 = printLWorld 10 (comparing id) exampleLWorld1
-examplePrint2 = printLWorld 10 (comparing id) exampleLWorld2
-examplePrint3 = printLWorld 10 (comparing id) exampleLWorld3
-examplePrint4 = printLWorld 10 (comparing id) exampleLWorld4
+examplePrint1 = printLWorld exampleWorldWidth (comparing id) exampleLWorld1
+examplePrint2 = printLWorld exampleWorldWidth (comparing id) exampleLWorld2
+examplePrint3 = printLWorld exampleWorldWidth (comparing id) exampleLWorld3
+examplePrint4 = printLWorld exampleWorldWidth (comparing id) exampleLWorld4
 
 
 -- Assumes lWorlds are same size
