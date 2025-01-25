@@ -298,8 +298,8 @@ isOverlappingLayers c1 c2 w = fromMaybe False $ do
         (l2, r2, d2, u2) = lyrWindowLRDU layer2
         
     guard $ not $ 
-        r1 < l2 || l1 > r2 ||  -- horizontal non-overlap 
-        u1 < d2 || d1 > u2     -- vertical non-overlap
+        r1 < l2 || r2 < l1 ||  -- horizontal non-overlap 
+        u1 < d2 || u2 < d1     -- vertical non-overlap
     
     let worldWidth = lWorldWidth w
         blittedLayer1 = blitToLayer layer1 layer2
