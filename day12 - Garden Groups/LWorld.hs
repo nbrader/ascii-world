@@ -244,6 +244,7 @@ combineTwoLWorlds w1 w2
 combineLWorlds :: [LWorld] -> LWorld
 combineLWorlds = foldr1 combineTwoLWorlds
 
+-- Bug: hasPoint currently ignores position and window information
 hasPoint :: Char -> Point -> LWorld -> Bool
 hasPoint char point lWorld = inPoints || inBitMasks
   where
