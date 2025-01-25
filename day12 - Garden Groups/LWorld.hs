@@ -135,6 +135,8 @@ applyBitMaskShift srcMask srcWidth destWidth (dx, dy) (maxX, maxY) =
                 in setBits newMask (x + 1) y
     in foldl (\mask y -> setBits mask 0 y) zeroBits [0 .. maxY - 1]
 
+
+-- To Do: Check that these blit functions (blitToLayer and blitToWorld) ensure that nothing is written from outside the src window and to outside the dest window or otherwise justify a different behaviour
 -- Blit a layer onto another layer
 blitToLayer :: Layer -> Layer -> Layer
 blitToLayer src dest =
