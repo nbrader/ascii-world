@@ -108,7 +108,7 @@ readLWorld boundsMode bgChar singularChars inStr
           where maybeOldBitMask = fmap lyrBitMask maybeOldLayer -- assumes all layers read in so far have been given origin (0,0) and bounds matching the world
                 emptyBitMask = 0
                 newBitMask = setBit (fromMaybe emptyBitMask maybeOldBitMask) (y * width + x)
-                newLayer   = Layer { lyrLSBPosition = (0,0), lyrWindowLRDU = (0,width,0,height), lyrBitMask = newBitMask }
+                newLayer   = Layer { lyrLSBPosition = (0,0), lyrWindowLRDU = (0,width,0,height), lyrBitMaskWidth = width, lyrBitMask = newBitMask }
 
 diffVec2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 diffVec2  (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
@@ -249,12 +249,14 @@ hasPoint char point lWorld = inPoints || inBitMasks
         Nothing -> False
 
     inBitMasks = case M.lookup char (lWorldLayers lWorld) of
-        Just bits -> testBit bits (pointToIndex (lWorldWidth lWorld) point)
+        Just layer -> testBit (lyrBitMask layer) (pointToIndex (lWorldWidth lWorld) point)
         Nothing -> False
 
 moveBitMaskInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
-moveBitMaskInLWorld c (dx,dy) w = w {lWorldLayers = M.update (\pts -> Just $ moveBitMask width (dx,dy) pts) c (lWorldLayers w)}
-  where width = lWorldWidth w
+moveBitMaskInLWorld c (dx,dy) w = w {lWorldLayers = M.update updateLayer c (lWorldLayers w)}
+  where 
+    width = lWorldWidth w
+    updateLayer layer = Just $ layer { lyrBitMask = moveBitMask width (dx,dy) (lyrBitMask layer) }
 
 movePointInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
 movePointInLWorld c (dx,dy) w = w {lWorldPoints = M.update (\pt -> Just $ movePoint width (dx,dy) pt) c (lWorldPoints w)}
@@ -263,11 +265,12 @@ movePointInLWorld c (dx,dy) w = w {lWorldPoints = M.update (\pt -> Just $ movePo
 cutBitMaskWithBitMask :: Char -> Char -> LWorld -> LWorld
 cutBitMaskWithBitMask targetChar cuttingChar w
     |   targetChar  `M.member` lWorldLayers w
-     && cuttingChar `M.member` lWorldLayers w = w {lWorldLayers = M.insert targetChar newBitMask (lWorldLayers w)}
+     && cuttingChar `M.member` lWorldLayers w = w {lWorldLayers = M.insert targetChar newLayer (lWorldLayers w)}
     | otherwise = w
-  where targetBitMask  = fromJust $ M.lookup targetChar  (lWorldLayers w)
-        cuttingBitMask = fromJust $ M.lookup cuttingChar (lWorldLayers w)
-        newBitMask = targetBitMask `diff` cuttingBitMask
+  where 
+    targetLayer   = fromJust $ M.lookup targetChar  (lWorldLayers w)
+    cuttingLayer = fromJust $ M.lookup cuttingChar (lWorldLayers w)
+    newLayer = targetLayer { lyrBitMask = lyrBitMask targetLayer `diff` lyrBitMask cuttingLayer }
 
 setPoint :: Char -> (Int,Int) -> LWorld -> LWorld
 setPoint c (x,y) w = w {lWorldPoints = M.insert c (x,y) (lWorldPoints w)}
@@ -275,14 +278,21 @@ setPoint c (x,y) w = w {lWorldPoints = M.insert c (x,y) (lWorldPoints w)}
 insertBitMaskAtPoint :: Char -> Char -> LWorld -> Maybe LWorld
 insertBitMaskAtPoint bitMaskChar pointChar w = do
     point <- M.lookup pointChar (lWorldPoints w)
-    let newBitMask = pointToBitMask width point
-    return $ w {lWorldLayers = M.insert bitMaskChar newBitMask (lWorldLayers w)}
-  where width = lWorldWidth w
+    let newLayer = Layer 
+            { lyrLSBPosition = point
+            , lyrWindowLRDU = (0, width, 0, height)
+            , lyrBitMaskWidth = width
+            , lyrBitMask = pointToBitMask width point 
+            }
+    return $ w {lWorldLayers = M.insert bitMaskChar newLayer (lWorldLayers w)}
+  where 
+    width = lWorldWidth w
+    height = lWorldHeight w
 
 isOverlappingBitMasks :: Char -> Char -> LWorld -> Bool
 isOverlappingBitMasks c1 c2 w
     = fromMaybe False $ do
-        points1 <- M.lookup c1 (lWorldLayers w)
-        points2 <- M.lookup c2 (lWorldLayers w)
+        layer1 <- M.lookup c1 (lWorldLayers w)
+        layer2 <- M.lookup c2 (lWorldLayers w)
         
-        return $ points1 `isOverlapping` points2
+        return $ lyrBitMask layer1 `isOverlapping` lyrBitMask layer2
