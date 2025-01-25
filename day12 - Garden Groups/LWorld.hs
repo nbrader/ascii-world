@@ -262,7 +262,7 @@ movePointInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
 movePointInLWorld c (dx,dy) w = w {lWorldPoints = M.update (\pt -> Just $ movePoint width (dx,dy) pt) c (lWorldPoints w)}
   where width = lWorldWidth w
 
--- Bug: This function currently ignores position and window information
+-- Bug: cutBitMaskWithBitMask currently ignores position and window information
 cutBitMaskWithBitMask :: Char -> Char -> LWorld -> LWorld
 cutBitMaskWithBitMask targetChar cuttingChar w
     |   targetChar  `M.member` lWorldLayers w
