@@ -26,15 +26,54 @@
 -------------
 import Data.Maybe (fromJust, isNothing)
 import Linear hiding (trace)
-import Data.List as L (foldl', transpose)
+import Data.List as L (foldl', transpose, findIndex)
 import Data.Array as A
+import qualified Data.Map as M
+import Data.Ord
+import Data.Bits
 
 import Util (iterate')
 
-import WalkableWorld
-import WalkableBoundedWorld
 import Control.Concurrent (threadDelay)
 import System.Console.ANSI (clearScreen, setCursorPosition)
+
+import Layer ( allDirs )
+
+import World as W ( World(..)
+                  , readWorld
+                  , showWorld
+                  , combineWorlds
+                  , moveLayerInWorld
+                  , cutLayerWithLayer
+                  , insertLayerAtPoint )
+
+-- Assumes all rows have equal length
+readWorld :: String -> (Int, World)
+readWorld = W.readWorld '.' ['S'] . addRocksToRightAndTop
+
+showWorld :: Int -> World -> String
+showWorld height w = W.showWorld height charOrder w
+
+removeForbidden :: World -> World
+removeForbidden w = cutLayerWithLayer 'O' '#' w
+
+progressByAStep :: World -> World
+progressByAStep w = removeForbidden $ combineWorlds $ map (\dir -> moveLayerInWorld 'O' dir w) allDirs
+
+setOAtS :: World -> World
+setOAtS = fromJust . insertLayerAtPoint 'O' 'S'
+
+oCount :: World -> Integer
+oCount = toInteger . popCount . fromJust . M.lookup 'O' . worldLayers
+
+charOrder :: Char -> Char -> Ordering
+charOrder c1 c2 = comparing specialRank c1 c2 <> compare c1 c2
+  where compareSpecial = comparing specialRank
+        
+        specialRank c = findIndex (==c) ['O','S','#','.']
+
+addRocksToRightAndTop :: String -> String
+addRocksToRightAndTop inStr = unlines . (\rows -> map (const '#') (head rows) : rows) . map (++"#") . lines $ inStr
 
 
 -------------
@@ -230,22 +269,3 @@ day12part2 = do
         repPerims = [perimetersGrid A.! p | p <- repPositions]
     
     print $ sum $ zipWith (*) repPerims repAreas
-
-
-day21part1 = do
-    contents <- readFile "day21 (data).csv"
-    let (height, world) = (readWorld :: String -> (Int, WalkableBoundedWorld)) contents
-    let worldBeforeStep = setOAtS world
-    let futureWorlds = iterate progressByAStep worldBeforeStep
-    
-    animateFrames 3 height futureWorlds
-
-animateFrames :: Int -> Int -> [WalkableBoundedWorld] -> IO ()
-animateFrames frameRate height worlds = mapM_ (animateStep frameRate height) (take 100 worlds)
-
-animateStep :: Int -> Int -> WalkableBoundedWorld -> IO ()
-animateStep frameRate height world = do
-    clearScreen  -- Clear the console
-    setCursorPosition 0 0  -- Move cursor to top-left
-    printWorld 132 world  -- Print the current state
-    threadDelay (1000000 `div` frameRate)  -- Control frame rate
