@@ -212,7 +212,7 @@ exampleLWorld1 :: LWorld
 exampleLWorld1 = LWorld '.' (M.fromList [('U', simpleLayer 3)]) (M.fromList [('U',(7,7))]) exampleWorldWidth exampleWorldHeight
 
 exampleLWorld2 :: LWorld
-exampleLWorld2 = LWorld '.' (M.fromList [('U', let lyr = simpleLayer 5 in lyr { lyrLSBPosition = (0,0) }), ('V', simpleLayer 4)]) (M.fromList [('S',(2,1))]) exampleWorldWidth exampleWorldHeight
+exampleLWorld2 = LWorld '.' (M.fromList [('U', let lyr = simpleLayer 3 in lyr { lyrLSBPosition = (0,1) }), ('V', let lyr = simpleLayer 6 in lyr { lyrLSBPosition = (0,2) })]) (M.fromList [('S',(2,1))]) exampleWorldWidth exampleWorldHeight
 
 exampleLWorld3 :: LWorld
 exampleLWorld3 = exampleLWorld1 `combineTwoLWorlds` exampleLWorld2
@@ -262,6 +262,7 @@ movePointInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
 movePointInLWorld c (dx,dy) w = w {lWorldPoints = M.update (\pt -> Just $ movePoint width (dx,dy) pt) c (lWorldPoints w)}
   where width = lWorldWidth w
 
+-- Bug: This function currently ignores position and window information
 cutBitMaskWithBitMask :: Char -> Char -> LWorld -> LWorld
 cutBitMaskWithBitMask targetChar cuttingChar w
     |   targetChar  `M.member` lWorldLayers w
