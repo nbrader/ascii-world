@@ -45,33 +45,39 @@ lyrHeight lyr = let (l,r,d,u) = lyrBoundsLRDU lyr in u-d
 
 data LWorld
     = LWorld { lWorldBG :: Char
-             , lWorldBitMasks :: M.Map Char Layer
+             , lWorldLayers :: M.Map Char Layer
              , lWorldPoints :: M.Map Char Point
              , lWorldOrigin :: Point
-             , lWorldBoundsLRDU :: Int } deriving (Show)
-lWorldWidth  lyr = let (l,r,d,u) = lWorldBoundsLRDU lyr in r-l
-lWorldHeight lyr = let (l,r,d,u) = lWorldBoundsLRDU lyr in u-d
+             , lWorldBoundsLRDU :: (Int,Int,Int,Int) } deriving (Show)
+lWorldWidth  w = let (l,r,d,u) = lWorldBoundsLRDU w in r-l
+lWorldHeight w = let (l,r,d,u) = lWorldBoundsLRDU w in u-d
 
 emptyLWorld :: Char -> Int -> LWorld
-emptyLWorld bgChar width = LWorld bgChar mempty mempty width
+emptyLWorld bgChar width = LWorld bgChar mempty mempty origin (l,r,d,u)
+  where origin = (0,0)
+        width = 0
+        height = 0
+        (l,r,d,u) = (0,0,width,height)
 
-
+-- BoundsMode is currently unused but should be made to select the bounds (size and location) of loaded layers
 data BoundsMode = MaxBounds | MinBounds | MarginLRDU (Int,Int,Int,Int)
 
 -- Assumes all rows have equal length
-readLWorld :: BoundsMode -> Char -> [Char] -> String -> (Int,LWorld)
+readLWorld :: BoundsMode -> Char -> [Char] -> String -> LWorld
 readLWorld boundsMode bgChar singularChars inStr
     = LWorld { lWorldBG = bgChar,
-               lWorldBitMasks = foldr addToBitMask M.empty $ filter (\(char,_) -> not (char `elem` singularChars)) char2Ds,
+               lWorldLayers = foldr addToLayer M.empty $ filter (\(char,_) -> not (char `elem` singularChars)) char2Ds,
                lWorldPoints = singularPoints,
-               lWorldWidth = width,
-               lWorldWidth = height }
+               lWorldOrigin = origin,
+               lWorldBoundsLRDU = (l,r,d,u) }
        
   where rows = lines inStr
         height = length rows
         width
           | height == 0 = 0
           | otherwise   = length $ head rows
+        origin = (0,0)
+        (l,r,d,u) = (0,width,0,height)
         char2Ds = readChar2DsFromRows rows
         singularPoints = M.fromList . catMaybes
                                     . map (\c -> find (\(c', (x,y)) -> c' == c) char2Ds)
@@ -87,17 +93,29 @@ readLWorld boundsMode bgChar singularChars inStr
             guard $ char /= bgChar
             
             return (char, (x, y))
-
+        
         addToBitMask :: (Char, (Int, Int)) -> M.Map Char BitMask -> M.Map Char BitMask
         addToBitMask (char, (x, y)) = M.alter (setBitInBitMask (x, y)) char
-
+        
+        addToLayer :: (Char, (Int, Int)) -> M.Map Char Layer -> M.Map Char Layer
+        addToLayer (char, (x, y)) = M.alter (setBitInLayer (x, y)) char
+        
         setBitInBitMask :: (Int, Int) -> Maybe BitMask -> Maybe BitMask
-        setBitInBitMask (x, y) maybeBitMask = Just $ setBit (fromMaybe 0 maybeBitMask) (y * width + x)
-
+        setBitInBitMask (x, y) maybeOldBitMask = Just newBitMask
+          where emptyBitMask = 0
+                newBitMask = setBit (fromMaybe emptyBitMask maybeOldBitMask) (y * width + x)
+        
+        setBitInLayer :: (Int, Int) -> Maybe Layer -> Maybe Layer
+        setBitInLayer (x, y) maybeOldLayer = Just newLayer
+          where maybeOldBitMask = fmap lyrBitMask maybeOldLayer -- assumes all layers read in so far have been given origin (0,0) and bounds matching the world
+                emptyBitMask = 0
+                newBitMask   = setBit (fromMaybe emptyBitMask maybeOldBitMask) (y * width + x)
+                newLayer   = Layer { lyrOrigin = (0,0), lyrBoundsLRDU = (l,r,d,u), lyrBitMask = newBitMask }
 
 showLWorld :: Int -> (Char -> Char -> Ordering) -> LWorld -> String
 showLWorld height charZOrder lWorld = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromBitMasksAndPoints
-  where (LWorld bgChar bitMasks points width) = lWorld
+  where (LWorld bgChar bitMasks points origin (l,r,d,u)) = lWorld
+        width = lWorldWidth lWorld
         listsOfMaybeCharsFromBitMasks = prioritize charZOrder $ M.mapWithKey (\c n -> bitMaskToMaybeChars c n) bitMasks
         listOfMaybeCharsFromBitMasks = combineMaybeCharLists listsOfMaybeCharsFromBitMasks
         charsAndPoints = map head . groupBy ((==) `on` snd) . sortBy (\(aChar,aPos) (bChar,bPos) -> compare aPos bPos <> compare aChar bChar) . M.toList $ points
@@ -140,7 +158,7 @@ examplePrint4 = printLWorld 10 (comparing id) exampleLWorld4
 -- Left-biased such that the background character and any singular points they share are taken from the left
 combineTwoLWorlds :: LWorld -> LWorld -> LWorld
 combineTwoLWorlds w1 w2
-    = w1 { lWorldBitMasks = M.unionWith combineBitMasks (lWorldBitMasks w1) (lWorldBitMasks w2),
+    = w1 { lWorldLayers = M.unionWith combineBitMasks (lWorldLayers w1) (lWorldLayers w2),
            lWorldPoints = M.unionWith combinePoints (lWorldPoints w1) (lWorldPoints w2) }
   where combineBitMasks :: BitMask -> BitMask -> BitMask
         combineBitMasks points1 points2 = points1 .|. points2
@@ -158,12 +176,12 @@ hasPoint char point lWorld = inPoints || inBitMasks
         Just p -> p == point
         Nothing -> False
 
-    inBitMasks = case M.lookup char (lWorldBitMasks lWorld) of
+    inBitMasks = case M.lookup char (lWorldLayers lWorld) of
         Just bits -> testBit bits (pointToIndex (lWorldWidth lWorld) point)
         Nothing -> False
 
 moveBitMaskInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
-moveBitMaskInLWorld c (dx,dy) w = w {lWorldBitMasks = M.update (\pts -> Just $ moveBitMask width (dx,dy) pts) c (lWorldBitMasks w)}
+moveBitMaskInLWorld c (dx,dy) w = w {lWorldLayers = M.update (\pts -> Just $ moveBitMask width (dx,dy) pts) c (lWorldLayers w)}
   where width = lWorldWidth w
 
 movePointInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
@@ -172,11 +190,11 @@ movePointInLWorld c (dx,dy) w = w {lWorldPoints = M.update (\pt -> Just $ movePo
 
 cutBitMaskWithBitMask :: Char -> Char -> LWorld -> LWorld
 cutBitMaskWithBitMask targetChar cuttingChar w
-    |   targetChar  `M.member` lWorldBitMasks w
-     && cuttingChar `M.member` lWorldBitMasks w = w {lWorldBitMasks = M.insert targetChar newBitMask (lWorldBitMasks w)}
+    |   targetChar  `M.member` lWorldLayers w
+     && cuttingChar `M.member` lWorldLayers w = w {lWorldLayers = M.insert targetChar newBitMask (lWorldLayers w)}
     | otherwise = w
-  where targetBitMask  = fromJust $ M.lookup targetChar  (lWorldBitMasks w)
-        cuttingBitMask = fromJust $ M.lookup cuttingChar (lWorldBitMasks w)
+  where targetBitMask  = fromJust $ M.lookup targetChar  (lWorldLayers w)
+        cuttingBitMask = fromJust $ M.lookup cuttingChar (lWorldLayers w)
         newBitMask = targetBitMask `diff` cuttingBitMask
 
 setPoint :: Char -> (Int,Int) -> LWorld -> LWorld
@@ -186,13 +204,13 @@ insertBitMaskAtPoint :: Char -> Char -> LWorld -> Maybe LWorld
 insertBitMaskAtPoint bitMaskChar pointChar w = do
     point <- M.lookup pointChar (lWorldPoints w)
     let newBitMask = pointToBitMask width point
-    return $ w {lWorldBitMasks = M.insert bitMaskChar newBitMask (lWorldBitMasks w)}
+    return $ w {lWorldLayers = M.insert bitMaskChar newBitMask (lWorldLayers w)}
   where width = lWorldWidth w
 
 isOverlappingBitMasks :: Char -> Char -> LWorld -> Bool
 isOverlappingBitMasks c1 c2 w
     = fromMaybe False $ do
-        points1 <- M.lookup c1 (lWorldBitMasks w)
-        points2 <- M.lookup c2 (lWorldBitMasks w)
+        points1 <- M.lookup c1 (lWorldLayers w)
+        points2 <- M.lookup c2 (lWorldLayers w)
         
         return $ points1 `isOverlapping` points2
