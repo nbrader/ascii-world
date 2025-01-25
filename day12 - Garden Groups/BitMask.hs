@@ -33,8 +33,17 @@ movePoint width (dx,dy) (x,y) = (x+dx,y+dy)
 isOverlapping :: BitMask -> BitMask -> Bool
 isOverlapping ps1 ps2 = (ps1 .&. ps2) /= zeroBits
 
-diff :: BitMask -> BitMask -> BitMask
-diff ps1 ps2 = (ps1 .&. complement ps2)
+bitwiseSubtract :: BitMask -> BitMask -> BitMask
+bitwiseSubtract ps1 ps2 = (ps1 .&. complement ps2)
+
+bitwiseAnd :: BitMask -> BitMask -> BitMask
+bitwiseAnd ps1 ps2 = (ps1 .&. ps2)
+
+bitwiseOr :: BitMask -> BitMask -> BitMask
+bitwiseOr ps1 ps2 = (ps1 .|. ps2)
+
+bitwiseXor :: BitMask -> BitMask -> BitMask
+bitwiseXor ps1 ps2 = (ps1 `xor` ps2)
 
 up, dn, lt, rt :: (Integral a) => (a,a)
 up = (  0 ,   1 )

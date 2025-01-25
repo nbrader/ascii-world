@@ -44,7 +44,7 @@ import BWorld as BW ( BWorld(..)
                     , showBWorld
                     , combineBWorlds
                     , moveBitMaskInBWorld
-                    , cutBitMaskWithBitMask
+                    , subtractBitMask
                     , insertBitMaskAtPoint
                     , printBWorld)
 
@@ -56,7 +56,7 @@ showBWorld :: Int -> BWorld -> String
 showBWorld height w = BW.showBWorld height charOrder w
 
 removeForbidden :: BWorld -> BWorld
-removeForbidden w = cutBitMaskWithBitMask 'O' '#' w
+removeForbidden w = subtractBitMask 'O' '#' w
 
 progressByAStep :: BWorld -> BWorld
 progressByAStep w = removeForbidden $ combineBWorlds $ map (\dir -> moveBitMaskInBWorld 'O' dir w) allDirs

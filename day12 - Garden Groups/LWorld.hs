@@ -11,7 +11,7 @@ module LWorld ( LWorld(..)
               , hasPoint
               , moveBitMaskInLWorld
               , movePointInLWorld
-              , cutBitMaskWithBitMask
+              , subtractBitMask
               , setPoint
               , insertBitMaskAtPoint
               , isOverlappingLayers ) where
@@ -32,7 +32,7 @@ import Data.Foldable
 import Safe (atMay)
 
 import Util (replace)
-import BitMask (Point, BitMask, pointToIndex, pointToBitMask, moveBitMask, movePoint, isOverlapping, diff, up, dn, lt, rt, allDirs, combineBitMasks)
+import BitMask (Point, BitMask, pointToIndex, pointToBitMask, moveBitMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, up, dn, lt, rt, allDirs, combineBitMasks)
 
 -- Each obj has a shape encoded as bits of an Integer referred to as a bitMask which is interpreted in 2D by stacking upwards rows of a given width.
 
@@ -268,16 +268,16 @@ movePointInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
 movePointInLWorld c (dx,dy) w = w {lWorldPoints = M.update (\pt -> Just $ movePoint width (dx,dy) pt) c (lWorldPoints w)}
   where width = lWorldWidth w
 
--- Bug: cutBitMaskWithBitMask currently ignores position and window information
-cutBitMaskWithBitMask :: Char -> Char -> LWorld -> LWorld
-cutBitMaskWithBitMask targetChar cuttingChar w
+-- Bug: bitwiseSubtractBitMaskWithBitMask currently ignores position and window information
+subtractBitMask :: Char -> Char -> LWorld -> LWorld
+subtractBitMask targetChar cuttingChar w
     |   targetChar  `M.member` lWorldLayers w
      && cuttingChar `M.member` lWorldLayers w = w {lWorldLayers = M.insert targetChar newLayer (lWorldLayers w)}
     | otherwise = w
   where 
     targetLayer   = fromJust $ M.lookup targetChar  (lWorldLayers w)
     cuttingLayer = fromJust $ M.lookup cuttingChar (lWorldLayers w)
-    newLayer = targetLayer { lyrBitMask = lyrBitMask targetLayer `diff` lyrBitMask cuttingLayer }
+    newLayer = targetLayer { lyrBitMask = lyrBitMask targetLayer `bitwiseSubtract` lyrBitMask cuttingLayer }
 
 setPoint :: Char -> (Int,Int) -> LWorld -> LWorld
 setPoint c (x,y) w = w {lWorldPoints = M.insert c (x,y) (lWorldPoints w)}
