@@ -34,30 +34,30 @@ import Safe (atMay)
 import Util (replace)
 import BitMask (Point, BitMask, pointToIndex, pointToBitMask, moveBitMask, movePoint, isOverlapping, diff, up, dn, lt, rt, allDirs)
 
--- Each obj has a shape encoded as bits of an Integer.
+-- Each obj has a shape encoded as bits of an Integer referred to as a bitMask which is interpreted in 2D by stacking upwards rows of a given width.
 
+-- A Layer is a bitmask of at least 1 bit (the least significant bit) coupled with a position of the least sig. bit (LSB) relative to the bottom
+--    left of the world and a rectangular window that is defined in terms of a lyrWindowLRDU tuple giving the left, right (x bounds) and then down
+--    and up (y bounds) on the same coordinate grid.
 data Layer
-    = Layer { lyrOrigin :: Point
-            , lyrBoundsLRDU :: (Int,Int,Int,Int)
-            , lyrBitMask :: BitMask } deriving (Show)
-lyrWidth  lyr = let (l,r,d,u) = lyrBoundsLRDU lyr in r-l
-lyrHeight lyr = let (l,r,d,u) = lyrBoundsLRDU lyr in u-d
+    = Layer { lyrLSBPosition :: Point
+            , lyrWindowLRDU :: (Int,Int,Int,Int)
+            , lyrBitMask :: BitMask
+            , lyrBitMaskWidth :: Int } deriving (Show)
+lyrWidth  lyr = let (l,r,d,u) = lyrWindowLRDU lyr in r-l
+lyrHeight lyr = let (l,r,d,u) = lyrWindowLRDU lyr in u-d
 
 data LWorld
     = LWorld { lWorldBG :: Char
              , lWorldLayers :: M.Map Char Layer
              , lWorldPoints :: M.Map Char Point
-             , lWorldOrigin :: Point
-             , lWorldBoundsLRDU :: (Int,Int,Int,Int) } deriving (Show)
-lWorldWidth  w = let (l,r,d,u) = lWorldBoundsLRDU w in r-l
-lWorldHeight w = let (l,r,d,u) = lWorldBoundsLRDU w in u-d
+             , lWorldWidth :: Int
+             , lWorldHeight :: Int } deriving (Show)
 
 emptyLWorld :: Char -> Int -> LWorld
-emptyLWorld bgChar width = LWorld bgChar mempty mempty origin (l,r,d,u)
-  where origin = (0,0)
-        width = 0
+emptyLWorld bgChar width = LWorld bgChar mempty mempty width height
+  where width = 0
         height = 0
-        (l,r,d,u) = (0,0,width,height)
 
 -- BoundsMode is currently unused but should be made to select the bounds (size and location) of loaded layers
 data BoundsMode = MaxBounds | MinBounds | MarginLRDU (Int,Int,Int,Int)
@@ -68,16 +68,14 @@ readLWorld boundsMode bgChar singularChars inStr
     = LWorld { lWorldBG = bgChar,
                lWorldLayers = foldr addToLayer M.empty $ filter (\(char,_) -> not (char `elem` singularChars)) char2Ds,
                lWorldPoints = singularPoints,
-               lWorldOrigin = origin,
-               lWorldBoundsLRDU = (l,r,d,u) }
+               lWorldWidth = width,
+               lWorldHeight = height }
        
   where rows = lines inStr
         height = length rows
         width
           | height == 0 = 0
           | otherwise   = length $ head rows
-        origin = (0,0)
-        (l,r,d,u) = (0,width,0,height)
         char2Ds = readChar2DsFromRows rows
         singularPoints = M.fromList . catMaybes
                                     . map (\c -> find (\(c', (x,y)) -> c' == c) char2Ds)
@@ -109,13 +107,19 @@ readLWorld boundsMode bgChar singularChars inStr
         setBitInLayer (x, y) maybeOldLayer = Just newLayer
           where maybeOldBitMask = fmap lyrBitMask maybeOldLayer -- assumes all layers read in so far have been given origin (0,0) and bounds matching the world
                 emptyBitMask = 0
-                newBitMask   = setBit (fromMaybe emptyBitMask maybeOldBitMask) (y * width + x)
-                newLayer   = Layer { lyrOrigin = (0,0), lyrBoundsLRDU = (l,r,d,u), lyrBitMask = newBitMask }
+                newBitMask = setBit (fromMaybe emptyBitMask maybeOldBitMask) (y * width + x)
+                newLayer   = Layer { lyrLSBPosition = (0,0), lyrWindowLRDU = (0,width,0,height), lyrBitMask = newBitMask }
+
+blitToLayer :: Layer -> Layer -> Layer
+blitToLayer sourceLayer destLayer = undefined
+
+blitToWorld :: Layer -> LWorld -> Layer
+blitToWorld sourceLayer world = undefined
 
 showLWorld :: Int -> (Char -> Char -> Ordering) -> LWorld -> String
 showLWorld height charZOrder lWorld = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromBitMasksAndPoints
-  where (LWorld bgChar bitMasks points origin (l,r,d,u)) = lWorld
-        width = lWorldWidth lWorld
+  where (LWorld bgChar layers points width height) = lWorld
+        bitMasks = fmap lyrBitMask $ fmap (`blitToWorld` lWorld) layers
         listsOfMaybeCharsFromBitMasks = prioritize charZOrder $ M.mapWithKey (\c n -> bitMaskToMaybeChars c n) bitMasks
         listOfMaybeCharsFromBitMasks = combineMaybeCharLists listsOfMaybeCharsFromBitMasks
         charsAndPoints = map head . groupBy ((==) `on` snd) . sortBy (\(aChar,aPos) (bChar,bPos) -> compare aPos bPos <> compare aChar bChar) . M.toList $ points
@@ -137,7 +141,7 @@ printLWorld height charZOrder lWorld = putStrLn $ showLWorld height charZOrder l
 
 -- Testing
 exampleLWorld1 :: LWorld
-exampleLWorld1 = LWorld '.' (M.fromList [('U',3)]) (M.fromList [('U',(7,7))]) 10
+exampleLWorld1 = LWorld '.' (M.fromList [('U', Layer (0,0) (0,0,1,1)3)]) (M.fromList [('U',(7,7))]) 10
 
 exampleLWorld2 :: LWorld
 exampleLWorld2 = LWorld '.' (M.fromList [('U',96)]) (M.fromList [('U',(0,6))]) 10
