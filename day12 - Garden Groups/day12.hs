@@ -1,14 +1,14 @@
 #!/usr/bin/env stack
--- stack --resolver lts-18.22 ghci --package linear --package array
+-- stack --resolver lts-21.22 ghci --package containers-0.6.7 --package split-0.2.3.5 --package safe-0.3.19 --package QuickCheck-2.14.3 --package ansi-terminal-0.11.5 --package linear --package array
 
 ---------------------------------
 ---------------------------------
-----  Day 11: Garden Groups  ----
+----  Day 12: Garden Groups  ----
 ---------------------------------
 ---------------------------------
 {-
     To build, run the following shell command in this directory:
-        stack --resolver lts-20.5 ghc --package linear --package array -- '.\day12.hs' -O2
+        stack --resolver lts-21.22 ghc --package containers-0.6.7 --package split-0.2.3.5 --package safe-0.3.19 --package QuickCheck-2.14.3 --package ansi-terminal-0.11.5 --package linear --package array -- '.\day12.hs' -O2
 -}
 
 ------------
@@ -29,11 +29,18 @@ import Linear hiding (trace)
 import Data.List as L (foldl', transpose)
 import Data.Array as A
 
+import Util (iterate')
+
+import WalkableWorld
+import WalkableBoundedWorld
+import Control.Concurrent (threadDelay)
+import System.Console.ANSI (clearScreen, setCursorPosition)
+
 
 -------------
 -- Program --
 -------------
-main = day12part2
+main = day12part1
 
 type CharGrid = Array (V2 Int) Char
 type RegionRepGrid = Array (V2 Int) (Maybe (V2 Int))
@@ -135,7 +142,6 @@ day12part1 = do
     print $ sum $ zipWith (*) repPerims repAreas
     -- mapM_ print $ zipWith (\x y -> (x,y)) repChars (zipWith (\x y -> (x,y)) repPerims repAreas)
 
-
 day12part2 = do
     contents <- readFile "day12 (data).csv"
     let rows = lines contents
@@ -224,3 +230,22 @@ day12part2 = do
         repPerims = [perimetersGrid A.! p | p <- repPositions]
     
     print $ sum $ zipWith (*) repPerims repAreas
+
+
+day21part1 = do
+    contents <- readFile "day21 (data).csv"
+    let (height, world) = (readWorld :: String -> (Int, WalkableBoundedWorld)) contents
+    let worldBeforeStep = setOAtS world
+    let futureWorlds = iterate progressByAStep worldBeforeStep
+    
+    animateFrames 3 height futureWorlds
+
+animateFrames :: Int -> Int -> [WalkableBoundedWorld] -> IO ()
+animateFrames frameRate height worlds = mapM_ (animateStep frameRate height) (take 100 worlds)
+
+animateStep :: Int -> Int -> WalkableBoundedWorld -> IO ()
+animateStep frameRate height world = do
+    clearScreen  -- Clear the console
+    setCursorPosition 0 0  -- Move cursor to top-left
+    printWorld 132 world  -- Print the current state
+    threadDelay (1000000 `div` frameRate)  -- Control frame rate
