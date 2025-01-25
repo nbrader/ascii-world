@@ -37,35 +37,35 @@ import Util (iterate')
 import Control.Concurrent (threadDelay)
 import System.Console.ANSI (clearScreen, setCursorPosition)
 
-import Layer ( allDirs )
+import BitMask ( allDirs )
 
-import World as W ( World(..)
-                  , readWorld
-                  , showWorld
-                  , combineWorlds
-                  , moveLayerInWorld
-                  , cutLayerWithLayer
-                  , insertLayerAtPoint
-                  , printWorld)
+import BWorld as BW ( BWorld(..)
+                    , readBWorld
+                    , showBWorld
+                    , combineBWorlds
+                    , moveBitMaskInBWorld
+                    , cutBitMaskWithBitMask
+                    , insertBitMaskAtPoint
+                    , printBWorld)
 
 -- Assumes all rows have equal length
-readWorld :: String -> (Int, World)
-readWorld = W.readWorld '?' ['!']
+readBWorld :: String -> (Int, BWorld)
+readBWorld = BW.readBWorld '?' ['!']
 
-showWorld :: Int -> World -> String
-showWorld height w = W.showWorld height charOrder w
+showBWorld :: Int -> BWorld -> String
+showBWorld height w = BW.showBWorld height charOrder w
 
-removeForbidden :: World -> World
-removeForbidden w = cutLayerWithLayer 'O' '#' w
+removeForbidden :: BWorld -> BWorld
+removeForbidden w = cutBitMaskWithBitMask 'O' '#' w
 
-progressByAStep :: World -> World
-progressByAStep w = removeForbidden $ combineWorlds $ map (\dir -> moveLayerInWorld 'O' dir w) allDirs
+progressByAStep :: BWorld -> BWorld
+progressByAStep w = removeForbidden $ combineBWorlds $ map (\dir -> moveBitMaskInBWorld 'O' dir w) allDirs
 
-setOAtS :: World -> World
-setOAtS = fromJust . insertLayerAtPoint 'O' 'S'
+setOAtS :: BWorld -> BWorld
+setOAtS = fromJust . insertBitMaskAtPoint 'O' 'S'
 
-oCount :: World -> Integer
-oCount = toInteger . popCount . fromJust . M.lookup 'O' . worldLayers
+oCount :: BWorld -> Integer
+oCount = toInteger . popCount . fromJust . M.lookup 'O' . bWorldBitMasks
 
 charOrder :: Char -> Char -> Ordering
 charOrder c1 c2 = comparing specialRank c1 c2 <> compare c1 c2
@@ -270,6 +270,6 @@ day12part2 = do
 
 test = do
     contents <- readFile "day12 (data).csv"
-    let (height, world) = Main.readWorld contents
-    printWorld height (comparing id) world
-    print world
+    let (height, bWorld) = Main.readBWorld contents
+    printBWorld height (comparing id) bWorld
+    print bWorld
