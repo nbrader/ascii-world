@@ -110,6 +110,9 @@ readLWorld boundsMode bgChar singularChars inStr
                 newBitMask = setBit (fromMaybe emptyBitMask maybeOldBitMask) (y * width + x)
                 newLayer   = Layer { lyrLSBPosition = (0,0), lyrWindowLRDU = (0,width,0,height), lyrBitMaskWidth = width, lyrBitMask = newBitMask }
 
+addVec2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
+addVec2  (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+
 diffVec2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 diffVec2  (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 
@@ -256,7 +259,7 @@ moveBitMaskInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
 moveBitMaskInLWorld c (dx,dy) w = w {lWorldLayers = M.update updateLayer c (lWorldLayers w)}
   where 
     width = lWorldWidth w
-    updateLayer layer = Just $ layer { lyrBitMask = moveBitMask width (dx,dy) (lyrBitMask layer) }
+    updateLayer layer = Just $ layer { lyrLSBPosition = lyrLSBPosition layer `addVec2` (dx,dy) }
 
 movePointInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
 movePointInLWorld c (dx,dy) w = w {lWorldPoints = M.update (\pt -> Just $ movePoint width (dx,dy) pt) c (lWorldPoints w)}
