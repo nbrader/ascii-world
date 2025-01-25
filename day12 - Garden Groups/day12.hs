@@ -45,11 +45,12 @@ import World as W ( World(..)
                   , combineWorlds
                   , moveLayerInWorld
                   , cutLayerWithLayer
-                  , insertLayerAtPoint )
+                  , insertLayerAtPoint
+                  , printWorld)
 
 -- Assumes all rows have equal length
 readWorld :: String -> (Int, World)
-readWorld = W.readWorld '.' ['S'] . addRocksToRightAndTop
+readWorld = W.readWorld '?' ['!']
 
 showWorld :: Int -> World -> String
 showWorld height w = W.showWorld height charOrder w
@@ -72,14 +73,11 @@ charOrder c1 c2 = comparing specialRank c1 c2 <> compare c1 c2
         
         specialRank c = findIndex (==c) ['O','S','#','.']
 
-addRocksToRightAndTop :: String -> String
-addRocksToRightAndTop inStr = unlines . (\rows -> map (const '#') (head rows) : rows) . map (++"#") . lines $ inStr
-
 
 -------------
 -- Program --
 -------------
-main = day12part1
+main = test
 
 type CharGrid = Array (V2 Int) Char
 type RegionRepGrid = Array (V2 Int) (Maybe (V2 Int))
@@ -269,3 +267,9 @@ day12part2 = do
         repPerims = [perimetersGrid A.! p | p <- repPositions]
     
     print $ sum $ zipWith (*) repPerims repAreas
+
+test = do
+    contents <- readFile "day12 (data).csv"
+    let (height, world) = Main.readWorld contents
+    printWorld height (comparing id) world
+    print world
