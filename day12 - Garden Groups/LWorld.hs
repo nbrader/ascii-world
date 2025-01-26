@@ -9,11 +9,11 @@ module LWorld ( LWorld(..)
               , combineTwoLWorlds
               , combineLWorlds
               , hasPoint
-              , moveBitMaskInLWorld
+              , moveMaskInLWorld
               , movePointInLWorld
-              , subtractBitMask
+              , subtractMask
               , setPoint
-              , insertBitMaskAtPoint
+              , insertMaskAtPoint
               , isOverlappingLayers ) where
 
 -------------
@@ -32,9 +32,9 @@ import Data.Foldable
 import Safe (atMay)
 
 import Util (replace)
-import BitMask (Point, BitMask, pointToIndex, pointToBitMask, moveBitMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, up, dn, lt, rt, allDirs, combineBitMasks)
+import Mask (Point, Mask, pointToIndex, pointToMask, moveMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, up, dn, lt, rt, allDirs, combineMasks)
 
--- Each obj has a shape encoded as bits of an Integer referred to as a bitMask which is interpreted in 2D by stacking upwards rows of a given width.
+-- Each obj has a shape encoded as bits of an Integer referred to as a mask which is interpreted in 2D by stacking upwards rows of a given width.
 
 -- A Layer is a bitmask of at least 1 bit (the least significant bit) coupled with a position of the least sig. bit (LSB) relative to the bottom
 --    left of the world and a rectangular window that is defined in terms of a lyrWindowLRDU tuple giving the left, right (x bounds) and then down
@@ -42,8 +42,8 @@ import BitMask (Point, BitMask, pointToIndex, pointToBitMask, moveBitMask, moveP
 data Layer
     = Layer { lyrLSBPosition :: Point
             , lyrWindowLRDU :: (Int,Int,Int,Int)
-            , lyrBitMaskWidth :: Int
-            , lyrBitMask :: BitMask } deriving (Show)
+            , lyrMaskWidth :: Int
+            , lyrMask :: Mask } deriving (Show)
 lyrWidth  lyr = let (l,r,d,u) = lyrWindowLRDU lyr in r-l
 lyrHeight lyr = let (l,r,d,u) = lyrWindowLRDU lyr in u-d
 
@@ -92,23 +92,23 @@ readLWorld boundsMode bgChar singularChars inStr
             
             return (char, (x, y))
         
-        addToBitMask :: (Char, (Int, Int)) -> M.Map Char BitMask -> M.Map Char BitMask
-        addToBitMask (char, (x, y)) = M.alter (setBitInBitMask (x, y)) char
+        addToMask :: (Char, (Int, Int)) -> M.Map Char Mask -> M.Map Char Mask
+        addToMask (char, (x, y)) = M.alter (setBitInMask (x, y)) char
         
         addToLayer :: (Char, (Int, Int)) -> M.Map Char Layer -> M.Map Char Layer
         addToLayer (char, (x, y)) = M.alter (setBitInLayer (x, y)) char
         
-        setBitInBitMask :: (Int, Int) -> Maybe BitMask -> Maybe BitMask
-        setBitInBitMask (x, y) maybeOldBitMask = Just newBitMask
-          where emptyBitMask = 0
-                newBitMask = setBit (fromMaybe emptyBitMask maybeOldBitMask) (y * width + x)
+        setBitInMask :: (Int, Int) -> Maybe Mask -> Maybe Mask
+        setBitInMask (x, y) maybeOldMask = Just newMask
+          where emptyMask = 0
+                newMask = setBit (fromMaybe emptyMask maybeOldMask) (y * width + x)
         
         setBitInLayer :: (Int, Int) -> Maybe Layer -> Maybe Layer
         setBitInLayer (x, y) maybeOldLayer = Just newLayer
-          where maybeOldBitMask = fmap lyrBitMask maybeOldLayer -- assumes all layers read in so far have been given origin (0,0) and bounds matching the world
-                emptyBitMask = 0
-                newBitMask = setBit (fromMaybe emptyBitMask maybeOldBitMask) (y * width + x)
-                newLayer   = Layer { lyrLSBPosition = (0,0), lyrWindowLRDU = (0,width,0,height), lyrBitMaskWidth = width, lyrBitMask = newBitMask }
+          where maybeOldMask = fmap lyrMask maybeOldLayer -- assumes all layers read in so far have been given origin (0,0) and bounds matching the world
+                emptyMask = 0
+                newMask = setBit (fromMaybe emptyMask maybeOldMask) (y * width + x)
+                newLayer   = Layer { lyrLSBPosition = (0,0), lyrWindowLRDU = (0,width,0,height), lyrMaskWidth = width, lyrMask = newMask }
 
 addVec2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 addVec2  (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
@@ -117,10 +117,10 @@ diffVec2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
 diffVec2  (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 
 -- Applies a bitmask shift and sets bits in a new mask
-applyBitMaskShift :: BitMask -> Int -> Int -> (Int, Int) -> (Int, Int) -> BitMask
-applyBitMaskShift srcMask srcWidth destWidth (dx, dy) (maxX, maxY) =
+applyMaskShift :: Mask -> Int -> Int -> (Int, Int) -> (Int, Int) -> Mask
+applyMaskShift srcMask srcWidth destWidth (dx, dy) (maxX, maxY) =
     let
-        setBits :: BitMask -> Int -> Int -> BitMask
+        setBits :: Mask -> Int -> Int -> Mask
         setBits acc x y
             | x >= srcWidth = acc  -- Stop at the right boundary
             | otherwise =
@@ -141,11 +141,11 @@ applyBitMaskShift srcMask srcWidth destWidth (dx, dy) (maxX, maxY) =
 blitToLayer :: Layer -> Layer -> Layer
 blitToLayer src dest =
     let destLSB = lyrLSBPosition dest
-        destWidth = lyrBitMaskWidth dest
+        destWidth = lyrMaskWidth dest
         srcLSB = lyrLSBPosition src
-        srcWidth = lyrBitMaskWidth src
-        srcMask = lyrBitMask src
-        destMask = lyrBitMask dest
+        srcWidth = lyrMaskWidth src
+        srcMask = lyrMask src
+        destMask = lyrMask dest
 
         -- Compute height of the source layer
         (_, _, _, srcHeight) = lyrWindowLRDU src
@@ -154,9 +154,9 @@ blitToLayer src dest =
         shift = srcLSB `diffVec2` destLSB
 
         -- Shift bitmask
-        srcMask_Shifted = applyBitMaskShift srcMask srcWidth destWidth shift (destWidth, srcHeight)
+        srcMask_Shifted = applyMaskShift srcMask srcWidth destWidth shift (destWidth, srcHeight)
 
-    in dest { lyrBitMask = combineBitMasks destMask srcMask_Shifted }
+    in dest { lyrMask = combineMasks destMask srcMask_Shifted }
 
 -- Blit a layer onto a world
 blitToWorld :: Layer -> LWorld -> Layer
@@ -164,8 +164,8 @@ blitToWorld layer world =
     let worldWidth  = lWorldWidth world
         worldHeight = lWorldHeight world
         layerLSB = lyrLSBPosition layer
-        layerWidth = lyrBitMaskWidth layer
-        layerBitMask = lyrBitMask layer
+        layerWidth = lyrMaskWidth layer
+        layerMask = lyrMask layer
 
         -- Compute height of the layer
         (_, _, _, layerHeight) = lyrWindowLRDU layer
@@ -174,24 +174,24 @@ blitToWorld layer world =
         shift = layerLSB `diffVec2` (0, 0)
 
         -- Shift bitmask
-        newBitMask = applyBitMaskShift layerBitMask layerWidth worldWidth shift (worldWidth, worldHeight)
+        newMask = applyMaskShift layerMask layerWidth worldWidth shift (worldWidth, worldHeight)
 
     in Layer
         { lyrLSBPosition = (0, 0)
         , lyrWindowLRDU = (0, worldWidth, 0, worldHeight)
-        , lyrBitMaskWidth = worldWidth
-        , lyrBitMask = newBitMask
+        , lyrMaskWidth = worldWidth
+        , lyrMask = newMask
         }
 
 showLWorld :: Int -> (Char -> Char -> Ordering) -> LWorld -> String
-showLWorld height charZOrder lWorld = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromBitMasksAndPoints
+showLWorld height charZOrder lWorld = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromMasksAndPoints
   where (LWorld bgChar layers points width height) = lWorld
-        bitMasks = fmap lyrBitMask $ fmap (`blitToWorld` lWorld) layers
-        listsOfMaybeCharsFromBitMasks = prioritize charZOrder $ M.mapWithKey (\c n -> bitMaskToMaybeChars c n) bitMasks
-        listOfMaybeCharsFromBitMasks = combineMaybeCharLists listsOfMaybeCharsFromBitMasks
+        masks = fmap lyrMask $ fmap (`blitToWorld` lWorld) layers
+        listsOfMaybeCharsFromMasks = prioritize charZOrder $ M.mapWithKey (\c n -> maskToMaybeChars c n) masks
+        listOfMaybeCharsFromMasks = combineMaybeCharLists listsOfMaybeCharsFromMasks
         charsAndPoints = map head . groupBy ((==) `on` snd) . sortBy (\(aChar,aPos) (bChar,bPos) -> compare aPos bPos <> compare aChar bChar) . M.toList $ points
         charsAndIndices = map (fmap (pointToIndex width)) charsAndPoints
-        listOfMaybeCharsFromBitMasksAndPoints = foldr (\(c,i) acc -> let maybeOld = join (acc `atMay` i) in replace acc (i, Just $ minimum $ catMaybes [maybeOld, Just c])) listOfMaybeCharsFromBitMasks charsAndIndices
+        listOfMaybeCharsFromMasksAndPoints = foldr (\(c,i) acc -> let maybeOld = join (acc `atMay` i) in replace acc (i, Just $ minimum $ catMaybes [maybeOld, Just c])) listOfMaybeCharsFromMasks charsAndIndices
         
         combineMaybeCharLists :: [[Maybe a]] -> [Maybe a]
         combineMaybeCharLists = map (getFirst . fold . map First) . transpose
@@ -199,8 +199,8 @@ showLWorld height charZOrder lWorld = unlines . reverse . take height . chunksOf
         prioritize :: Ord a1 => (a1 -> a1 -> Ordering) -> M.Map a1 a2 -> [a2]
         prioritize charZOrder = (\m -> map (fromJust . flip M.lookup m) (sortBy charZOrder $ M.keys m))
         
-        bitMaskToMaybeChars :: Char -> Integer -> [Maybe Char]
-        bitMaskToMaybeChars c n = map (\i -> if n `testBit` i then Just c else Nothing) [0..]
+        maskToMaybeChars :: Char -> Integer -> [Maybe Char]
+        maskToMaybeChars c n = map (\i -> if n `testBit` i then Just c else Nothing) [0..]
 
 printLWorld :: Int -> (Char -> Char -> Ordering) -> LWorld -> IO ()
 printLWorld height charZOrder lWorld = putStrLn $ showLWorld height charZOrder lWorld
@@ -211,7 +211,7 @@ exampleWorldWidth = 10
 exampleWorldHeight = 10
 exampleWindow = (0,exampleWorldWidth,0,exampleWorldHeight)
 exampleMaskWidth = 10
-simpleLayer bitMask = Layer (0,0) exampleWindow exampleMaskWidth bitMask
+simpleLayer mask = Layer (0,0) exampleWindow exampleMaskWidth mask
 
 exampleLWorld1 :: LWorld
 exampleLWorld1 = LWorld '.' (M.fromList [('U', simpleLayer 3)]) (M.fromList [('U',(7,7))]) exampleWorldWidth exampleWorldHeight
@@ -237,8 +237,8 @@ combineTwoLWorlds :: LWorld -> LWorld -> LWorld
 combineTwoLWorlds w1 w2
     = w1 { lWorldLayers = M.unionWith blitToLayer (lWorldLayers w1) (lWorldLayers w2),
            lWorldPoints = M.unionWith combinePoints (lWorldPoints w1) (lWorldPoints w2) }
-  where combineBitMasks :: BitMask -> BitMask -> BitMask
-        combineBitMasks points1 points2 = points1 .|. points2
+  where combineMasks :: Mask -> Mask -> Mask
+        combineMasks points1 points2 = points1 .|. points2
         
         combinePoints :: Point -> Point -> Point
         combinePoints point1 _ = point1
@@ -248,18 +248,18 @@ combineLWorlds = foldr1 combineTwoLWorlds
 
 -- Bug: hasPoint currently ignores position and window information
 hasPoint :: Char -> Point -> LWorld -> Bool
-hasPoint char point lWorld = inPoints || inBitMasks
+hasPoint char point lWorld = inPoints || inMasks
   where
     inPoints = case M.lookup char (lWorldPoints lWorld) of
         Just p -> p == point
         Nothing -> False
 
-    inBitMasks = case M.lookup char (lWorldLayers lWorld) of
-        Just layer -> testBit (lyrBitMask layer) (pointToIndex (lWorldWidth lWorld) point)
+    inMasks = case M.lookup char (lWorldLayers lWorld) of
+        Just layer -> testBit (lyrMask layer) (pointToIndex (lWorldWidth lWorld) point)
         Nothing -> False
 
-moveBitMaskInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
-moveBitMaskInLWorld c (dx,dy) w = w {lWorldLayers = M.update updateLayer c (lWorldLayers w)}
+moveMaskInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
+moveMaskInLWorld c (dx,dy) w = w {lWorldLayers = M.update updateLayer c (lWorldLayers w)}
   where 
     width = lWorldWidth w
     updateLayer layer = Just $ layer { lyrLSBPosition = lyrLSBPosition layer `addVec2` (dx,dy) }
@@ -268,30 +268,30 @@ movePointInLWorld :: Char -> (Int,Int) -> LWorld -> LWorld
 movePointInLWorld c (dx,dy) w = w {lWorldPoints = M.update (\pt -> Just $ movePoint width (dx,dy) pt) c (lWorldPoints w)}
   where width = lWorldWidth w
 
--- Bug: bitwiseSubtractBitMaskWithBitMask currently ignores position and window information
-subtractBitMask :: Char -> Char -> LWorld -> LWorld
-subtractBitMask targetChar cuttingChar w
+-- Bug: bitwiseSubtractMaskWithMask currently ignores position and window information
+subtractMask :: Char -> Char -> LWorld -> LWorld
+subtractMask targetChar cuttingChar w
     |   targetChar  `M.member` lWorldLayers w
      && cuttingChar `M.member` lWorldLayers w = w {lWorldLayers = M.insert targetChar newLayer (lWorldLayers w)}
     | otherwise = w
   where 
     targetLayer   = fromJust $ M.lookup targetChar  (lWorldLayers w)
     cuttingLayer = fromJust $ M.lookup cuttingChar (lWorldLayers w)
-    newLayer = targetLayer { lyrBitMask = lyrBitMask targetLayer `bitwiseSubtract` lyrBitMask cuttingLayer }
+    newLayer = targetLayer { lyrMask = lyrMask targetLayer `bitwiseSubtract` lyrMask cuttingLayer }
 
 setPoint :: Char -> (Int,Int) -> LWorld -> LWorld
 setPoint c (x,y) w = w {lWorldPoints = M.insert c (x,y) (lWorldPoints w)}
 
-insertBitMaskAtPoint :: Char -> Char -> LWorld -> Maybe LWorld
-insertBitMaskAtPoint bitMaskChar pointChar w = do
+insertMaskAtPoint :: Char -> Char -> LWorld -> Maybe LWorld
+insertMaskAtPoint maskChar pointChar w = do
     point@(x,y) <- M.lookup pointChar (lWorldPoints w)
     let newLayer = Layer 
             { lyrLSBPosition = point
             , lyrWindowLRDU = (x, x, y, y)
-            , lyrBitMaskWidth = width
-            , lyrBitMask = 1
+            , lyrMaskWidth = width
+            , lyrMask = 1
             }
-    return $ w {lWorldLayers = M.insert bitMaskChar newLayer (lWorldLayers w)}
+    return $ w {lWorldLayers = M.insert maskChar newLayer (lWorldLayers w)}
   where 
     width = lWorldWidth w
     height = lWorldHeight w
@@ -309,6 +309,6 @@ isOverlappingLayers c1 c2 w = fromMaybe False $ do
         u1 < d2 || u2 < d1     -- vertical non-overlap
     
     let worldWidth = lWorldWidth w
-        blittedLayer1 = blitToLayer layer1 (layer2 { lyrBitMask = 0 })
+        blittedLayer1 = blitToLayer layer1 (layer2 { lyrMask = 0 })
     
-    return $ lyrBitMask blittedLayer1 `isOverlapping` lyrBitMask layer2
+    return $ lyrMask blittedLayer1 `isOverlapping` lyrMask layer2
