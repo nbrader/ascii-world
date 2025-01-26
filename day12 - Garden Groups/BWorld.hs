@@ -9,6 +9,8 @@
 --              Loop until latest found points are empty
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
+-- Make "WalkableWorld" with max walk distance fed in at construction to then add that much margin and so be able to detect reachability effects up to that distance.
+-- Make non-zero bit with highest vertical position component tracked by data structure.
 
 module BWorld ( BWorld(..)
               , emptyBWorld
@@ -218,3 +220,6 @@ isOverlappingBitMasks label1 label2 w
         points2 <- M.lookup label2 (bWorldBitMasks w)
         
         return $ points1 `isOverlapping` points2
+
+partitionLayerByReachableLRDU :: String -> BWorld -> BWorld
+partitionLayerByReachableLRDU = undefined
