@@ -30,7 +30,7 @@ module AsciiWorld ( AsciiWorld(..)
 -------------
 -- Imports --
 -------------
-import Data.List (sortBy, groupBy, delete, find, transpose)
+import Data.List (sortBy, groupBy, delete, find, transpose, sortOn, isPrefixOf)
 import Data.List.Split (chunksOf)
 import qualified Data.Map as M
 import Data.Maybe (fromJust, catMaybes, fromMaybe)
@@ -62,9 +62,9 @@ readAsciiWorld :: Char -> [Char] -> String -> (Int,AsciiWorld)
 readAsciiWorld bgChar singularChars inStr
     = ( height
       , AsciiWorld { bWorldBG = bgChar,
-                 bWorldMasks = foldr addToMask M.empty $ filter (\(char,_) -> not (char `elem` singularChars)) char2Ds,
-                 bWorldPoints = singularPoints,
-                 bWorldWidth = width } )
+                     bWorldMasks = foldr addToMask M.empty $ filter (\(char,_) -> not (char `elem` singularChars)) char2Ds,
+                     bWorldPoints = singularPoints,
+                     bWorldWidth = width } )
        
   where rows = lines inStr
         height = length rows
@@ -119,6 +119,29 @@ showAsciiWorld height nameZOrder bWorld = unlines . reverse . take height . chun
 
 printAsciiWorld :: Int -> (String -> String -> Ordering) -> AsciiWorld -> IO ()
 printAsciiWorld height nameZOrder bWorld = putStrLn $ showAsciiWorld height nameZOrder bWorld
+
+-- Count how many times the prefix appears at the start of a key
+countPrefixOccurrences :: String -> String -> Int
+countPrefixOccurrences prefix = length . takeWhile (isPrefixOf prefix) . iterate (drop (length prefix))
+
+-- Transform the keys while ensuring no collisions
+addPrefixToKeys :: String -> M.Map String v -> M.Map String v
+addPrefixToKeys prefix m =
+  let keysWithCounts = [(key, countPrefixOccurrences prefix key) | key <- M.keys m]
+      sortedKeys = map fst $ sortOn (Down . snd) keysWithCounts  -- Sort descending by count
+  in M.fromList $ renameKeys sortedKeys
+  where
+    renameKeys [] = []
+    renameKeys (key:remaining) =
+      let newKey = prefix ++ key
+      in if newKey `M.member` m
+         then renameKeys remaining ++ [(newKey, m M.! key)]
+         else (newKey, m M.! key) : renameKeys remaining
+
+prefixMasksAndPoints :: String -> AsciiWorld -> AsciiWorld
+prefixMasksAndPoints p w = 
+    w { bWorldMasks  = addPrefixToKeys p (bWorldMasks w)
+      , bWorldPoints = addPrefixToKeys p (bWorldPoints w) }
 
 
 -- Testing
