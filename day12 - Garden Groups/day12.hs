@@ -37,35 +37,35 @@ import Util (iterate')
 import Control.Concurrent (threadDelay)
 import System.Console.ANSI (clearScreen, setCursorPosition)
 
-import BitMask ( allDirs )
+import Mask ( allDirs )
 
 import BWorld as BW ( BWorld(..)
                     , readBWorld
                     , showBWorld
                     , combineBWorlds
-                    , moveBitMaskInBWorld
-                    , subtractBitMask
-                    , insertBitMaskAtPoint
+                    , moveMaskInBWorld
+                    , subtractMask
+                    , insertMaskAtPoint
                     , printBWorld)
 
 -- Assumes all rows have equal length
-readBWorld :: String -> (Int, BWorld)
+readBWorld :: String -> (Int, BWorld)   
 readBWorld = BW.readBWorld '?' ['!']
 
 showBWorld :: Int -> BWorld -> String
 showBWorld height w = BW.showBWorld height charOrder w
 
 removeForbidden :: BWorld -> BWorld
-removeForbidden w = subtractBitMask "O" "#" w
+removeForbidden w = subtractMask "O" "#" w
 
 progressByAStep :: BWorld -> BWorld
-progressByAStep w = removeForbidden $ combineBWorlds $ map (\dir -> moveBitMaskInBWorld "O" dir w) allDirs
+progressByAStep w = removeForbidden $ combineBWorlds $ map (\dir -> moveMaskInBWorld "O" dir w) allDirs
 
 setOAtS :: BWorld -> BWorld
-setOAtS = fromJust . insertBitMaskAtPoint "O" "S"
+setOAtS = fromJust . insertMaskAtPoint "O" "S"
 
 oCount :: BWorld -> Integer
-oCount = toInteger . popCount . fromJust . M.lookup "O" . bWorldBitMasks
+oCount = toInteger . popCount . fromJust . M.lookup "O" . bWorldMasks
 
 charOrder :: String -> String -> Ordering
 charOrder lab1 lab2 = comparing specialRank lab1 lab2 <> compare lab1 lab2

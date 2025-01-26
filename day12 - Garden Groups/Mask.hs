@@ -1,7 +1,7 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-21.22 ghci
 
-module BitMask where
+module Mask where
 
 -------------
 -- Imports --
@@ -10,17 +10,17 @@ import Data.Bits
 
 -- Each obj has a shape encoded as bits of an Integer.
 type Point = (Int,Int)
-type BitMask = Integer
+type Mask = Integer
 
 -- Converts a 2D point to a 1D index
 pointToIndex :: Int -> Point -> Int
 pointToIndex width (x, y) = y * width + x
 
-pointToBitMask :: Int -> Point -> BitMask
-pointToBitMask width (x,y) = moveBitMask width (x,y) 1
+pointToMask :: Int -> Point -> Mask
+pointToMask width (x,y) = moveMask width (x,y) 1
 
-moveBitMask :: Int -> (Int,Int) -> BitMask -> BitMask
-moveBitMask width (dx,dy) pts = pts `shift` pointToIndex width (dx,dy)
+moveMask :: Int -> (Int,Int) -> Mask -> Mask
+moveMask width (dx,dy) pts = pts `shift` pointToIndex width (dx,dy)
 
 movePoint :: Int -> (Int,Int) -> (Int,Int) -> (Int,Int)
 movePoint width (dx,dy) (x,y) = (x+dx,y+dy)
@@ -30,19 +30,19 @@ movePoint width (dx,dy) (x,y) = (x+dx,y+dy)
 -- time:  O(n) (approx.) [0 < n < 10000000000, 0 < secs < 7.97]
 -- space: O(n) (approx.) [0 < n < 10000000000, 0 < bytes < 30000141704]
 -- https://nux-pc/svn/Nux-SVN/My Programming/Scratchings/Advent of Code 2022/day17 (bits).hs/?r=1569
-isOverlapping :: BitMask -> BitMask -> Bool
+isOverlapping :: Mask -> Mask -> Bool
 isOverlapping ps1 ps2 = (ps1 .&. ps2) /= zeroBits
 
-bitwiseSubtract :: BitMask -> BitMask -> BitMask
+bitwiseSubtract :: Mask -> Mask -> Mask
 bitwiseSubtract ps1 ps2 = (ps1 .&. complement ps2)
 
-bitwiseAnd :: BitMask -> BitMask -> BitMask
+bitwiseAnd :: Mask -> Mask -> Mask
 bitwiseAnd ps1 ps2 = (ps1 .&. ps2)
 
-bitwiseOr :: BitMask -> BitMask -> BitMask
+bitwiseOr :: Mask -> Mask -> Mask
 bitwiseOr ps1 ps2 = (ps1 .|. ps2)
 
-bitwiseXor :: BitMask -> BitMask -> BitMask
+bitwiseXor :: Mask -> Mask -> Mask
 bitwiseXor ps1 ps2 = (ps1 `xor` ps2)
 
 up, dn, lt, rt :: (Integral a) => (a,a)
@@ -54,5 +54,5 @@ rt = (  1 ,   0 )
 allDirs :: (Integral a) => [(a,a)]
 allDirs = [up,dn,lt,rt]
 
-combineBitMasks :: BitMask -> BitMask -> BitMask
-combineBitMasks x y = x .|. y
+combineMasks :: Mask -> Mask -> Mask
+combineMasks x y = x .|. y
