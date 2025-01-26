@@ -14,7 +14,9 @@ module AsciiWorld ( AsciiWorld(..)
                   , applyNamedMask
                   , setPoint
                   , insertMaskAtPoint
-                  , isOverlappingMasks ) where
+                  , isOverlappingMasks
+                  , prefixMasksAndPoints
+                  , dropNCharsFromMasksAndPoints ) where
 
 -------------
 -- Imports --
@@ -127,10 +129,28 @@ addPrefixToKeys prefix m =
          then renameKeys remaining ++ [(newKey, m M.! key)]
          else (newKey, m M.! key) : renameKeys remaining
 
+-- Drop n characters from the start of all keys
+dropNCharsFromKeys :: Int -> M.Map String v -> M.Map String v
+dropNCharsFromKeys n m =
+  let keysSorted = sortOn (Down . length) (M.keys m) -- Sort by length (longest first)
+  in M.fromList $ renameKeys keysSorted
+  where
+    renameKeys [] = []
+    renameKeys (key:remaining) =
+      let newKey = drop n key
+      in if newKey `M.member` m
+         then renameKeys remaining ++ [(newKey, m M.! key)]
+         else (newKey, m M.! key) : renameKeys remaining
+
 prefixMasksAndPoints :: String -> AsciiWorld -> AsciiWorld
 prefixMasksAndPoints p w = 
     w { asciiWorldMasks  = addPrefixToKeys p (asciiWorldMasks w)
       , asciiWorldPoints = addPrefixToKeys p (asciiWorldPoints w) }
+
+dropNCharsFromMasksAndPoints :: Int -> AsciiWorld -> AsciiWorld
+dropNCharsFromMasksAndPoints n w = 
+    w { asciiWorldMasks  = dropNCharsFromKeys n (asciiWorldMasks w)
+      , asciiWorldPoints = dropNCharsFromKeys n (asciiWorldPoints w) }
 
 
 -- Testing

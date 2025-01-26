@@ -38,39 +38,17 @@ import Mask ( bitwiseSubtract )
 import Control.Concurrent ( threadDelay )
 import System.Console.ANSI ( clearScreen, setCursorPosition )
 
-import AsciiWorld as BW ( AsciiWorld(..)
-                        , readAsciiWorld
-                        , showAsciiWorld
-                        , combineAsciiWorlds
-                        , moveNamedMask
-                        , applyNamedMask
-                        , insertMaskAtPoint
-                        , printAsciiWorld)
-
--- Assumes all rows have equal length
-readAsciiWorld :: String -> (Int, AsciiWorld)   
-readAsciiWorld = BW.readAsciiWorld '?' ['!']
-
-showAsciiWorld :: Int -> AsciiWorld -> String
-showAsciiWorld height w = BW.showAsciiWorld height nameOrder w
-
-removeForbidden :: AsciiWorld -> AsciiWorld
-removeForbidden w = applyNamedMask bitwiseSubtract "#" "O" w
-
-progressByAStep :: AsciiWorld -> AsciiWorld
-progressByAStep w = removeForbidden $ combineAsciiWorlds $ map (\dir -> moveNamedMask "O" dir w) lrduDirs
-
-setOAtS :: AsciiWorld -> AsciiWorld
-setOAtS = fromJust . insertMaskAtPoint "O" "S"
-
-oCount :: AsciiWorld -> Integer
-oCount = toInteger . popCount . fromJust . M.lookup "O" . asciiWorldMasks
-
-nameOrder :: String -> String -> Ordering
-nameOrder lab1 lab2 = comparing specialRank lab1 lab2 <> compare lab1 lab2
-  where compareSpecial = comparing specialRank
-        
-        specialRank c = findIndex (==c) ["O","S","#","."]
+import WalkableWorld ( WalkableWorld(..)
+                     , readWorld
+                     , showWorld
+                     , printWorld
+                     , removeForbidden
+                     , progressByAStep
+                     , setOAtS
+                     , oCount
+                     , nameOrder
+                     , addRocksToRightAndTop
+                     , partitionLayerByReachableLRDU )
 
 
 -------------
@@ -269,6 +247,6 @@ day12part2 = do
 
 test = do
     contents <- readFile "day12 (data).csv"
-    let (height, bWorld) = Main.readAsciiWorld contents
-    printAsciiWorld height (comparing id) bWorld
-    print bWorld
+    let (height, world) = readWorld contents
+    printWorld height world
+    print world

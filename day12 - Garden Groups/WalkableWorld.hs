@@ -12,7 +12,20 @@
 -- Make "WalkableWorld" with max walk distance fed in at construction to then add that much margin and so be able to detect reachability effects up to that distance.
 -- Make non-zero bit with highest vertical position component tracked by data structure.
 
-module WalkableWorld (WalkableWorld(WalkableWorld), nameOrder, addRocksToRightAndTop) where
+module WalkableWorld ( WalkableWorld(..)
+                     , readWorld
+                     , showWorld
+                     , printWorld
+                     , removeForbidden
+                     , progressByAStep
+                     , setOAtS
+                     , oCount
+                     , nameOrder
+                     , addRocksToRightAndTop
+                     , partitionLayerByReachableLRDU ) where
+
+
+
 
 -------------
 -- Imports --
@@ -32,16 +45,21 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , combineAsciiWorlds
                         , moveNamedMask
                         , applyNamedMask
-                        , insertMaskAtPoint )
+                        , insertMaskAtPoint
+                        , prefixMasksAndPoints
+                        , dropNCharsFromMasksAndPoints )
 
-newtype WalkableWorld = WalkableWorld {asWorld :: AsciiWorld}
+newtype WalkableWorld = WalkableWorld {asWorld :: AsciiWorld} deriving (Show)
 
 -- Assumes all rows have equal length
 readWorld :: String -> (Int, WalkableWorld)
-readWorld = fmap WalkableWorld . readAsciiWorld '.' ['S'] . addRocksToRightAndTop
+readWorld = fmap (WalkableWorld . prefixMasksAndPoints "_") . readAsciiWorld '.' ['S'] . addRocksToRightAndTop
 
 showWorld :: Int -> WalkableWorld -> String
-showWorld height w = showAsciiWorld height nameOrder (asWorld w)
+showWorld height = showAsciiWorld height nameOrder . dropNCharsFromMasksAndPoints 1 . asWorld
+
+printWorld :: Int -> WalkableWorld -> IO ()
+printWorld height = putStrLn . showWorld height
 
 removeForbidden :: WalkableWorld -> WalkableWorld
 removeForbidden w = WalkableWorld $ applyNamedMask bitwiseSubtract "#" "O" (asWorld w)
