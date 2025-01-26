@@ -39,32 +39,32 @@ import System.Console.ANSI (clearScreen, setCursorPosition)
 
 import Mask ( allDirs )
 
-import BWorld as BW ( BWorld(..)
-                    , readBWorld
-                    , showBWorld
-                    , combineBWorlds
-                    , moveMaskInBWorld
-                    , subtractMask
-                    , insertMaskAtPoint
-                    , printBWorld)
+import ASCIIWorld as BW ( ASCIIWorld(..)
+                        , readASCIIWorld
+                        , showASCIIWorld
+                        , combineASCIIWorlds
+                        , moveMaskInASCIIWorld
+                        , subtractMask
+                        , insertMaskAtPoint
+                        , printASCIIWorld)
 
 -- Assumes all rows have equal length
-readBWorld :: String -> (Int, BWorld)   
-readBWorld = BW.readBWorld '?' ['!']
+readASCIIWorld :: String -> (Int, ASCIIWorld)   
+readASCIIWorld = BW.readASCIIWorld '?' ['!']
 
-showBWorld :: Int -> BWorld -> String
-showBWorld height w = BW.showBWorld height charOrder w
+showASCIIWorld :: Int -> ASCIIWorld -> String
+showASCIIWorld height w = BW.showASCIIWorld height charOrder w
 
-removeForbidden :: BWorld -> BWorld
+removeForbidden :: ASCIIWorld -> ASCIIWorld
 removeForbidden w = subtractMask "O" "#" w
 
-progressByAStep :: BWorld -> BWorld
-progressByAStep w = removeForbidden $ combineBWorlds $ map (\dir -> moveMaskInBWorld "O" dir w) allDirs
+progressByAStep :: ASCIIWorld -> ASCIIWorld
+progressByAStep w = removeForbidden $ combineASCIIWorlds $ map (\dir -> moveMaskInASCIIWorld "O" dir w) allDirs
 
-setOAtS :: BWorld -> BWorld
+setOAtS :: ASCIIWorld -> ASCIIWorld
 setOAtS = fromJust . insertMaskAtPoint "O" "S"
 
-oCount :: BWorld -> Integer
+oCount :: ASCIIWorld -> Integer
 oCount = toInteger . popCount . fromJust . M.lookup "O" . bWorldMasks
 
 charOrder :: String -> String -> Ordering
@@ -270,6 +270,6 @@ day12part2 = do
 
 test = do
     contents <- readFile "day12 (data).csv"
-    let (height, bWorld) = Main.readBWorld contents
-    printBWorld height (comparing id) bWorld
+    let (height, bWorld) = Main.readASCIIWorld contents
+    printASCIIWorld height (comparing id) bWorld
     print bWorld
