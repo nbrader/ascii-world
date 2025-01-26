@@ -56,22 +56,22 @@ showBWorld :: Int -> BWorld -> String
 showBWorld height w = BW.showBWorld height charOrder w
 
 removeForbidden :: BWorld -> BWorld
-removeForbidden w = subtractBitMask 'O' '#' w
+removeForbidden w = subtractBitMask "O" "#" w
 
 progressByAStep :: BWorld -> BWorld
-progressByAStep w = removeForbidden $ combineBWorlds $ map (\dir -> moveBitMaskInBWorld 'O' dir w) allDirs
+progressByAStep w = removeForbidden $ combineBWorlds $ map (\dir -> moveBitMaskInBWorld "O" dir w) allDirs
 
 setOAtS :: BWorld -> BWorld
-setOAtS = fromJust . insertBitMaskAtPoint 'O' 'S'
+setOAtS = fromJust . insertBitMaskAtPoint "O" "S"
 
 oCount :: BWorld -> Integer
-oCount = toInteger . popCount . fromJust . M.lookup 'O' . bWorldBitMasks
+oCount = toInteger . popCount . fromJust . M.lookup "O" . bWorldBitMasks
 
-charOrder :: Char -> Char -> Ordering
-charOrder c1 c2 = comparing specialRank c1 c2 <> compare c1 c2
+charOrder :: String -> String -> Ordering
+charOrder lab1 lab2 = comparing specialRank lab1 lab2 <> compare lab1 lab2
   where compareSpecial = comparing specialRank
         
-        specialRank c = findIndex (==c) ['O','S','#','.']
+        specialRank c = findIndex (==c) ["O","S","#","."]
 
 
 -------------
