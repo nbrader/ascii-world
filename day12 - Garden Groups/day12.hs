@@ -64,7 +64,7 @@ setOAtS :: AsciiWorld -> AsciiWorld
 setOAtS = fromJust . insertMaskAtPoint "O" "S"
 
 oCount :: AsciiWorld -> Integer
-oCount = toInteger . popCount . fromJust . M.lookup "O" . bWorldMasks
+oCount = toInteger . popCount . fromJust . M.lookup "O" . asciiWorldMasks
 
 nameOrder :: String -> String -> Ordering
 nameOrder lab1 lab2 = comparing specialRank lab1 lab2 <> compare lab1 lab2

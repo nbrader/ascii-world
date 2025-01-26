@@ -42,7 +42,7 @@ setOAtS :: WalkableWorld -> WalkableWorld
 setOAtS = WalkableWorld . fromJust . insertMaskAtPoint "O" "S" . asWorld
 
 oCount :: WalkableWorld -> Integer
-oCount = toInteger . popCount . fromJust . M.lookup "O" . bWorldMasks . asWorld
+oCount = toInteger . popCount . fromJust . M.lookup "O" . asciiWorldMasks . asWorld
 
 nameOrder :: String -> String -> Ordering
 nameOrder s1 s2 = comparing specialRank s1 s2 <> compare s1 s2
