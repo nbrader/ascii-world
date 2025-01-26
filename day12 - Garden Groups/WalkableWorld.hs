@@ -49,10 +49,10 @@ newtype WalkableWorld = WalkableWorld {asWorld :: AsciiWorld} deriving (Show)
 
 -- Assumes all rows have equal length
 readWorld :: Char -> String -> String -> (Int, WalkableWorld)
-readWorld bgChar singularChars = fmap (WalkableWorld . prefixMasksAndPoints "_") . readAsciiWorld bgChar singularChars . addNoGoToRightAndTop
+readWorld bgChar singularChars = fmap (WalkableWorld . prefixMasksAndPoints "_" ["#"]) . readAsciiWorld bgChar singularChars . addNoGoToRightAndTop
 
 showWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> String
-showWorld height nameZOrder w = showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 . asWorld $ w
+showWorld height nameZOrder w = showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 ["#"] . asWorld $ w
   where nameZOrderWithSpecials :: String -> String -> Ordering
         nameZOrderWithSpecials s1 s2 = comparing specialRank s1 s2 <> nameZOrder s1 s2
           where specialRank s = findIndex (==s) ["O","S","#"]

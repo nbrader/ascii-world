@@ -245,7 +245,7 @@ day12part2 = do
     print $ sum $ zipWith (*) repPerims repAreas
 
 test = do
-    contents <- readFile "day12 (data).csv"
+    contents <- readFile "day12 (example).csv"
     let (height, world) = readWorld '.' [] contents
     printWorld height (comparing id) world
     print world

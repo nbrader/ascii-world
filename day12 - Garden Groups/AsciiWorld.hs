@@ -115,12 +115,12 @@ printAsciiWorld height nameZOrder asciiWorld = putStrLn $ showAsciiWorld height 
 countPrefixOccurrences :: String -> String -> Int
 countPrefixOccurrences prefix = length . takeWhile (isPrefixOf prefix) . iterate (drop (length prefix))
 
--- Transform the keys while ensuring no collisions
-addPrefixToKeys :: String -> M.Map String v -> M.Map String v
-addPrefixToKeys prefix m =
-  let keysWithCounts = [(key, countPrefixOccurrences prefix key) | key <- M.keys m]
+-- Transform the keys while ensuring no collisions, with an exclusion list
+addPrefixToKeys :: String -> [String] -> M.Map String v -> M.Map String v
+addPrefixToKeys prefix exclude m =
+  let keysWithCounts = [(key, countPrefixOccurrences prefix key) | key <- M.keys m, key `notElem` exclude]
       sortedKeys = map fst $ sortOn (Down . snd) keysWithCounts  -- Sort descending by count
-  in M.fromList $ renameKeys sortedKeys
+  in M.fromList $ renameKeys sortedKeys ++ [(k, v) | (k, v) <- M.toList m, k `elem` exclude]
   where
     renameKeys [] = []
     renameKeys (key:remaining) =
@@ -129,11 +129,11 @@ addPrefixToKeys prefix m =
          then renameKeys remaining ++ [(newKey, m M.! key)]
          else (newKey, m M.! key) : renameKeys remaining
 
--- Drop n characters from the start of all keys
-dropNCharsFromKeys :: Int -> M.Map String v -> M.Map String v
-dropNCharsFromKeys n m =
-  let keysSorted = sortOn (Down . length) (M.keys m) -- Sort by length (longest first)
-  in M.fromList $ renameKeys keysSorted
+-- Drop n characters from the start of all keys, with an exclusion list
+dropNCharsFromKeys :: Int -> [String] -> M.Map String v -> M.Map String v
+dropNCharsFromKeys n exclude m =
+  let keysSorted = sortOn (Down . length) [key | key <- M.keys m, key `notElem` exclude]  -- Sort by length (longest first)
+  in M.fromList $ renameKeys keysSorted ++ [(k, v) | (k, v) <- M.toList m, k `elem` exclude]
   where
     renameKeys [] = []
     renameKeys (key:remaining) =
@@ -142,15 +142,15 @@ dropNCharsFromKeys n m =
          then renameKeys remaining ++ [(newKey, m M.! key)]
          else (newKey, m M.! key) : renameKeys remaining
 
-prefixMasksAndPoints :: String -> AsciiWorld -> AsciiWorld
-prefixMasksAndPoints p w = 
-    w { asciiWorldMasks  = addPrefixToKeys p (asciiWorldMasks w)
-      , asciiWorldPoints = addPrefixToKeys p (asciiWorldPoints w) }
+prefixMasksAndPoints :: String -> [String] -> AsciiWorld -> AsciiWorld
+prefixMasksAndPoints p exclude w = 
+    w { asciiWorldMasks  = addPrefixToKeys p exclude (asciiWorldMasks w)
+      , asciiWorldPoints = addPrefixToKeys p exclude (asciiWorldPoints w) }
 
-dropNCharsFromMasksAndPoints :: Int -> AsciiWorld -> AsciiWorld
-dropNCharsFromMasksAndPoints n w = 
-    w { asciiWorldMasks  = dropNCharsFromKeys n (asciiWorldMasks w)
-      , asciiWorldPoints = dropNCharsFromKeys n (asciiWorldPoints w) }
+dropNCharsFromMasksAndPoints :: Int -> [String] -> AsciiWorld -> AsciiWorld
+dropNCharsFromMasksAndPoints n exclude w = 
+    w { asciiWorldMasks  = dropNCharsFromKeys n exclude (asciiWorldMasks w)
+      , asciiWorldPoints = dropNCharsFromKeys n exclude (asciiWorldPoints w) }
 
 
 -- Testing
