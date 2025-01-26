@@ -20,12 +20,8 @@ module WalkableWorld ( WalkableWorld(..)
                      , progressByAStep
                      , setOAtS
                      , oCount
-                     , nameOrder
-                     , addRocksToRightAndTop
+                     , addNoGoToRightAndTop
                      , partitionLayerByReachableLRDU ) where
-
-
-
 
 -------------
 -- Imports --
@@ -52,14 +48,17 @@ import AsciiWorld as AW ( AsciiWorld(..)
 newtype WalkableWorld = WalkableWorld {asWorld :: AsciiWorld} deriving (Show)
 
 -- Assumes all rows have equal length
-readWorld :: String -> (Int, WalkableWorld)
-readWorld = fmap (WalkableWorld . prefixMasksAndPoints "_") . readAsciiWorld '.' ['S'] . addRocksToRightAndTop
+readWorld :: Char -> String -> String -> (Int, WalkableWorld)
+readWorld bgChar singularChars = fmap (WalkableWorld . prefixMasksAndPoints "_") . readAsciiWorld bgChar singularChars . addNoGoToRightAndTop
 
-showWorld :: Int -> WalkableWorld -> String
-showWorld height = showAsciiWorld height nameOrder . dropNCharsFromMasksAndPoints 1 . asWorld
+showWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> String
+showWorld height nameZOrder w = showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 . asWorld $ w
+  where nameZOrderWithSpecials :: String -> String -> Ordering
+        nameZOrderWithSpecials s1 s2 = comparing specialRank s1 s2 <> nameZOrder s1 s2
+          where specialRank s = findIndex (==s) ["O","S","#"]
 
-printWorld :: Int -> WalkableWorld -> IO ()
-printWorld height = putStrLn . showWorld height
+printWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> IO ()
+printWorld height nameZOrder = putStrLn . showWorld height nameZOrder
 
 removeForbidden :: WalkableWorld -> WalkableWorld
 removeForbidden w = WalkableWorld $ applyNamedMask bitwiseSubtract "#" "O" (asWorld w)
@@ -73,14 +72,8 @@ setOAtS = WalkableWorld . fromJust . insertMaskAtPoint "O" "S" . asWorld
 oCount :: WalkableWorld -> Integer
 oCount = toInteger . popCount . fromJust . M.lookup "O" . asciiWorldMasks . asWorld
 
-nameOrder :: String -> String -> Ordering
-nameOrder s1 s2 = comparing specialRank s1 s2 <> compare s1 s2
-  where compareSpecial = comparing specialRank
-        
-        specialRank s = findIndex (==s) ["O","S","#","."]
-
-addRocksToRightAndTop :: String -> String
-addRocksToRightAndTop inStr = unlines . (\rows -> map (const '#') (head rows) : rows) . map (++"#") . lines $ inStr
+addNoGoToRightAndTop :: String -> String
+addNoGoToRightAndTop inStr = unlines . (\rows -> map (const '#') (head rows) : rows) . map (++"#") . lines $ inStr
 
 -- Make partitioner which gives every disconnected part of a layer it's own name by tacking on the next number not already existing in the bit mask map
 --      Have the disconnected portions found by a flood fill algorithm using bit mask operations:

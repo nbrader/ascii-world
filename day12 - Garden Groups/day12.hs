@@ -46,8 +46,7 @@ import WalkableWorld ( WalkableWorld(..)
                      , progressByAStep
                      , setOAtS
                      , oCount
-                     , nameOrder
-                     , addRocksToRightAndTop
+                     , addNoGoToRightAndTop
                      , partitionLayerByReachableLRDU )
 
 
@@ -247,6 +246,6 @@ day12part2 = do
 
 test = do
     contents <- readFile "day12 (data).csv"
-    let (height, world) = readWorld contents
-    printWorld height world
+    let (height, world) = readWorld '.' [] contents
+    printWorld height (comparing id) world
     print world
