@@ -32,17 +32,18 @@ import qualified Data.Map as M
 import Data.Ord
 import Data.Bits
 
-import Util (iterate', lrduDirs)
+import Util ( iterate', lrduDirs )
+import Mask ( bitwiseSubtract )
 
-import Control.Concurrent (threadDelay)
-import System.Console.ANSI (clearScreen, setCursorPosition)
+import Control.Concurrent ( threadDelay )
+import System.Console.ANSI ( clearScreen, setCursorPosition )
 
 import AsciiWorld as BW ( AsciiWorld(..)
                         , readAsciiWorld
                         , showAsciiWorld
                         , combineAsciiWorlds
-                        , moveMaskInAsciiWorld
-                        , subtractMask
+                        , moveNamedMask
+                        , applyNamedMask
                         , insertMaskAtPoint
                         , printAsciiWorld)
 
@@ -54,10 +55,10 @@ showAsciiWorld :: Int -> AsciiWorld -> String
 showAsciiWorld height w = BW.showAsciiWorld height charOrder w
 
 removeForbidden :: AsciiWorld -> AsciiWorld
-removeForbidden w = subtractMask "O" "#" w
+removeForbidden w = applyNamedMask bitwiseSubtract "#" "O" w
 
 progressByAStep :: AsciiWorld -> AsciiWorld
-progressByAStep w = removeForbidden $ combineAsciiWorlds $ map (\dir -> moveMaskInAsciiWorld "O" dir w) lrduDirs
+progressByAStep w = removeForbidden $ combineAsciiWorlds $ map (\dir -> moveNamedMask "O" dir w) lrduDirs
 
 setOAtS :: AsciiWorld -> AsciiWorld
 setOAtS = fromJust . insertMaskAtPoint "O" "S"

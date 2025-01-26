@@ -44,6 +44,3 @@ bitwiseOr ps1 ps2 = (ps1 .|. ps2)
 
 bitwiseXor :: Mask -> Mask -> Mask
 bitwiseXor ps1 ps2 = (ps1 `xor` ps2)
-
-combineMasks :: Mask -> Mask -> Mask
-combineMasks x y = x .|. y
