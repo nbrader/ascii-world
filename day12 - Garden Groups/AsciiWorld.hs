@@ -11,6 +11,7 @@ module AsciiWorld ( AsciiWorld(..)
                   , isNamedPointOrInNamedMask
                   , moveNamedMask
                   , moveNamedPoint
+                  , copyNamedMask
                   , applyNamedMask
                   , setPoint
                   , insertMaskAtPoint

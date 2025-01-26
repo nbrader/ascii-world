@@ -45,15 +45,18 @@ import WalkableWorld ( WalkableWorld(..)
                      , removeForbidden
                      , progressByAStep
                      , setOAtS
-                     , oCount
                      , addNoGoToRightAndTop
-                     , partitionLayerByReachableLRDU )
+                     , partitionMaskByReachableLRDU
+                     , partitionAllMasksByReachableLRDU
+                     , totalEdgesOverPoints
+                     , maskNames
+                     , totalPoints )
 
 
 -------------
 -- Program --
 -------------
-main = test
+main = day12part1
 
 type CharGrid = Array (V2 Int) Char
 type RegionRepGrid = Array (V2 Int) (Maybe (V2 Int))
@@ -61,10 +64,18 @@ type NumFencesGrid = Array (V2 Int) Int
 type AreasGrid = Array (V2 Int) Int
 type PerimetersGrid = Array (V2 Int) Int
 
-readPlots :: String -> [[Char]]
-readPlots = lines
-
 day12part1 = do
+    contents <- readFile "day12 (example 2).csv"
+    let (height, worldBeforePartition) = readWorld '.' [] contents
+        world = partitionAllMasksByReachableLRDU worldBeforePartition
+    -- printWorld height (comparing id) world
+    
+    let names = maskNames world
+        totalEdges = map (\n -> (totalPoints n world, totalEdgesOverPoints n world)) names
+    
+    print totalEdges
+
+day12part1' = do
     contents <- readFile "day12 (data).csv"
     let rows = lines contents
         height = length rows
@@ -243,9 +254,3 @@ day12part2 = do
         repPerims = [perimetersGrid A.! p | p <- repPositions]
     
     print $ sum $ zipWith (*) repPerims repAreas
-
-test = do
-    contents <- readFile "day12 (example).csv"
-    let (height, world) = readWorld '.' [] contents
-    printWorld height (comparing id) world
-    print world
