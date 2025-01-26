@@ -52,7 +52,7 @@ readAsciiWorld :: String -> (Int, AsciiWorld)
 readAsciiWorld = BW.readAsciiWorld '?' ['!']
 
 showAsciiWorld :: Int -> AsciiWorld -> String
-showAsciiWorld height w = BW.showAsciiWorld height charOrder w
+showAsciiWorld height w = BW.showAsciiWorld height nameOrder w
 
 removeForbidden :: AsciiWorld -> AsciiWorld
 removeForbidden w = applyNamedMask bitwiseSubtract "#" "O" w
@@ -66,8 +66,8 @@ setOAtS = fromJust . insertMaskAtPoint "O" "S"
 oCount :: AsciiWorld -> Integer
 oCount = toInteger . popCount . fromJust . M.lookup "O" . bWorldMasks
 
-charOrder :: String -> String -> Ordering
-charOrder lab1 lab2 = comparing specialRank lab1 lab2 <> compare lab1 lab2
+nameOrder :: String -> String -> Ordering
+nameOrder lab1 lab2 = comparing specialRank lab1 lab2 <> compare lab1 lab2
   where compareSpecial = comparing specialRank
         
         specialRank c = findIndex (==c) ["O","S","#","."]
