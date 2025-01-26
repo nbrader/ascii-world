@@ -45,14 +45,5 @@ bitwiseOr ps1 ps2 = (ps1 .|. ps2)
 bitwiseXor :: Mask -> Mask -> Mask
 bitwiseXor ps1 ps2 = (ps1 `xor` ps2)
 
-up, dn, lt, rt :: (Integral a) => (a,a)
-up = (  0 ,   1 )
-dn = (  0 , (-1))
-lt = ((-1),   0 )
-rt = (  1 ,   0 )
-
-allDirs :: (Integral a) => [(a,a)]
-allDirs = [up,dn,lt,rt]
-
 combineMasks :: Mask -> Mask -> Mask
 combineMasks x y = x .|. y

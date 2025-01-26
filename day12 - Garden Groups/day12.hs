@@ -32,39 +32,37 @@ import qualified Data.Map as M
 import Data.Ord
 import Data.Bits
 
-import Util (iterate')
+import Util (iterate', lrduDirs)
 
 import Control.Concurrent (threadDelay)
 import System.Console.ANSI (clearScreen, setCursorPosition)
 
-import Mask ( allDirs )
-
-import ASCIIWorld as BW ( ASCIIWorld(..)
-                        , readASCIIWorld
-                        , showASCIIWorld
-                        , combineASCIIWorlds
-                        , moveMaskInASCIIWorld
+import AsciiWorld as BW ( AsciiWorld(..)
+                        , readAsciiWorld
+                        , showAsciiWorld
+                        , combineAsciiWorlds
+                        , moveMaskInAsciiWorld
                         , subtractMask
                         , insertMaskAtPoint
-                        , printASCIIWorld)
+                        , printAsciiWorld)
 
 -- Assumes all rows have equal length
-readASCIIWorld :: String -> (Int, ASCIIWorld)   
-readASCIIWorld = BW.readASCIIWorld '?' ['!']
+readAsciiWorld :: String -> (Int, AsciiWorld)   
+readAsciiWorld = BW.readAsciiWorld '?' ['!']
 
-showASCIIWorld :: Int -> ASCIIWorld -> String
-showASCIIWorld height w = BW.showASCIIWorld height charOrder w
+showAsciiWorld :: Int -> AsciiWorld -> String
+showAsciiWorld height w = BW.showAsciiWorld height charOrder w
 
-removeForbidden :: ASCIIWorld -> ASCIIWorld
+removeForbidden :: AsciiWorld -> AsciiWorld
 removeForbidden w = subtractMask "O" "#" w
 
-progressByAStep :: ASCIIWorld -> ASCIIWorld
-progressByAStep w = removeForbidden $ combineASCIIWorlds $ map (\dir -> moveMaskInASCIIWorld "O" dir w) allDirs
+progressByAStep :: AsciiWorld -> AsciiWorld
+progressByAStep w = removeForbidden $ combineAsciiWorlds $ map (\dir -> moveMaskInAsciiWorld "O" dir w) lrduDirs
 
-setOAtS :: ASCIIWorld -> ASCIIWorld
+setOAtS :: AsciiWorld -> AsciiWorld
 setOAtS = fromJust . insertMaskAtPoint "O" "S"
 
-oCount :: ASCIIWorld -> Integer
+oCount :: AsciiWorld -> Integer
 oCount = toInteger . popCount . fromJust . M.lookup "O" . bWorldMasks
 
 charOrder :: String -> String -> Ordering
@@ -270,6 +268,6 @@ day12part2 = do
 
 test = do
     contents <- readFile "day12 (data).csv"
-    let (height, bWorld) = Main.readASCIIWorld contents
-    printASCIIWorld height (comparing id) bWorld
+    let (height, bWorld) = Main.readAsciiWorld contents
+    printAsciiWorld height (comparing id) bWorld
     print bWorld

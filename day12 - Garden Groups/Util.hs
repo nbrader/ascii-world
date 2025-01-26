@@ -47,6 +47,15 @@ enumSignedInv n
     | otherwise = -q
   where (q,r) = (n+1) `divMod` 2
 
+up, dn, lt, rt :: (Integral a) => (a,a)
+up = (  0 ,   1 )
+dn = (  0 , (-1))
+lt = ((-1),   0 )
+rt = (  1 ,   0 )
+
+lrduDirs :: (Integral a) => [(a,a)]
+lrduDirs = [lt,rt,dn,up]
+
 -- sum (map enumSignedInv2 [0..1000000])
 -- (3.89 secs, 8,563,703,400 bytes)
 -- enumSignedInv2 :: Int -> Int
