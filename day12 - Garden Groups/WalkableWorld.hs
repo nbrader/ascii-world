@@ -1,7 +1,7 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-21.22 ghci --package containers-0.6.7 --package split-0.2.3.5 --package safe-0.3.19 --package QuickCheck-2.14.3
 
-module WalkableBoundedWorld (WalkableBoundedWorld(WalkableBoundedWorld), nameOrder, addRocksToRightAndTop) where
+module WalkableWorld (WalkableWorld(WalkableWorld), nameOrder, addRocksToRightAndTop) where
 
 -------------
 -- Imports --
@@ -23,25 +23,25 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , applyNamedMask
                         , insertMaskAtPoint )
 
-newtype WalkableBoundedWorld = WalkableBoundedWorld {asWorld :: AsciiWorld}
+newtype WalkableWorld = WalkableWorld {asWorld :: AsciiWorld}
 
 -- Assumes all rows have equal length
-readWorld :: String -> (Int, WalkableBoundedWorld)
-readWorld = fmap WalkableBoundedWorld . readAsciiWorld '.' ['S'] . addRocksToRightAndTop
+readWorld :: String -> (Int, WalkableWorld)
+readWorld = fmap WalkableWorld . readAsciiWorld '.' ['S'] . addRocksToRightAndTop
 
-showWorld :: Int -> WalkableBoundedWorld -> String
+showWorld :: Int -> WalkableWorld -> String
 showWorld height w = showAsciiWorld height nameOrder (asWorld w)
 
-removeForbidden :: WalkableBoundedWorld -> WalkableBoundedWorld
-removeForbidden w = WalkableBoundedWorld $ applyNamedMask bitwiseSubtract "#" "O" (asWorld w)
+removeForbidden :: WalkableWorld -> WalkableWorld
+removeForbidden w = WalkableWorld $ applyNamedMask bitwiseSubtract "#" "O" (asWorld w)
 
-progressByAStep :: WalkableBoundedWorld -> WalkableBoundedWorld
-progressByAStep w = removeForbidden . WalkableBoundedWorld $ combineAsciiWorlds $ map (\dir -> moveNamedMask "O" dir (asWorld w)) lrduDirs
+progressByAStep :: WalkableWorld -> WalkableWorld
+progressByAStep w = removeForbidden . WalkableWorld $ combineAsciiWorlds $ map (\dir -> moveNamedMask "O" dir (asWorld w)) lrduDirs
 
-setOAtS :: WalkableBoundedWorld -> WalkableBoundedWorld
-setOAtS = WalkableBoundedWorld . fromJust . insertMaskAtPoint "O" "S" . asWorld
+setOAtS :: WalkableWorld -> WalkableWorld
+setOAtS = WalkableWorld . fromJust . insertMaskAtPoint "O" "S" . asWorld
 
-oCount :: WalkableBoundedWorld -> Integer
+oCount :: WalkableWorld -> Integer
 oCount = toInteger . popCount . fromJust . M.lookup "O" . bWorldMasks . asWorld
 
 nameOrder :: String -> String -> Ordering
