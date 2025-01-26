@@ -103,7 +103,11 @@ showBWorld height labelZOrder bWorld = unlines . reverse . take height . chunksO
         listOfMaybeCharsFromBitMasks = combineMaybeCharLists listsOfMaybeCharsFromBitMasks
         labelsAndPoints = map head . groupBy ((==) `on` snd) . sortBy (\(aLabel,aPos) (bLabel,bPos) -> compare aPos bPos <> compare aLabel bLabel) . M.toList $ points
         labelsAndIndices = map (fmap (pointToIndex width)) labelsAndPoints
-        listOfMaybeCharsFromBitMasksAndPoints = foldr (\(label,i) acc -> let maybeOld = join (acc `atMay` i) in replace acc (i, Just $ minimum $ catMaybes [maybeOld, Just (head label)])) listOfMaybeCharsFromBitMasks labelsAndIndices
+        
+        labelToChar [] = ' '
+        labelToChar (x:xs) = x
+        
+        listOfMaybeCharsFromBitMasksAndPoints = foldr (\(label,i) acc -> let maybeOld = join (acc `atMay` i) in replace acc (i, Just $ minimum $ catMaybes [maybeOld, Just (labelToChar label)])) listOfMaybeCharsFromBitMasks labelsAndIndices
         
         combineMaybeCharLists :: [[Maybe a]] -> [Maybe a]
         combineMaybeCharLists = map (getFirst . fold . map First) . transpose
@@ -112,7 +116,7 @@ showBWorld height labelZOrder bWorld = unlines . reverse . take height . chunksO
         prioritize labelZOrder = (\m -> map (fromJust . flip M.lookup m) (sortBy labelZOrder $ M.keys m))
         
         layerToMaybeChars :: String -> Integer -> [Maybe Char]
-        layerToMaybeChars label n = map (\i -> if n `testBit` i then Just (head label) else Nothing) [0..]
+        layerToMaybeChars label n = map (\i -> if n `testBit` i then Just (labelToChar label) else Nothing) [0..]
 
 printBWorld :: Int -> (String -> String -> Ordering) -> BWorld -> IO ()
 printBWorld height labelZOrder bWorld = putStrLn $ showBWorld height labelZOrder bWorld
