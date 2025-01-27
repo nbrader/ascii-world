@@ -94,10 +94,13 @@ totalPoints maskName w = toInteger . popCount . fromJust . M.lookup maskName' . 
 maskNames :: WalkableWorld -> [String]
 maskNames = map (drop 1) . M.keys . M.delete "#" . asciiWorldMasks . asAsciiWorld
 
--- Make partitioner which gives every disconnected part of a layer it's own name by tacking on the next number not already existing in the bit mask map
+-- Make partitioner which gives every disconnected part of a layer its own name by tacking on the next number not already existing in the bit mask map
 --      Have the disconnected portions found by a flood fill algorithm using bit mask operations:
 --          Loop until all points in world have been sufficiently checked to account for all part of all layers (need a nice way of checking this)
 --              find an active point from the layer not so far a member of any partition part
+--                  Note: -A MSB could be found using log.
+--                        -Also, an active bit would ideally be found in the middle of the pack to maximise the expansion outwards per iteration
+--                          This might be better achieved than simply finding the MSB by first removing half of the total active bits (rounding up) before finding the MSB after
 --              Loop until latest found points are empty
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
