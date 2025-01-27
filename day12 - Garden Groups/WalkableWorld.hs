@@ -32,7 +32,7 @@ import Data.Ord
 import Data.Bits
 
 import Util ( lrduDirs )
-import Mask ( bitwiseSubtract, bitwiseXor )
+import Mask ( bitwiseSubtract, bitwiseXor, msbPoint )
 
 import AsciiWorld as AW ( AsciiWorld(..)
                         , readAsciiWorld

@@ -7,6 +7,7 @@ module Mask where
 -- Imports --
 -------------
 import Data.Bits
+import GHC.Num
 
 -- Each obj has a shape encoded as bits of an Integer.
 type Point = (Int,Int)
@@ -15,6 +16,9 @@ type Mask = Integer
 -- Converts a 2D point to a 1D index
 pointToIndex :: Int -> Point -> Int
 pointToIndex width (x, y) = y * width + x
+
+indexToPoint :: Int -> Int -> Point
+indexToPoint width i = i `divMod` width
 
 pointToMask :: Int -> Point -> Mask
 pointToMask width (x,y) = moveMask width (x,y) 1
@@ -44,3 +48,9 @@ bitwiseOr ps1 ps2 = (ps1 .|. ps2)
 
 bitwiseXor :: Mask -> Mask -> Mask
 bitwiseXor ps1 ps2 = (ps1 `xor` ps2)
+
+msbIndex :: Integer -> Int
+msbIndex n = if n <= 0 then error "msb requires a positive integer input" else fromIntegral (integerLog2 n)
+
+msbPoint :: Int -> Integer -> Point
+msbPoint width n = indexToPoint width (msbIndex n)
