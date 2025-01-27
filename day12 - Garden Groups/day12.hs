@@ -42,10 +42,6 @@ import WalkableWorld ( WalkableWorld(..)
                      , readWorld
                      , showWorld
                      , printWorld
-                     , removeForbidden
-                     , progressByAStep
-                     , setOAtS
-                     , addNoGoToRightAndTop
                      , partitionMaskByReachableLRDU
                      , partitionAllMasksByReachableLRDU
                      , totalEdgesOverPoints
@@ -68,7 +64,7 @@ day12part1 = do
     contents <- readFile "day12 (example 2).csv"
     let (height, worldBeforePartition) = readWorld '.' [] contents
         world = partitionAllMasksByReachableLRDU worldBeforePartition
-    -- printWorld height (comparing id) world
+    printWorld height (comparing id) world
     
     let names = maskNames world
         totalEdges = map (\n -> (totalPoints n world, totalEdgesOverPoints n world)) names

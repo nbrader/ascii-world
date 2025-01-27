@@ -16,10 +16,6 @@ module WalkableWorld ( WalkableWorld(..)
                      , readWorld
                      , showWorld
                      , printWorld
-                     , removeForbidden
-                     , progressByAStep
-                     , setOAtS
-                     , addNoGoToRightAndTop
                      , totalEdgesOverPoints
                      , maskNames
                      , totalPoints
@@ -59,10 +55,10 @@ readWorld :: Char -> String -> String -> (Int, WalkableWorld)
 readWorld bgChar singularChars = fmap (WalkableWorld . prefixMasksAndPoints "_" ["#"]) . readAsciiWorld bgChar singularChars . addNoGoToRightAndTop
 
 showWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> String
-showWorld height nameZOrder w = showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 ["#"] . asAsciiWorld $ w
+showWorld height nameZOrder w = unlines . map init . drop 1 . lines . showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 ["#"] . asAsciiWorld $ w
   where nameZOrderWithSpecials :: String -> String -> Ordering
         nameZOrderWithSpecials s1 s2 = comparing specialRank s1 s2 <> nameZOrder s1 s2
-          where specialRank s = findIndex (==s) ["O","S","#"]
+          where specialRank s = findIndex (==s) ["#"]
 
 printWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> IO ()
 printWorld height nameZOrder = putStrLn . showWorld height nameZOrder
