@@ -139,8 +139,8 @@ partitionMaskByReachableLRDU maskName (WalkableWorld w') = WalkableWorld newAsci
                        in case maybeMiddlePoint of
                             Just point -> point
                             Nothing -> error $ "middlePoint failed: \"" ++ maskName'  ++ "\" not found in " ++ show w'
-        wWithXMidpointMask = deletePoint "?" . fromJust . insertMaskAtPoint "X" "?" . setPoint "?" middlePoint $ w'
-        wWithMidpointXoredWithMaskName = deleteMask "X" . applyNamedMask bitwiseXor "X" maskName' $ wWithXMidpointMask
+        wWithXMidpointMask = deletePoint "temp" . fromJust . insertMaskAtPoint "midpoint" "temp" . setPoint "temp" middlePoint $ w'
+        wWithMidpointXoredWithMaskName = deleteMask "midpoint" . applyNamedMask bitwiseXor "midpoint" maskName' $ wWithXMidpointMask
         newAsciiWorld = wWithMidpointXoredWithMaskName
 
 test = do
@@ -160,8 +160,9 @@ test = do
                        in case maybeMiddlePoint of
                             Just point -> point
                             Nothing -> error $ "middlePoint failed: \"" ++ maskName'  ++ "\" not found in " ++ show w'
-        wWithXMidpointMask = deletePoint "?" . fromJust . insertMaskAtPoint "X" "?" . setPoint "?" middlePoint $ w'
-        wWithMidpointXoredWithMaskName = deleteMask "X" . applyNamedMask bitwiseXor "X" maskName' $ wWithXMidpointMask
+        wWithXMidpointMask = deletePoint "temp" . fromJust . insertMaskAtPoint "midpoint" "temp" . setPoint "temp" middlePoint $ w'
+        
+        wWithMidpointXoredWithMaskName = copyNamedMask "midpoint" "visited" $ applyNamedMask bitwiseXor "midpoint" maskName' $ wWithXMidpointMask
         newAsciiWorld = wWithMidpointXoredWithMaskName
         
         newWorld = WalkableWorld newAsciiWorld
