@@ -18,7 +18,13 @@ module AsciiWorld ( AsciiWorld(..)
                   , isOverlappingMasks
                   , prefixMasksAndPoints
                   , dropNCharsFromMasksAndPoints
-                  , deleteMask ) where
+                  , deleteMask
+                  , lookupMask
+                  , adjustMask
+                  , updateMask
+                  , alterMask
+                  , msbPointOfMask
+                  , middlePointOfMask ) where
 
 -------------
 -- Imports --
@@ -35,8 +41,8 @@ import Data.Monoid
 import Data.Foldable
 import Safe (atMay)
 
-import Util (replace)
-import Mask (Point, Mask, pointToIndex, pointToMask, moveMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor)
+import Util ( replace )
+import Mask ( Point, Mask, pointToIndex, pointToMask, moveMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, msbPoint, middlePoint )
 
 -- Each obj has a shape encoded as bits of an Integer.
 
@@ -90,8 +96,10 @@ readAsciiWorld bgChar singularChars inStr
 
 showAsciiWorld :: Int -> (String -> String -> Ordering) -> AsciiWorld -> String
 showAsciiWorld height nameZOrder asciiWorld = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromMasksAndPoints
-  where (AsciiWorld bgChar layers points width) = asciiWorld
-        listsOfMaybeCharsFromMasks = prioritize nameZOrder $ M.mapWithKey (\name n -> layerToMaybeChars name n) layers
+  where (AsciiWorld bgChar masks points width) = asciiWorld
+        listsOfMaybeCharsFromMasks = if M.null masks
+                                      then [replicate (height * width) Nothing]
+                                      else prioritize nameZOrder $ M.mapWithKey (\name n -> layerToMaybeChars name n) masks
         listOfMaybeCharsFromMasks = combineMaybeCharLists listsOfMaybeCharsFromMasks
         namesAndPoints = map head . groupBy ((==) `on` snd) . sortBy (\(aName,aPos) (bName,bPos) -> compare aPos bPos <> compare aName bName) . M.toList $ points
         namesAndIndices = map (fmap (pointToIndex width)) namesAndPoints
@@ -105,7 +113,7 @@ showAsciiWorld height nameZOrder asciiWorld = unlines . reverse . take height . 
         combineMaybeCharLists = map (getFirst . fold . map First) . transpose
         
         prioritize :: Ord a1 => (a1 -> a1 -> Ordering) -> M.Map a1 a2 -> [a2]
-        prioritize nameZOrder = (\m -> map (fromJust . flip M.lookup m) (sortBy nameZOrder $ M.keys m))
+        prioritize nameZOrder m = map (fromJust . flip M.lookup m) (sortBy nameZOrder $ M.keys m)
         
         layerToMaybeChars :: String -> Integer -> [Maybe Char]
         layerToMaybeChars name n = map (\i -> if n `testBit` i then Just (nameToChar name) else Nothing) [0..]
@@ -156,6 +164,26 @@ dropNCharsFromMasksAndPoints n exclude w =
 
 deleteMask :: String -> AsciiWorld -> AsciiWorld
 deleteMask maskName w = w { asciiWorldMasks = M.delete maskName (asciiWorldMasks w) }
+
+lookupMask :: String -> AsciiWorld -> Maybe Mask
+lookupMask maskName w = M.lookup maskName (asciiWorldMasks w)
+
+adjustMask :: (Mask -> Mask) -> String -> AsciiWorld -> AsciiWorld
+adjustMask f maskName w = w { asciiWorldMasks = M.adjust f maskName (asciiWorldMasks w) }
+
+updateMask :: (Mask -> Maybe Mask) -> String -> AsciiWorld -> AsciiWorld
+updateMask f maskName w = w { asciiWorldMasks = M.update f maskName (asciiWorldMasks w) }
+
+alterMask :: (Maybe Mask -> Maybe Mask) -> String -> AsciiWorld -> AsciiWorld
+alterMask f maskName w = w { asciiWorldMasks = M.alter f maskName (asciiWorldMasks w) }
+
+msbPointOfMask :: String -> AsciiWorld -> Point
+msbPointOfMask maskName w = msbPoint width (fromJust (lookupMask maskName w))
+  where width = asciiWorldWidth w
+
+middlePointOfMask :: String -> AsciiWorld -> Point
+middlePointOfMask maskName w = middlePoint width (fromJust (lookupMask maskName w))
+  where width = asciiWorldWidth w
 
 -- Testing
 exampleAsciiWorld1 :: AsciiWorld
