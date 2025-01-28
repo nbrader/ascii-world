@@ -75,6 +75,8 @@ readAsciiWorld bgChar charMap inStr
 
         setBitInMask (x, y) maybeMask = Just $ setBit (fromMaybe 0 maybeMask) (y * width + x)
 
+-- To Do: - Continue uncommenting the rest, making it work with the new version of AsciiWorld which allows arbitrary keys.
+--        - After getting this file working, I'll need to correct the files it depends on accordingly.
 
 -- showAsciiWorld :: Int -> (String -> String -> Ordering) -> AsciiWorld -> String
 -- showAsciiWorld height nameZOrder asciiWorld = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromMasksAndPoints
