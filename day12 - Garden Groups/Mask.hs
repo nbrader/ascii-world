@@ -8,6 +8,7 @@ module Mask where
 -------------
 import Data.Bits
 import GHC.Num
+import Data.Tuple (swap)
 
 -- Each obj has a shape encoded as bits of an Integer.
 type Point = (Int,Int)
@@ -18,7 +19,7 @@ pointToIndex :: Int -> Point -> Int
 pointToIndex width (x, y) = y * width + x
 
 indexToPoint :: Integral a => a -> a -> (a, a)
-indexToPoint width i = i `divMod` width
+indexToPoint width i = swap (i `divMod` width)
 
 pointToMask :: Int -> Point -> Mask
 pointToMask width (x,y) = moveMask width (x,y) 1

@@ -136,6 +136,10 @@ test = do
         worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld ["_A", "_B", "_D", "_E", "#"]
         world = partitionMaskByReachableLRDU "_C" worldBeforePartition
         world2 = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) world ["_C"]
+    
+    printRawAsciiWorld height (comparing id) world
+    print world
+    
     printRawAsciiWorld height (comparing id) world2
     print world2
 
