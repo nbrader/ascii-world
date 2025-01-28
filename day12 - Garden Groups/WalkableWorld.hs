@@ -127,7 +127,7 @@ maskNames = map (drop 1) . M.keys . M.delete "#" . asciiWorldMasks . asAsciiWorl
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
 partitionMaskByReachableLRDU :: String -> WalkableWorld -> WalkableWorld
-partitionMaskByReachableLRDU maskName (WalkableWorld w') = WalkableWorld (setPoint "_Y" (msbPointOfMask maskName w') $ w') -- To Do: Implement this
+partitionMaskByReachableLRDU maskName (WalkableWorld w') = WalkableWorld (setPoint "_X" (middlePointOfMask maskName w') . setPoint "_Y" (msbPointOfMask maskName w') $ w') -- To Do: Implement this
 
 test = do
     contents <- readFile "day12 (example).csv"
@@ -136,16 +136,6 @@ test = do
         worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld ["_A", "_B", "_D", "_E", "#"]
         world = partitionMaskByReachableLRDU "_C" worldBeforePartition
         world2 = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) world ["_C"]
-    printRawAsciiWorld height (comparing id) world2
-    print world2
-
-test2 = do
-    contents <- readFile "day12 (example).csv"
-    
-    let (height, initWorld) = readWorld '.' [] contents
-        worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld ["_A", "_B", "_D", "_E", "#"]
-        world = partitionMaskByReachableLRDU "_C" worldBeforePartition
-        world2 = modifyRawAsciiWorld (applyNamedMask bitwiseXor "_C" "_C") world
     printRawAsciiWorld height (comparing id) world2
     print world2
 
