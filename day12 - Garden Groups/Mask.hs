@@ -17,7 +17,7 @@ type Mask = Integer
 pointToIndex :: Int -> Point -> Int
 pointToIndex width (x, y) = y * width + x
 
-indexToPoint :: Int -> Int -> Point
+indexToPoint :: Integral a => a -> a -> (a, a)
 indexToPoint width i = i `divMod` width
 
 pointToMask :: Int -> Point -> Mask
@@ -49,8 +49,25 @@ bitwiseOr ps1 ps2 = (ps1 .|. ps2)
 bitwiseXor :: Mask -> Mask -> Mask
 bitwiseXor ps1 ps2 = (ps1 `xor` ps2)
 
+-- Warning: fromIntegral may truncate an exceptionally large Integer (larger than max Int)
 msbIndex :: Integer -> Int
 msbIndex n = if n <= 0 then error "msb requires a positive integer input" else fromIntegral (integerLog2 n)
 
+-- Warning: fromIntegral may truncate an exceptionally large Integer (larger than max Int)
+removeMsbNTimes :: Int -> Integer -> Integer
+removeMsbNTimes 0 n = n  -- Base case: No removals left
+removeMsbNTimes _ 0 = 0  -- No MSB to remove
+removeMsbNTimes k n
+  | k <= 0    = n
+  | otherwise = removeMsbNTimes (k - 1) (n `xor` bit (fromIntegral (integerLog2 n)))
+
+-- Warning: fromIntegral may truncate an exceptionally large Integer (larger than max Int)
+middleIndex :: Integer -> Int
+middleIndex n = fromIntegral . msbIndex $ (removeMsbNTimes halfActiveBits n)
+  where halfActiveBits = popCount n `div` 2
+
 msbPoint :: Int -> Integer -> Point
 msbPoint width n = indexToPoint width (msbIndex n)
+
+middlePoint :: Int -> Integer -> Point
+middlePoint width n = indexToPoint width (middleIndex n)
