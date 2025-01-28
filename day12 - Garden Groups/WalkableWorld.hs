@@ -130,8 +130,9 @@ maskNames = map (drop 1) . M.keys . M.delete "#" . asciiWorldMasks . asAsciiWorl
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
 partitionMaskByReachableLRDU :: String -> WalkableWorld -> WalkableWorld
-partitionMaskByReachableLRDU maskName (WalkableWorld w') = (WalkableWorld w')
+partitionMaskByReachableLRDU maskName (WalkableWorld w') = WalkableWorld newAsciiWorld
   where -- To Do: This implementation is a WIP. Make it behave like the above explained algorithm.
+        --        Currently, what it does is simply removes the midpoint of every mask.
         maskName' = ('_':) maskName -- Tag the name to avoid collisions with internal representations
         
         middlePoint = let maybeMiddlePoint = middlePointOfMask maskName' w'
@@ -148,10 +149,25 @@ test = do
     let masksToDelete = ("#":) . map (('_':) . (:[])) . delete 'C' . nub $ contents
         (height, initWorld) = readWorld '.' [] contents
         worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld masksToDelete
-        world = partitionMaskByReachableLRDU "C" worldBeforePartition
+        
+        -- world = partitionMaskByReachableLRDU "C" worldBeforePartition
+        maskName = "C"
+        (WalkableWorld w') = worldBeforePartition
+        
+        maskName' = ('_':) maskName -- Tag the name to avoid collisions with internal representations
+        
+        middlePoint = let maybeMiddlePoint = middlePointOfMask maskName' w'
+                       in case maybeMiddlePoint of
+                            Just point -> point
+                            Nothing -> error $ "middlePoint failed: \"" ++ maskName'  ++ "\" not found in " ++ show w'
+        wWithXMidpointMask = deletePoint "?" . fromJust . insertMaskAtPoint "X" "?" . setPoint "?" middlePoint $ w'
+        wWithMidpointXoredWithMaskName = deleteMask "X" . applyNamedMask bitwiseXor "X" maskName' $ wWithXMidpointMask
+        newAsciiWorld = wWithMidpointXoredWithMaskName
+        
+        newWorld = WalkableWorld newAsciiWorld
     
-    printRawAsciiWorld height (comparing id) world
-    print world
+    printRawAsciiWorld height (comparing id) newWorld
+    print newWorld
 
 partitionAllMasksByReachableLRDU :: WalkableWorld -> WalkableWorld
 partitionAllMasksByReachableLRDU w = foldl' (flip partitionMaskByReachableLRDU) w (maskNames w)
