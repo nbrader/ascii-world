@@ -69,8 +69,18 @@ showWorld height nameZOrder w = unlines . map init . drop 1 . lines . showAsciiW
         nameZOrderWithSpecials s1 s2 = comparing specialRank s1 s2 <> nameZOrder s1 s2
           where specialRank s = findIndex (==s) ["#"]
 
+-- Shows the raw underlying ascii world except for underscores which are stripped so that there aren't just underscores for all non-background point.
+showRawAsciiWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> String
+showRawAsciiWorld height nameZOrder w = showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 ["#"] . asAsciiWorld $ w
+  where nameZOrderWithSpecials :: String -> String -> Ordering
+        nameZOrderWithSpecials s1 s2 = comparing specialRank s1 s2 <> nameZOrder s1 s2
+          where specialRank s = findIndex (==s) ["#"]
+
 printWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> IO ()
 printWorld height nameZOrder = putStrLn . showWorld height nameZOrder
+
+printRawAsciiWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> IO ()
+printRawAsciiWorld height nameZOrder = putStrLn . showRawAsciiWorld height nameZOrder
 
 removeForbidden :: WalkableWorld -> WalkableWorld
 removeForbidden w = WalkableWorld $ applyNamedMask bitwiseSubtract "#" "O" (asAsciiWorld w)
@@ -116,9 +126,9 @@ test = do
     contents <- readFile "day12 (example).csv"
     
     let (height, initWorld) = readWorld '.' [] contents
-        worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld ["_A", "_B", "_D", "_E"]
+        worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld ["_A", "_B", "_D", "_E", "#"]
         world = partitionMaskByReachableLRDU "C" worldBeforePartition
-    printWorld height (comparing id) world
+    printRawAsciiWorld height (comparing id) world
 
 partitionAllMasksByReachableLRDU :: WalkableWorld -> WalkableWorld
 partitionAllMasksByReachableLRDU w = foldl' (flip partitionMaskByReachableLRDU) w (maskNames w)
