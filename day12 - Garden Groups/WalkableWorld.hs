@@ -25,7 +25,7 @@ module WalkableWorld ( WalkableWorld(..)
 -------------
 -- Imports --
 -------------
-import Data.List ( findIndex ,foldl' )
+import Data.List ( findIndex, foldl', nub, delete )
 import qualified Data.Map as M
 import Data.Maybe ( fromJust )
 import Data.Ord
@@ -127,21 +127,18 @@ maskNames = map (drop 1) . M.keys . M.delete "#" . asciiWorldMasks . asAsciiWorl
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
 partitionMaskByReachableLRDU :: String -> WalkableWorld -> WalkableWorld
-partitionMaskByReachableLRDU maskName (WalkableWorld w') = WalkableWorld (setPoint "_X" (middlePointOfMask maskName w') . setPoint "_Y" (msbPointOfMask maskName w') $ w') -- To Do: Implement this
+partitionMaskByReachableLRDU maskName (WalkableWorld w') = WalkableWorld (deleteMask "_=" . applyNamedMask bitwiseXor "_=" "_C" . fromJust . insertMaskAtPoint "_=" "_X" . setPoint "_X" (middlePointOfMask maskName w') $ w') -- To Do: Implement this
 
 test = do
     contents <- readFile "day12 (example).csv"
     
-    let (height, initWorld) = readWorld '.' [] contents
-        worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld ["_A", "_B", "_D", "_E", "#"]
+    let masksToDelete = ("#":) . map (('_':) . (:[])) . delete 'C' . nub $ contents
+        (height, initWorld) = readWorld '.' [] contents
+        worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld masksToDelete
         world = partitionMaskByReachableLRDU "_C" worldBeforePartition
-        world2 = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) world ["_C"]
     
     printRawAsciiWorld height (comparing id) world
     print world
-    
-    printRawAsciiWorld height (comparing id) world2
-    print world2
 
 partitionAllMasksByReachableLRDU :: WalkableWorld -> WalkableWorld
 partitionAllMasksByReachableLRDU w = foldl' (flip partitionMaskByReachableLRDU) w (maskNames w)
