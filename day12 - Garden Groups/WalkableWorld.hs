@@ -42,6 +42,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , copyNamedMask
                         , applyNamedMask
                         , setPoint
+                        , deletePoint
                         , insertMaskAtPoint
                         , prefixMasksAndPoints
                         , dropNCharsFromMasksAndPoints
@@ -58,6 +59,8 @@ newtype WalkableWorld = WalkableWorld {asAsciiWorld :: AsciiWorld} deriving (Sho
 addNoGoToRightAndTop :: String -> String
 addNoGoToRightAndTop inStr = unlines . (\rows -> map (const '#') (head rows) : rows) . map (++"#") . lines $ inStr
 
+specialNames = ["#"]
+
 -- Assumes all rows have equal length
 readWorld :: Char -> String -> String -> (Int, WalkableWorld)
 readWorld bgChar singularChars = fmap (WalkableWorld . prefixMasksAndPoints "_" ["#"]) . readAsciiWorld bgChar singularChars . addNoGoToRightAndTop
@@ -71,17 +74,17 @@ modifyAsciiWorld :: (AsciiWorld -> AsciiWorld) -> WalkableWorld -> WalkableWorld
 modifyAsciiWorld f = undefined -- Ensure the NoGos, underscores and whatever else are torn down before applying f before putting them back after.
 
 showWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> String
-showWorld height nameZOrder w = unlines . map init . drop 1 . lines . showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 ["#"] . asAsciiWorld $ w
+showWorld height nameZOrder w = unlines . map init . drop 1 . lines . showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 specialNames . asAsciiWorld $ w
   where nameZOrderWithSpecials :: String -> String -> Ordering
         nameZOrderWithSpecials s1 s2 = comparing specialRank s1 s2 <> nameZOrder s1 s2
-          where specialRank s = findIndex (==s) ["#"]
+          where specialRank s = findIndex (==s) specialNames
 
 -- Shows the raw underlying ascii world except for underscores which are stripped so that there aren't just underscores for all non-background point.
 showRawAsciiWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> String
-showRawAsciiWorld height nameZOrder w = showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 ["#"] . asAsciiWorld $ w
+showRawAsciiWorld height nameZOrder w = showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 specialNames . asAsciiWorld $ w
   where nameZOrderWithSpecials :: String -> String -> Ordering
         nameZOrderWithSpecials s1 s2 = comparing specialRank s1 s2 <> nameZOrder s1 s2
-          where specialRank s = findIndex (==s) ["#"]
+          where specialRank s = findIndex (==s) specialNames
 
 printWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> IO ()
 printWorld height nameZOrder = putStrLn . showWorld height nameZOrder
@@ -127,9 +130,17 @@ maskNames = map (drop 1) . M.keys . M.delete "#" . asciiWorldMasks . asAsciiWorl
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
 partitionMaskByReachableLRDU :: String -> WalkableWorld -> WalkableWorld
-partitionMaskByReachableLRDU maskName (WalkableWorld w') = WalkableWorld newAsciiWorld
+partitionMaskByReachableLRDU maskName (WalkableWorld w') = (WalkableWorld w')
   where -- To Do: This implementation is a WIP. Make it behave like the above explained algorithm.
-        newAsciiWorld = deleteMask "_=" . applyNamedMask bitwiseXor "_=" "_C" . fromJust . insertMaskAtPoint "_=" "_X" . setPoint "_X" (middlePointOfMask maskName w') $ w' 
+        maskName' = ('_':) maskName -- Tag the name to avoid collisions with internal representations
+        
+        middlePoint = let maybeMiddlePoint = middlePointOfMask maskName' w'
+                       in case maybeMiddlePoint of
+                            Just point -> point
+                            Nothing -> error $ "middlePoint failed: \"" ++ maskName'  ++ "\" not found in " ++ show w'
+        wWithXMidpointMask = deletePoint "?" . fromJust . insertMaskAtPoint "X" "?" . setPoint "?" middlePoint $ w'
+        wWithMidpointXoredWithMaskName = deleteMask "X" . applyNamedMask bitwiseXor "X" maskName' $ wWithXMidpointMask
+        newAsciiWorld = wWithMidpointXoredWithMaskName
 
 test = do
     contents <- readFile "day12 (example).csv"
@@ -137,7 +148,7 @@ test = do
     let masksToDelete = ("#":) . map (('_':) . (:[])) . delete 'C' . nub $ contents
         (height, initWorld) = readWorld '.' [] contents
         worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld masksToDelete
-        world = partitionMaskByReachableLRDU "_C" worldBeforePartition
+        world = partitionMaskByReachableLRDU "C" worldBeforePartition
     
     printRawAsciiWorld height (comparing id) world
     print world

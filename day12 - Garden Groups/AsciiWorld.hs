@@ -14,6 +14,7 @@ module AsciiWorld ( AsciiWorld(..)
                   , copyNamedMask
                   , applyNamedMask
                   , setPoint
+                  , deletePoint
                   , insertMaskAtPoint
                   , isOverlappingMasks
                   , prefixMasksAndPoints
@@ -177,12 +178,12 @@ updateMask f maskName w = w { asciiWorldMasks = M.update f maskName (asciiWorldM
 alterMask :: (Maybe Mask -> Maybe Mask) -> String -> AsciiWorld -> AsciiWorld
 alterMask f maskName w = w { asciiWorldMasks = M.alter f maskName (asciiWorldMasks w) }
 
-msbPointOfMask :: String -> AsciiWorld -> Point
-msbPointOfMask maskName w = msbPoint width (fromJust (lookupMask maskName w))
+msbPointOfMask :: String -> AsciiWorld -> Maybe Point
+msbPointOfMask maskName w = fmap (msbPoint width) (lookupMask maskName w)
   where width = asciiWorldWidth w
 
-middlePointOfMask :: String -> AsciiWorld -> Point
-middlePointOfMask maskName w = middlePoint width (fromJust (lookupMask maskName w))
+middlePointOfMask :: String -> AsciiWorld -> Maybe Point
+middlePointOfMask maskName w = fmap (middlePoint width) (lookupMask maskName w)
   where width = asciiWorldWidth w
 
 -- Testing
@@ -270,6 +271,9 @@ exampleOfMaskOperation4 = (\(height,world) -> print . popCount . fromJust . M.lo
 
 setPoint :: String -> (Int,Int) -> AsciiWorld -> AsciiWorld
 setPoint name (x,y) w = w {asciiWorldPoints = M.insert name (x,y) (asciiWorldPoints w)}
+
+deletePoint :: String -> AsciiWorld -> AsciiWorld
+deletePoint name w = w {asciiWorldPoints = M.delete name (asciiWorldPoints w)}
 
 insertMaskAtPoint :: String -> String -> AsciiWorld -> Maybe AsciiWorld
 insertMaskAtPoint layerName pointName w = do
