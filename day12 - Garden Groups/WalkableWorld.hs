@@ -43,7 +43,8 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , applyNamedMask
                         , insertMaskAtPoint
                         , prefixMasksAndPoints
-                        , dropNCharsFromMasksAndPoints )
+                        , dropNCharsFromMasksAndPoints
+                        , deleteMask )
 
 newtype WalkableWorld = WalkableWorld {asAsciiWorld :: AsciiWorld} deriving (Show)
 
@@ -53,6 +54,14 @@ addNoGoToRightAndTop inStr = unlines . (\rows -> map (const '#') (head rows) : r
 -- Assumes all rows have equal length
 readWorld :: Char -> String -> String -> (Int, WalkableWorld)
 readWorld bgChar singularChars = fmap (WalkableWorld . prefixMasksAndPoints "_" ["#"]) . readAsciiWorld bgChar singularChars . addNoGoToRightAndTop
+
+-- This modify modifies the underlying asciiWorld directly, including all of the stuff that WalkableWorld did to it (such as NoGos and underscores in names)
+modifyRawAsciiWorld :: (AsciiWorld -> AsciiWorld) -> WalkableWorld -> WalkableWorld
+modifyRawAsciiWorld f = WalkableWorld . f . asAsciiWorld
+
+-- This modify allows you to modify the world in a way ignorant to the stuff that WalkableWorld added (such as NoGos and underscores in names)
+modifyAsciiWorld :: (AsciiWorld -> AsciiWorld) -> WalkableWorld -> WalkableWorld
+modifyAsciiWorld f = undefined -- Ensure the NoGos, underscores and whatever else are torn down before applying f before putting them back after.
 
 showWorld :: Int -> (String -> String -> Ordering) -> WalkableWorld -> String
 showWorld height nameZOrder w = unlines . map init . drop 1 . lines . showAsciiWorld height nameZOrderWithSpecials . dropNCharsFromMasksAndPoints 1 ["#"] . asAsciiWorld $ w
@@ -101,7 +110,15 @@ maskNames = map (drop 1) . M.keys . M.delete "#" . asciiWorldMasks . asAsciiWorl
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
 partitionMaskByReachableLRDU :: String -> WalkableWorld -> WalkableWorld
-partitionMaskByReachableLRDU = undefined
+partitionMaskByReachableLRDU maskName w = w -- To Do: Implement this
+
+test = do
+    contents <- readFile "day12 (example).csv"
+    
+    let (height, initWorld) = readWorld '.' [] contents
+        worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld ["_A", "_B", "_D", "_E"]
+        world = partitionMaskByReachableLRDU "C" worldBeforePartition
+    printWorld height (comparing id) world
 
 partitionAllMasksByReachableLRDU :: WalkableWorld -> WalkableWorld
 partitionAllMasksByReachableLRDU w = foldl' (flip partitionMaskByReachableLRDU) w (maskNames w)

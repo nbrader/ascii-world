@@ -17,7 +17,8 @@ module AsciiWorld ( AsciiWorld(..)
                   , insertMaskAtPoint
                   , isOverlappingMasks
                   , prefixMasksAndPoints
-                  , dropNCharsFromMasksAndPoints ) where
+                  , dropNCharsFromMasksAndPoints
+                  , deleteMask ) where
 
 -------------
 -- Imports --
@@ -153,6 +154,8 @@ dropNCharsFromMasksAndPoints n exclude w =
     w { asciiWorldMasks  = dropNCharsFromKeys n exclude (asciiWorldMasks w)
       , asciiWorldPoints = dropNCharsFromKeys n exclude (asciiWorldPoints w) }
 
+deleteMask :: String -> AsciiWorld -> AsciiWorld
+deleteMask maskName w = w { asciiWorldMasks = M.delete maskName (asciiWorldMasks w) }
 
 -- Testing
 exampleAsciiWorld1 :: AsciiWorld
