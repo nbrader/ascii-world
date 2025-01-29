@@ -5,6 +5,24 @@ module Util where
 
 import Test.QuickCheck
 import Data.Function (on)
+import Data.Maybe (fromMaybe)
+import Data.List (sortBy, maximumBy)
+
+maximumMaybeBy :: (a -> a -> Ordering) -> [Maybe a] -> Maybe a
+maximumMaybeBy cmp xs = maximumBy maybeCompare xs
+  where
+    maybeCompare Nothing Nothing = EQ
+    maybeCompare Nothing _       = LT
+    maybeCompare _ Nothing       = GT
+    maybeCompare (Just x) (Just y) = cmp x y
+
+sortMaybesBy :: (a -> a -> Ordering) -> [Maybe a] -> [Maybe a]
+sortMaybesBy cmp xs = sortBy maybeCompare xs
+  where
+    maybeCompare Nothing Nothing = EQ
+    maybeCompare Nothing _       = LT
+    maybeCompare _ Nothing       = GT
+    maybeCompare (Just x) (Just y) = cmp x y
 
 replace [] _ = []
 replace (_:xs) (0,a) = a:xs
