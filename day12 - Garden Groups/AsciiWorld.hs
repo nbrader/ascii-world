@@ -107,72 +107,33 @@ showAsciiWorld height maskToChar pointsToChar nameZOrder asciiWorld = unlines . 
 printAsciiWorld :: (Ord km, Ord kp) => Int -> (km -> Char) -> (kp -> Char) -> (Either km kp -> Either km kp -> Ordering) -> AsciiWorld km kp -> IO ()
 printAsciiWorld height maskToChar pointsToChar nameZOrder asciiWorld = putStrLn $ showAsciiWorld height maskToChar pointsToChar nameZOrder asciiWorld 
 
+
+deleteMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> AsciiWorld km kp
+deleteMask maskName w = w { asciiWorldMasks = M.delete maskName (asciiWorldMasks w) }
+
+lookupMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Mask
+lookupMask maskName w = M.lookup maskName (asciiWorldMasks w)
+
+adjustMask :: (Ord km, Ord kp) => (Mask -> Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
+adjustMask f maskName w = w { asciiWorldMasks = M.adjust f maskName (asciiWorldMasks w) }
+
+updateMask :: (Ord km, Ord kp) => (Mask -> Maybe Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
+updateMask f maskName w = w { asciiWorldMasks = M.update f maskName (asciiWorldMasks w) }
+
+alterMask :: (Ord km, Ord kp) => (Maybe Mask -> Maybe Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
+alterMask f maskName w = w { asciiWorldMasks = M.alter f maskName (asciiWorldMasks w) }
+
+msbPointOfMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Point
+msbPointOfMask maskName w = fmap (msbPoint width) (lookupMask maskName w)
+  where width = asciiWorldWidth w
+
+middlePointOfMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Point
+middlePointOfMask maskName w = fmap (middlePoint width) (lookupMask maskName w)
+  where width = asciiWorldWidth w
+
+
 -- To Do: - Continue uncommenting the rest, making it work with the new version of AsciiWorld which allows arbitrary keys.
 --        - After getting this file working, I'll need to correct the files it depends on accordingly.
-
--- -- Count how many times the prefix appears at the start of a key
--- countPrefixOccurrences :: String -> String -> Int
--- countPrefixOccurrences prefix = length . takeWhile (isPrefixOf prefix) . iterate (drop (length prefix))
-
--- -- Transform the keys while ensuring no collisions, with an exclusion list
--- addPrefixToKeys :: String -> [String] -> M.Map String v -> M.Map String v
--- addPrefixToKeys prefix exclude m =
-  -- let keysWithCounts = [(key, countPrefixOccurrences prefix key) | key <- M.keys m, key `notElem` exclude]
-      -- sortedKeys = map fst $ sortOn (Down . snd) keysWithCounts  -- Sort descending by count
-  -- in M.fromList $ renameKeys sortedKeys ++ [(k, v) | (k, v) <- M.toList m, k `elem` exclude]
-  -- where
-    -- renameKeys [] = []
-    -- renameKeys (key:remaining) =
-      -- let newKey = prefix ++ key
-      -- in if newKey `M.member` m
-         -- then renameKeys remaining ++ [(newKey, m M.! key)]
-         -- else (newKey, m M.! key) : renameKeys remaining
-
--- -- Drop n characters from the start of all keys, with an exclusion list
--- dropNCharsFromKeys :: Int -> [String] -> M.Map String v -> M.Map String v
--- dropNCharsFromKeys n exclude m =
-  -- let keysSorted = sortOn (Down . length) [key | key <- M.keys m, key `notElem` exclude]  -- Sort by length (longest first)
-  -- in M.fromList $ renameKeys keysSorted ++ [(k, v) | (k, v) <- M.toList m, k `elem` exclude]
-  -- where
-    -- renameKeys [] = []
-    -- renameKeys (key:remaining) =
-      -- let newKey = drop n key
-      -- in if newKey `M.member` m
-         -- then renameKeys remaining ++ [(newKey, m M.! key)]
-         -- else (newKey, m M.! key) : renameKeys remaining
-
--- prefixMasksAndPoints :: String -> [String] -> AsciiWorld -> AsciiWorld
--- prefixMasksAndPoints p exclude w = 
-    -- w { asciiWorldMasks  = addPrefixToKeys p exclude (asciiWorldMasks w)
-      -- , asciiWorldPoints = addPrefixToKeys p exclude (asciiWorldPoints w) }
-
--- dropNCharsFromMasksAndPoints :: Int -> [String] -> AsciiWorld -> AsciiWorld
--- dropNCharsFromMasksAndPoints n exclude w = 
-    -- w { asciiWorldMasks  = dropNCharsFromKeys n exclude (asciiWorldMasks w)
-      -- , asciiWorldPoints = dropNCharsFromKeys n exclude (asciiWorldPoints w) }
-
--- deleteMask :: String -> AsciiWorld -> AsciiWorld
--- deleteMask maskName w = w { asciiWorldMasks = M.delete maskName (asciiWorldMasks w) }
-
--- lookupMask :: String -> AsciiWorld -> Maybe Mask
--- lookupMask maskName w = M.lookup maskName (asciiWorldMasks w)
-
--- adjustMask :: (Mask -> Mask) -> String -> AsciiWorld -> AsciiWorld
--- adjustMask f maskName w = w { asciiWorldMasks = M.adjust f maskName (asciiWorldMasks w) }
-
--- updateMask :: (Mask -> Maybe Mask) -> String -> AsciiWorld -> AsciiWorld
--- updateMask f maskName w = w { asciiWorldMasks = M.update f maskName (asciiWorldMasks w) }
-
--- alterMask :: (Maybe Mask -> Maybe Mask) -> String -> AsciiWorld -> AsciiWorld
--- alterMask f maskName w = w { asciiWorldMasks = M.alter f maskName (asciiWorldMasks w) }
-
--- msbPointOfMask :: String -> AsciiWorld -> Maybe Point
--- msbPointOfMask maskName w = fmap (msbPoint width) (lookupMask maskName w)
-  -- where width = asciiWorldWidth w
-
--- middlePointOfMask :: String -> AsciiWorld -> Maybe Point
--- middlePointOfMask maskName w = fmap (middlePoint width) (lookupMask maskName w)
-  -- where width = asciiWorldWidth w
 
 -- -- Testing
 -- exampleAsciiWorld1 :: AsciiWorld
