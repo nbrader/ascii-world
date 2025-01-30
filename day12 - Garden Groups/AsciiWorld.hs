@@ -133,10 +133,6 @@ middlePointOfMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Point
 middlePointOfMask maskName w = fmap (middlePoint width) (lookupMask maskName w)
   where width = asciiWorldWidth w
 
-
--- To Do: - Continue uncommenting the rest, making it work with the new version of AsciiWorld which allows arbitrary keys.
---        - After getting this file working, I'll need to correct the files it depends on accordingly.
-
 -- Assumes asciiWorlds are same size
 -- Left-biased such that the background character and any singular points they share are taken from the left
 combineTwoAsciiWorlds :: (Ord km, Ord kp) => AsciiWorld km kp -> AsciiWorld km kp -> AsciiWorld km kp
