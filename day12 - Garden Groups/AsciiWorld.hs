@@ -164,6 +164,12 @@ isInNamedMask name point asciiWorld = inMasks
         Just bits -> testBit bits (pointToIndex (asciiWorldWidth asciiWorld) point)
         Nothing -> False
 
+isNamedPointOrInNamedMask :: (Ord k) => k -> Point -> AsciiWorld k k -> Bool
+isNamedPointOrInNamedMask name point asciiWorld = inPoints || inMasks
+  where
+    inPoints = isNamedPoint name point asciiWorld
+    inMasks = isInNamedMask name point asciiWorld
+
 moveNamedMask :: (Ord km, Ord kp) => km -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
 moveNamedMask name (dx,dy) w = w {asciiWorldMasks = M.update (\pts -> Just $ moveMask width (dx,dy) pts) name (asciiWorldMasks w)}
   where width = asciiWorldWidth w
