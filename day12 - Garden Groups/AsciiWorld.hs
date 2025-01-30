@@ -33,7 +33,9 @@ data AsciiWorld km kp
 emptyAsciiWorld :: (Ord km, Ord kp) => Char -> Int -> AsciiWorld km kp
 emptyAsciiWorld bgChar width = AsciiWorld bgChar mempty mempty width
 
-
+-- To Do: Possible enhancement: Currently, we have bgChar functioning as both the character to ignore when reading a world in and as the character to display when nothing exists at a point.
+--                              Change (charMap :: Char -> Either km kp) into (charMap :: Char -> Maybe (Either km kp)), make Nothing mean background and have the bgChar decided as argument to showAsciiWorld.
+--                              This might entail also adding a (width :: Maybe Int) argument which, when supplied, sets the width of the world (when Nothing, the length of the first row decides it as before).
 -- Assumes all rows have equal length
 readAsciiWorld :: (Ord km, Ord kp) => Char -> (Char -> Either km kp) -> String -> (Int, AsciiWorld km kp)
 readAsciiWorld bgChar charMap inStr
