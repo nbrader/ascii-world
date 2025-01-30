@@ -135,20 +135,20 @@ middlePointOfMask maskName w = fmap (middlePoint width) (lookupMask maskName w)
 -- To Do: - Continue uncommenting the rest, making it work with the new version of AsciiWorld which allows arbitrary keys.
 --        - After getting this file working, I'll need to correct the files it depends on accordingly.
 
--- -- Assumes asciiWorlds are same size
--- -- Left-biased such that the background character and any singular points they share are taken from the left
--- combineTwoAsciiWorlds :: (Ord km, Ord kp) => AsciiWorld km kp -> AsciiWorld km kp -> AsciiWorld km kp
--- combineTwoAsciiWorlds w1 w2
-    -- = w1 { asciiWorldMasks = M.unionWith combineMasks (asciiWorldMasks w1) (asciiWorldMasks w2),
-           -- asciiWorldPoints = M.unionWith combinePoints (asciiWorldPoints w1) (asciiWorldPoints w2) }
-  -- where combineMasks :: Mask -> Mask -> Mask
-        -- combineMasks = bitwiseOr
+-- Assumes asciiWorlds are same size
+-- Left-biased such that the background character and any singular points they share are taken from the left
+combineTwoAsciiWorlds :: (Ord km, Ord kp) => AsciiWorld km kp -> AsciiWorld km kp -> AsciiWorld km kp
+combineTwoAsciiWorlds w1 w2
+    = w1 { asciiWorldMasks = M.unionWith combineMasks (asciiWorldMasks w1) (asciiWorldMasks w2),
+           asciiWorldPoints = M.unionWith combinePoints (asciiWorldPoints w1) (asciiWorldPoints w2) }
+  where combineMasks :: Mask -> Mask -> Mask
+        combineMasks = bitwiseOr
         
-        -- combinePoints :: Point -> Point -> Point
-        -- combinePoints point1 _ = point1
+        combinePoints :: [Point] -> [Point] -> [Point]
+        combinePoints = (++)
 
--- combineAsciiWorlds :: (Ord km, Ord kp) => [AsciiWorld km kp] -> AsciiWorld km kp
--- combineAsciiWorlds = foldr1 combineTwoAsciiWorlds
+combineAsciiWorlds :: (Ord km, Ord kp) => [AsciiWorld km kp] -> AsciiWorld km kp
+combineAsciiWorlds = foldr1 combineTwoAsciiWorlds
 
 -- isNamedPoint :: (Ord km, Ord kp) => String -> Point -> AsciiWorld km kp -> Bool
 -- isNamedPoint name point asciiWorld = inPoints
