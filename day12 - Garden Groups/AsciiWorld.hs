@@ -150,29 +150,23 @@ combineTwoAsciiWorlds w1 w2
 combineAsciiWorlds :: (Ord km, Ord kp) => [AsciiWorld km kp] -> AsciiWorld km kp
 combineAsciiWorlds = foldr1 combineTwoAsciiWorlds
 
--- isNamedPoint :: (Ord km, Ord kp) => String -> Point -> AsciiWorld km kp -> Bool
--- isNamedPoint name point asciiWorld = inPoints
-  -- where
-    -- inPoints = case M.lookup name (asciiWorldPoints asciiWorld) of
-        -- Just p -> p == point
-        -- Nothing -> False
+isNamedPoint :: (Ord km, Ord kp) => kp -> Point -> AsciiWorld km kp -> Bool
+isNamedPoint name point asciiWorld = inPoints
+  where
+    inPoints = case M.lookup name (asciiWorldPoints asciiWorld) of
+        Just ps -> point `elem` ps
+        Nothing -> False
 
--- isInNamedMask :: (Ord km, Ord kp) => String -> Point -> AsciiWorld km kp -> Bool
--- isInNamedMask name point asciiWorld = inMasks
-  -- where
-    -- inMasks = case M.lookup name (asciiWorldMasks asciiWorld) of
-        -- Just bits -> testBit bits (pointToIndex (asciiWorldWidth asciiWorld) point)
-        -- Nothing -> False
+isInNamedMask :: (Ord km, Ord kp) => km -> Point -> AsciiWorld km kp -> Bool
+isInNamedMask name point asciiWorld = inMasks
+  where
+    inMasks = case M.lookup name (asciiWorldMasks asciiWorld) of
+        Just bits -> testBit bits (pointToIndex (asciiWorldWidth asciiWorld) point)
+        Nothing -> False
 
--- isNamedPointOrInNamedMask :: (Ord km, Ord kp) => String -> Point -> AsciiWorld km kp -> Bool
--- isNamedPointOrInNamedMask name point asciiWorld = inPoints || inMasks
-  -- where
-    -- inPoints = isNamedPoint name point asciiWorld
-    -- inMasks = isInNamedMask name point asciiWorld
-
--- moveNamedMask :: (Ord km, Ord kp) => String -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
--- moveNamedMask name (dx,dy) w = w {asciiWorldMasks = M.update (\pts -> Just $ moveMask width (dx,dy) pts) name (asciiWorldMasks w)}
-  -- where width = asciiWorldWidth w
+moveNamedMask :: (Ord km, Ord kp) => km -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
+moveNamedMask name (dx,dy) w = w {asciiWorldMasks = M.update (\pts -> Just $ moveMask width (dx,dy) pts) name (asciiWorldMasks w)}
+  where width = asciiWorldWidth w
 
 movePointsOfNameBy :: (Ord km, Ord kp) => kp -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
 movePointsOfNameBy name (dx,dy) w = w {asciiWorldPoints = M.update (\pts -> Just $ map (movePoint width (dx,dy)) pts) name (asciiWorldPoints w)}
