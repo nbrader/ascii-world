@@ -178,40 +178,40 @@ movePointsOfNameBy :: (Ord km, Ord kp) => kp -> (Int,Int) -> AsciiWorld km kp ->
 movePointsOfNameBy name (dx,dy) w = w {asciiWorldPoints = M.update (\pts -> Just $ map (movePoint width (dx,dy)) pts) name (asciiWorldPoints w)}
   where width = asciiWorldWidth w
 
--- copyNamedMask :: (Ord km, Ord kp) => String -> String -> AsciiWorld km kp -> AsciiWorld km kp
--- copyNamedMask srcName destName w = fromMaybe w $ do
-    -- mask <- M.lookup srcName (asciiWorldMasks w)
-    -- return $ w {asciiWorldMasks = M.insert destName mask (asciiWorldMasks w)}
+copyNamedMask :: (Ord km, Ord kp) => km -> km -> AsciiWorld km kp -> AsciiWorld km kp
+copyNamedMask srcName destName w = fromMaybe w $ do
+    mask <- M.lookup srcName (asciiWorldMasks w)
+    return $ w {asciiWorldMasks = M.insert destName mask (asciiWorldMasks w)}
 
--- applyNamedMask :: (Ord km, Ord kp) => (Mask -> Mask -> Mask) -> String -> String -> AsciiWorld km kp -> AsciiWorld km kp
--- applyNamedMask op modifier target w
-    -- | not (modifier `M.member` asciiWorldMasks w) = error $ "applyNamedMask: not (modifier `M.member` asciiWorldMasks w) == False where modifier == " ++ modifier
-    -- | not (target   `M.member` asciiWorldMasks w) = error $ "applyNamedMask: not (target `M.member` asciiWorldMasks w) == False where target == " ++ modifier
-    -- | otherwise = w {asciiWorldMasks = M.insert target newMask (asciiWorldMasks w)}
-  -- where mask1 = fromJust $ M.lookup modifier (asciiWorldMasks w)
-        -- mask2 = fromJust $ M.lookup target   (asciiWorldMasks w)
-        -- newMask = mask1 `op` mask2
+applyNamedMask :: (Ord km, Ord kp) => (Mask -> Mask -> Mask) -> km -> km -> AsciiWorld km kp -> AsciiWorld km kp
+applyNamedMask op modifier target w
+    | not (modifier `M.member` asciiWorldMasks w) = error $ "applyNamedMask: not (modifier `M.member` asciiWorldMasks w) == False"
+    | not (target   `M.member` asciiWorldMasks w) = error $ "applyNamedMask: not (target `M.member` asciiWorldMasks w) == False"
+    | otherwise = w {asciiWorldMasks = M.insert target newMask (asciiWorldMasks w)}
+  where mask1 = fromJust $ M.lookup modifier (asciiWorldMasks w)
+        mask2 = fromJust $ M.lookup target   (asciiWorldMasks w)
+        newMask = mask1 `op` mask2
 
--- setPoint :: (Ord km, Ord kp) => String -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
--- setPoint name (x,y) w = w {asciiWorldPoints = M.insert name [(x,y)] (asciiWorldPoints w)}
+setPoint :: (Ord km, Ord kp) => kp -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
+setPoint name (x,y) w = w {asciiWorldPoints = M.insert name [(x,y)] (asciiWorldPoints w)}
 
--- deletePoints :: (Ord km, Ord kp) => kp -> AsciiWorld km kp -> AsciiWorld km kp
--- deletePoints name w = w {asciiWorldPoints = M.delete name (asciiWorldPoints w)}
+deletePoints :: (Ord km, Ord kp) => kp -> AsciiWorld km kp -> AsciiWorld km kp
+deletePoints name w = w {asciiWorldPoints = M.delete name (asciiWorldPoints w)}
 
--- insertMaskAtPoint :: (Ord km, Ord kp) => km -> kp -> AsciiWorld km kp -> Maybe (AsciiWorld km kp)
--- insertMaskAtPoint layerName pointName w = do
-    -- point <- M.lookup pointName (asciiWorldPoints w)
-    -- let newMask = pointToMask width point
-    -- return $ w {asciiWorldMasks = M.insert layerName newMask (asciiWorldMasks w)}
-  -- where width = asciiWorldWidth w
+insertMaskFromPoints :: (Ord km, Ord kp) => km -> kp -> AsciiWorld km kp -> Maybe (AsciiWorld km kp)
+insertMaskFromPoints layerName pointName w = do
+    points <- M.lookup pointName (asciiWorldPoints w)
+    let newMask = foldl' bitwiseOr 0 $ map (pointToMask width) points
+    return $ w {asciiWorldMasks = M.insert layerName newMask (asciiWorldMasks w)}
+  where width = asciiWorldWidth w
 
--- isOverlappingMasks :: (Ord km, Ord kp) => km -> km -> AsciiWorld km kp -> Bool
--- isOverlappingMasks name1 name2 w
-    -- = fromMaybe False $ do
-        -- points1 <- M.lookup name1 (asciiWorldMasks w)
-        -- points2 <- M.lookup name2 (asciiWorldMasks w)
+isOverlappingMasks :: (Ord km, Ord kp) => km -> km -> AsciiWorld km kp -> Bool
+isOverlappingMasks name1 name2 w
+    = fromMaybe False $ do
+        points1 <- M.lookup name1 (asciiWorldMasks w)
+        points2 <- M.lookup name2 (asciiWorldMasks w)
         
-        -- return $ points1 `isOverlapping` points2
+        return $ points1 `isOverlapping` points2
 
 
 -- Testing
@@ -221,19 +221,23 @@ exampleAsciiWorld1 = AsciiWorld '.' (M.fromList [("U",3)]) (M.fromList [("U",[(7
 exampleAsciiWorld2 :: AsciiWorld String String
 exampleAsciiWorld2 = AsciiWorld '.' (M.fromList [("U",96)]) (M.fromList [("U",[(0,6)])]) 10
 
--- exampleAsciiWorld3 :: (Ord km, Ord kp) => AsciiWorld km kp
--- exampleAsciiWorld3 = exampleAsciiWorld1 `combineTwoAsciiWorlds` exampleAsciiWorld2
+exampleAsciiWorld3 :: AsciiWorld String String
+exampleAsciiWorld3 = exampleAsciiWorld1 `combineTwoAsciiWorlds` exampleAsciiWorld2
 
--- exampleAsciiWorld4 :: (Ord km, Ord kp) => AsciiWorld km kp
--- exampleAsciiWorld4 = moveNamedPoint "U" (1,1) $ exampleAsciiWorld3
+exampleAsciiWorld4 :: AsciiWorld String String
+exampleAsciiWorld4 = movePointsOfNameBy "U" (1,1) $ exampleAsciiWorld3
 
--- examplePrint1 = printAsciiWorld 10 (comparing id) exampleAsciiWorld1
--- examplePrint2 = printAsciiWorld 10 (comparing id) exampleAsciiWorld2
--- examplePrint3 = printAsciiWorld 10 (comparing id) exampleAsciiWorld3
--- examplePrint4 = printAsciiWorld 10 (comparing id) exampleAsciiWorld4
+examplePrint1 = printAsciiWorld 10 head head compare exampleAsciiWorld1
+examplePrint2 = printAsciiWorld 10 head head compare exampleAsciiWorld2
+examplePrint3 = printAsciiWorld 10 head head compare exampleAsciiWorld3
+examplePrint4 = printAsciiWorld 10 head head compare exampleAsciiWorld4
 
--- exampleOfMaskOperation1 = (\(height,world) -> printAsciiWorld height (comparing id) world)                      $ fmap (moveNamedMask "+" (0,3) . applyNamedMask bitwiseXor "*" "+" . moveNamedMask "+" (0,1) . copyNamedMask "*" "+") $ readAsciiWorld '.' [] (unlines [".....",".....",".....",".....",".***.","..*..","....."])
--- exampleOfMaskOperation2 = (\(height,world) -> print . popCount . fromJust . M.lookup "+" . asciiWorldMasks $ world) $ fmap (moveNamedMask "+" (0,3) . applyNamedMask bitwiseXor "*" "+" . moveNamedMask "+" (0,1) . copyNamedMask "*" "+") $ readAsciiWorld '.' [] (unlines [".....",".....",".....",".....",".***.","..*..","....."])
+exampleOfMaskOperationsHeightHandWorld :: (Int, AsciiWorld String String)
+exampleOfMaskOperationsHeightHandWorld = readAsciiWorld '.' (Left . (:[])) (unlines [".....",".....",".....",".....",".***.","..*..","....."])
+
+exampleOfMaskOperation1, exampleOfMaskOperation2 :: IO ()
+exampleOfMaskOperation1 = (\(height,world) -> printAsciiWorld height head head compare world)                       $ fmap (moveNamedMask "+" (0,3) . applyNamedMask bitwiseXor "*" "+" . moveNamedMask "+" (0,1) . copyNamedMask "*" "+") $ exampleOfMaskOperationsHeightHandWorld
+exampleOfMaskOperation2 = (\(height,world) -> print . popCount . fromJust . M.lookup "+" . asciiWorldMasks $ world) $ fmap (moveNamedMask "+" (0,3) . applyNamedMask bitwiseXor "*" "+" . moveNamedMask "+" (0,1) . copyNamedMask "*" "+") $ exampleOfMaskOperationsHeightHandWorld
 
 printExampleWorld5  = let bgChar = '.'
                           
@@ -277,5 +281,34 @@ printExampleWorld5' = let bgChar = '.'
                           asciiWorld' = movePointsOfNameBy "X" (1,1) asciiWorld
                       in printAsciiWorld height maskToChar pointsToChar nameZOrder asciiWorld'
 
--- exampleOfMaskOperation3 = (\(height,world) -> printAsciiWorld height (comparing id) world)                      $ fmap (applyNamedMask bitwiseXor " " "Q" . moveNamedMask " " (0,1) . copyNamedMask "Q" " ") $ exampleWorld5
--- exampleOfMaskOperation4 = (\(height,world) -> print . popCount . fromJust . M.lookup "+" . asciiWorldMasks $ world) $ fmap (applyNamedMask bitwiseXor "+" "Q" . moveNamedMask "+" (0,1) . copyNamedMask "Q" "+") $ exampleWorld5
+exampleOfMaskOperation3 = let bgChar = '.'
+                          
+                              charMap 'X' =  Left "X"
+                              charMap 'Y' =  Left "Y"
+                              charMap  _  =  Left ""
+                              
+                              inStr = "XYZ"
+                              
+                              maskToChar  ""   = '-'
+                              maskToChar (x:_) = x
+                              
+                              pointsToChar  ""   = '-'
+                              pointsToChar (x:_) = x
+                              
+                              nameZOrder (Right _) (Left  _) = LT
+                              nameZOrder (Left  _) (Right _) = GT
+                              nameZOrder _ _ = EQ
+                              
+                              (height, asciiWorld) = readAsciiWorld bgChar charMap inStr :: (Int, AsciiWorld String String)
+                          in (\(height,world) -> printAsciiWorld height maskToChar pointsToChar nameZOrder world) $ fmap (applyNamedMask bitwiseXor " " "X" . moveNamedMask " " (0,1) . copyNamedMask "X" " ") $ (height, asciiWorld)
+
+exampleOfMaskOperation4 = let bgChar = '.'
+                          
+                              charMap 'X' =  Left "X"
+                              charMap 'Y' =  Left "Y"
+                              charMap  _  =  Left ""
+                              
+                              inStr = "XYZ"
+                              
+                              (height, asciiWorld) = readAsciiWorld bgChar charMap inStr :: (Int, AsciiWorld String String)
+                          in (\(height,world) -> print . popCount . fromJust . M.lookup "+" . asciiWorldMasks $ world) $ fmap (applyNamedMask bitwiseXor "+" "X" . moveNamedMask "+" (0,1) . copyNamedMask "X" "+") $ (height, asciiWorld)
