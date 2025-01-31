@@ -20,7 +20,7 @@ import Data.Foldable
 import Safe (atMay)
 
 import Util ( replace, maximumMaybeBy )
-import Mask ( Point, Mask, pointToIndex, pointToMask, moveMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, msbPoint, middlePoint )
+import Mask ( Point, Mask, pointToIndex, pointToMask, moveMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, msbPoint, middlePoint, changeMaskWidth, setMaskWidth )
 
 -- Each obj has a shape encoded as bits of an Integer.
 
@@ -73,14 +73,28 @@ readAsciiWorld charMap inStr
 
         setBitInMask (x, y) maybeMask = Just $ setBit (fromMaybe 0 maybeMask) (y * width + x)
 
--- expandWidth :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
--- expandWidth delta w = undefined
+changeWidth :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
+changeWidth delta w = w { asciiWorldMasks = M.map (changeMaskWidth oldWidth delta) (asciiWorldMasks w)
+                        , asciiWorldPoints = newPoints
+                        , asciiWorldWidth = newWidth }
+  where oldWidth = asciiWorldWidth w
+        newWidth = oldWidth + delta
+        
+        oldPoints = asciiWorldPoints w
+        newPoints
+            | delta < 0 = M.map (filter (\(x,_) -> x >= newWidth)) oldPoints
+            | otherwise = oldPoints
 
--- reduceWidth :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
--- reduceWidth delta w = undefined
-
--- setWidth :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
--- setWidth width w = undefined
+setWidth :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
+setWidth newWidth w = w { asciiWorldMasks = M.map (setMaskWidth oldWidth newWidth) (asciiWorldMasks w)
+                        , asciiWorldPoints = newPoints
+                        , asciiWorldWidth = newWidth }
+  where oldWidth = asciiWorldWidth w
+        
+        oldPoints = asciiWorldPoints w
+        newPoints
+            | newWidth < oldWidth = M.map (filter (\(x,_) -> x >= newWidth)) oldPoints
+            | otherwise = oldPoints
 
 showAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (km -> Char) -> (kp -> Char) -> (Either km kp -> Either km kp -> Ordering) -> AsciiWorld km kp -> String
 showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromMasksAndPoints
@@ -284,7 +298,7 @@ printExampleWorld5' = let bgChar = '.'
                           nameZOrder _ _ = EQ
                           
                           (height, asciiWorld) = readAsciiWorld charMap inStr
-                          asciiWorld' = movePointsOfNameBy "X" (1,1) asciiWorld
+                          asciiWorld' = setWidth 53 $ movePointsOfNameBy "X" (1,1) asciiWorld
                       in printAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld'
 
 exampleOfMaskOperation3 = let bgChar = '.'
