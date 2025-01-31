@@ -72,3 +72,31 @@ msbPoint width n = indexToPoint width (msbIndex n)
 
 middlePoint :: Int -> Integer -> Point
 middlePoint width n = indexToPoint width (middleIndex n)
+
+-- expandMaskWidth only works for non-negative delta
+expandMaskWidth :: Int -> Int -> Mask -> Mask
+expandMaskWidth oldWidth delta x
+    | 1 `shift` oldWidth > x = x
+    | otherwise = let bitsOnHigherRows = x `shift` (-oldWidth)
+                      bitsOnThisRow = x - (bitsOnHigherRows `shift` oldWidth)
+                  in bitsOnThisRow + ((expandMaskWidth oldWidth delta bitsOnHigherRows) `shift` (oldWidth+delta))
+
+-- reduceMaskWidth seems to work even for negative delta
+reduceMaskWidth :: Int -> Int -> Mask -> Mask
+reduceMaskWidth oldWidth delta x
+    | 1 `shift` oldWidth > x = let choppedBits = x `shift` (delta-oldWidth)
+                                   remaining = x - (choppedBits `shift` (oldWidth-delta))
+                               in remaining
+    | otherwise = let bitsOnHigherRows = x `shift` (-oldWidth)
+                      bitsOnThisRow = x - (bitsOnHigherRows `shift` oldWidth)
+                      choppedBits = bitsOnThisRow `shift` (delta-oldWidth)
+                      remaining = bitsOnThisRow - (choppedBits `shift` (oldWidth-delta))
+                  in remaining + ((reduceMaskWidth oldWidth delta bitsOnHigherRows) `shift` (oldWidth-delta))
+
+changeMaskWidth :: Int -> Int -> Mask -> Mask
+changeMaskWidth oldWidth delta x
+    | delta <= 0 = reduceMaskWidth oldWidth (-delta) x
+    | otherwise  = expandMaskWidth oldWidth delta x
+
+setMaskWidth :: Int -> Int -> Mask -> Mask
+setMaskWidth oldWidth newWidth x = changeMaskWidth oldWidth (newWidth - oldWidth) x
