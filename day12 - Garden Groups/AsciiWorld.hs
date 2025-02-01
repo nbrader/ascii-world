@@ -1,7 +1,30 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-21.22 ghci --package containers-0.6.7 --package split-0.2.3.5 --package safe-0.3.19 --package QuickCheck-2.14.3
 
-module AsciiWorld where
+module AsciiWorld   ( AsciiWorld(..)
+                    , WorldKey(..)
+                    , readAsciiWorld
+                    , showAsciiWorld
+                    , combineAsciiWorlds
+                    , moveNamedMask
+                    , movePointsOfNameBy
+                    , addNamedMask
+                    , deleteMask
+                    , lookupMask
+                    , adjustMask
+                    , updateMask
+                    , alterMask
+                    , copyNamedMask
+                    , applyNamedMask
+                    , setPoint
+                    , deletePoints
+                    , insertMaskFromPoints
+                    , setWidth
+                    , changeWidthBy
+                    , mapKeyForMasks
+                    , mapKeyForPoints
+                    , msbPointOfMask
+                    , middlePointOfMask ) where
 
 -------------
 -- Imports --
@@ -143,22 +166,6 @@ showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld = unl
 printAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (km -> Char) -> (kp -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> AsciiWorld km kp -> IO ()
 printAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld = putStrLn $ showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld 
 
-
-deleteMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> AsciiWorld km kp
-deleteMask maskName w = w { asciiWorldMasks = M.delete maskName (asciiWorldMasks w) }
-
-lookupMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Mask
-lookupMask maskName w = M.lookup maskName (asciiWorldMasks w)
-
-adjustMask :: (Ord km, Ord kp) => (Mask -> Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
-adjustMask f maskName w = w { asciiWorldMasks = M.adjust f maskName (asciiWorldMasks w) }
-
-updateMask :: (Ord km, Ord kp) => (Mask -> Maybe Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
-updateMask f maskName w = w { asciiWorldMasks = M.update f maskName (asciiWorldMasks w) }
-
-alterMask :: (Ord km, Ord kp) => (Maybe Mask -> Maybe Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
-alterMask f maskName w = w { asciiWorldMasks = M.alter f maskName (asciiWorldMasks w) }
-
 msbPointOfMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Point
 msbPointOfMask maskName w = fmap (msbPoint width) (lookupMask maskName w)
   where width = asciiWorldWidth w
@@ -209,6 +216,24 @@ moveNamedMask name (dx,dy) w = w {asciiWorldMasks = M.update (\pts -> Just $ mov
 movePointsOfNameBy :: (Ord km, Ord kp) => kp -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
 movePointsOfNameBy name (dx,dy) w = w {asciiWorldPoints = M.update (\pts -> Just $ map (movePoint width (dx,dy)) pts) name (asciiWorldPoints w)}
   where width = asciiWorldWidth w
+
+addNamedMask :: (Ord km, Ord kp) => km -> Mask -> AsciiWorld km kp -> AsciiWorld km kp
+addNamedMask name mask w = w {asciiWorldMasks = M.insert name mask (asciiWorldMasks w)}
+
+deleteMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> AsciiWorld km kp
+deleteMask maskName w = w { asciiWorldMasks = M.delete maskName (asciiWorldMasks w) }
+
+lookupMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Mask
+lookupMask maskName w = M.lookup maskName (asciiWorldMasks w)
+
+adjustMask :: (Ord km, Ord kp) => (Mask -> Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
+adjustMask f maskName w = w { asciiWorldMasks = M.adjust f maskName (asciiWorldMasks w) }
+
+updateMask :: (Ord km, Ord kp) => (Mask -> Maybe Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
+updateMask f maskName w = w { asciiWorldMasks = M.update f maskName (asciiWorldMasks w) }
+
+alterMask :: (Ord km, Ord kp) => (Maybe Mask -> Maybe Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
+alterMask f maskName w = w { asciiWorldMasks = M.alter f maskName (asciiWorldMasks w) }
 
 copyNamedMask :: (Ord km, Ord kp) => km -> km -> AsciiWorld km kp -> AsciiWorld km kp
 copyNamedMask srcName destName w = fromMaybe w $ do
