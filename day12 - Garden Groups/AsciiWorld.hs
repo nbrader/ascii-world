@@ -21,6 +21,7 @@ module AsciiWorld   ( AsciiWorld(..)
                     , setPoint
                     , deletePoints
                     , insertMaskFromPoints
+                    , insertMaskFromNamedPoints
                     , setWidth
                     , changeWidthBy
                     , mapKeyForMasks
@@ -257,11 +258,16 @@ setPoint name (x,y) w = w {asciiWorldPoints = M.insert name [(x,y)] (asciiWorldP
 deletePoints :: (Ord km, Ord kp) => kp -> AsciiWorld km kp -> AsciiWorld km kp
 deletePoints name w = w {asciiWorldPoints = M.delete name (asciiWorldPoints w)}
 
-insertMaskFromPoints :: (Ord km, Ord kp) => km -> kp -> AsciiWorld km kp -> Maybe (AsciiWorld km kp)
-insertMaskFromPoints layerName pointName w = do
-    points <- M.lookup pointName (asciiWorldPoints w)
+insertMaskFromPoints :: (Ord km, Ord kp) => km -> [Point] -> AsciiWorld km kp -> AsciiWorld km kp
+insertMaskFromPoints newMaskName points w = w {asciiWorldMasks = M.insert newMaskName newMask (asciiWorldMasks w)}
+  where width = asciiWorldWidth w
+        newMask = foldl' bitwiseOr 0 $ map (pointToMask width) points
+
+insertMaskFromNamedPoints :: (Ord km, Ord kp) => km -> kp -> AsciiWorld km kp -> Maybe (AsciiWorld km kp)
+insertMaskFromNamedPoints newMaskName pointsName w = do
+    points <- M.lookup pointsName (asciiWorldPoints w)
     let newMask = foldl' bitwiseOr 0 $ map (pointToMask width) points
-    return $ w {asciiWorldMasks = M.insert layerName newMask (asciiWorldMasks w)}
+    return $ w {asciiWorldMasks = M.insert newMaskName newMask (asciiWorldMasks w)}
   where width = asciiWorldWidth w
 
 isOverlappingMasks :: (Ord km, Ord kp) => km -> km -> AsciiWorld km kp -> Bool

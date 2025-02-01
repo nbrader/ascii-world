@@ -51,6 +51,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , setPoint
                         , deletePoints
                         , insertMaskFromPoints
+                        , insertMaskFromNamedPoints
                         , setWidth
                         , changeWidthBy
                         , mapKeyForMasks
@@ -217,8 +218,7 @@ partitionMaskByReachableLRDU maskName w = undefined --WalkableWorld newAsciiWorl
         
         wWithXMidpointMask =
             w'  & setPoint (WWInternal TemporaryPoints) middlePoint
-                & insertMaskFromPoints (WWInternal MidPointMask) (WWInternal TemporaryPoints)
-                & fromJust
+                & fromJust . insertMaskFromNamedPoints (WWInternal MidPointMask) (WWInternal TemporaryPoints)
                 & deletePoints (WWInternal TemporaryPoints)
         
         wWithMidpointXoredWithMaskName =
@@ -238,21 +238,17 @@ test = do
         
         initWorld = readWorld charMap contents
         
-        worldBeforePartition = foldl' (\w maskName -> modifyRawAsciiWorld (deleteMask maskName) w) initWorld masksToDelete
+        (WalkableWorld height worldBeforePartition) = foldl' (\w maskName -> modifyRawAsciiWorld (deleteMask maskName) w) initWorld masksToDelete
         
-        -- world = partitionMaskByReachableLRDU "C" worldBeforePartition
-        (WalkableWorld height w') = worldBeforePartition
-        
-        middlePoint = let maybeMiddlePoint = middlePointOfMask (WWExternal maskNameToKeep) w'
+        middlePoint = let maybeMiddlePoint = middlePointOfMask (WWExternal maskNameToKeep) worldBeforePartition
                        in case maybeMiddlePoint of
                             Just point -> point
-                            Nothing -> error $ "middlePoint failed: \"" ++ [maskNameToKeep]  ++ "\" not found in " ++ show w'
+                            Nothing -> error $ "middlePoint failed: \"" ++ [maskNameToKeep]  ++ "\" not found in " ++ show worldBeforePartition
         
         wWithXMidpointMask =
-            w'  & setPoint (WWInternal TemporaryPoints) middlePoint
-                & insertMaskFromPoints (WWInternal MidPointMask) (WWInternal TemporaryPoints)
-                & fromJust
-                & deletePoints (WWInternal TemporaryPoints)
+            worldBeforePartition    & setPoint (WWInternal TemporaryPoints) middlePoint
+                                    & fromJust . insertMaskFromNamedPoints (WWInternal MidPointMask) (WWInternal TemporaryPoints)
+                                    & deletePoints (WWInternal TemporaryPoints)
         
         wWithMidpointXoredWithMaskName =
             wWithXMidpointMask  & applyMask bitwiseXor (WWInternal MidPointMask) (WWExternal maskNameToKeep)
