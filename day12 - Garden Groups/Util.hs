@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-21.22 ghci --package QuickCheck-2.14.3
+-- stack --resolver lts-21.22 ghci --package containers-0.6.7 --package split-0.2.3.5 --package safe-0.3.19 --package QuickCheck-2.14.3
 
 module Util where
 
@@ -7,6 +7,7 @@ import Test.QuickCheck
 import Data.Function (on)
 import Data.Maybe (fromMaybe)
 import Data.List (sortBy, maximumBy)
+import qualified Data.Map as M
 
 maximumMaybeBy :: (a -> a -> Ordering) -> [Maybe a] -> Maybe a
 maximumMaybeBy cmp xs = maximumBy maybeCompare xs
@@ -73,6 +74,10 @@ rt = (  1 ,   0 )
 
 lrduDirs :: (Integral a) => [(a,a)]
 lrduDirs = [lt,rt,dn,up]
+
+filterKeys :: Ord k => (k -> Bool) -> M.Map k a -> M.Map k a
+filterKeys p m = M.filterWithKey p' m
+  where p' k _ = p k
 
 -- sum (map enumSignedInv2 [0..1000000])
 -- (3.89 secs, 8,563,703,400 bytes)

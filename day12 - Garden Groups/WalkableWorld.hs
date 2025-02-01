@@ -57,6 +57,8 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , mapKeyForMasks
                         , mapKeyForPoints
                         , deleteMask
+                        , filterMasks
+                        , filterMaskKeys
                         , lookupMask
                         , adjustMask
                         , updateMask
@@ -64,7 +66,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , msbPointOfMask
                         , middlePointOfMask )
 
-data WWMaskKey = NoGo | TemporaryMask | Visited deriving (Show, Eq, Ord, Enum, Bounded)
+data WWMaskKey = NoGo | TemporaryMask | Visited | CopyOfTargetMask deriving (Show, Eq, Ord, Enum, Bounded)
 data WWPointsKey = TemporaryPoints deriving (Show, Eq, Ord, Enum, Bounded)
 allWWMaskKeys :: [WWMaskKey]
 allWWMaskKeys = [minBound .. maxBound]
@@ -264,14 +266,16 @@ test = do
                             Nothing -> error $ "middlePoint failed: \"" ++ [maskNameToKeep]  ++ "\" not found in " ++ show worldBeforePartition
         
         visited = [middlePoint]
-        wWithMidpointMask = insertMaskFromPoints (WWInternal Visited) visited worldBeforePartition
-        wWithMidpointXoredWithMaskName = applyMask bitwiseXor (WWInternal Visited) (WWExternal maskNameToKeep) wWithMidpointMask
+        wWithVisitedMask = insertMaskFromPoints (WWInternal Visited) visited worldBeforePartition
+        wWithVisitedMaskAndCopyOfTargetMask = copyMask (WWExternal maskNameToKeep) (WWInternal CopyOfTargetMask) wWithVisitedMask
+        wWithMidpointWithCopyOfTargetMaskXoredWithVisited = applyMask bitwiseXor (WWInternal Visited) (WWExternal maskNameToKeep) wWithVisitedMaskAndCopyOfTargetMask
         
-        newAsciiWorld = wWithMidpointMask
-        newWorld = WalkableWorld height newAsciiWorld
+        newAsciiWorld = filterMaskKeys (\x -> case x of {WWExternal _ -> False; _ -> True}) wWithMidpointWithCopyOfTargetMaskXoredWithVisited
+        newAsciiWorld' = filterMaskKeys (\x -> case x of {WWInternal CopyOfTargetMask -> False; _ -> True}) newAsciiWorld
+        newWorld = WalkableWorld height newAsciiWorld'
     
-    printWorld '.' (either id (head . show) . eitherFromWWKey) (either id (head . show) . eitherFromWWKey) (comparing id) newWorld
-    putStrLn "\n"
+    -- printWorld '.' (either id (head . show) . eitherFromWWKey) (either id (head . show) . eitherFromWWKey) (comparing id) newWorld
+    -- putStrLn "\n"
     printRawAsciiWorld (height+1) '.' (either id (head . show) . eitherFromWWKey) (either id (head . show) . eitherFromWWKey) (comparing id) newWorld
     print newWorld
 

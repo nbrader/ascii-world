@@ -12,6 +12,8 @@ module AsciiWorld   ( AsciiWorld(..)
                     , movePointsOfNameBy
                     , addMask
                     , deleteMask
+                    , filterMasks
+                    , filterMaskKeys
                     , lookupMask
                     , adjustMask
                     , updateMask
@@ -45,7 +47,7 @@ import Data.Monoid
 import Data.Foldable
 import Safe (atMay)
 
-import Util ( replace, maximumMaybeBy )
+import Util ( replace, maximumMaybeBy, filterKeys )
 import Mask ( Point, Mask, pointToIndex, pointToMask, moveMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, msbPoint, middlePoint, changeMaskWidthBy, setMaskWidth )
 
 -- Each obj has a shape encoded as bits of an Integer.
@@ -225,6 +227,12 @@ addMask name mask w = w {asciiWorldMasks = M.insert name mask (asciiWorldMasks w
 
 deleteMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> AsciiWorld km kp
 deleteMask maskName w = w { asciiWorldMasks = M.delete maskName (asciiWorldMasks w) }
+
+filterMaskKeys :: (Ord km, Ord kp) => (km -> Bool) -> AsciiWorld km kp -> AsciiWorld km kp
+filterMaskKeys p w = w { asciiWorldMasks = filterKeys p (asciiWorldMasks w) }
+
+filterMasks :: (Ord km, Ord kp) => (Mask -> Bool) -> AsciiWorld km kp -> AsciiWorld km kp
+filterMasks p w = w { asciiWorldMasks = M.filter p (asciiWorldMasks w) }
 
 lookupMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Mask
 lookupMask maskName w = M.lookup maskName (asciiWorldMasks w)
