@@ -44,10 +44,10 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , readAsciiWorld
                         , showAsciiWorld
                         , combineAsciiWorlds
-                        , moveNamedMask
-                        , addNamedMask
-                        , copyNamedMask
-                        , applyNamedMask
+                        , moveMaskOfNameBy
+                        , addMask
+                        , copyMask
+                        , applyMask
                         , setPoint
                         , deletePoints
                         , insertMaskFromPoints
@@ -89,7 +89,7 @@ maskForNoGoRightAndTop width height = rightNoGos + topNoGos
         topNoGos   = sum [pointToMask width (x,y) | let x = (width-1),           y <- [0..(height-2)]]
 
 addNoGoToRightAndTop :: (Ord km, Ord kp) => Int -> RawAsciiWorld km kp -> RawAsciiWorld km kp
-addNoGoToRightAndTop height w = addNamedMask (WWInternal NoGo) (maskForNoGoRightAndTop width height) w
+addNoGoToRightAndTop height w = addMask (WWInternal NoGo) (maskForNoGoRightAndTop width height) w
   where width = asciiWorldWidth w
 
 removeNoGoFromRightAndTop :: (Ord km, Ord kp) => RawAsciiWorld km kp -> RawAsciiWorld km kp
@@ -139,10 +139,10 @@ printRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (WWKey km WWMaskKey -> 
 printRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder = putStrLn . showRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder
 
 -- removeForbidden :: (Ord km, Ord kp) => WalkableWorld km kp -> WalkableWorld km kp
--- removeForbidden w = WalkableWorld $ applyNamedMask bitwiseSubtract "#" "O" (wwRawAsciiWorld w)
+-- removeForbidden w = WalkableWorld $ applyMask bitwiseSubtract "#" "O" (wwRawAsciiWorld w)
 
 -- progressByAStep :: (Ord km, Ord kp) => WalkableWorld km kp -> WalkableWorld km kp
--- progressByAStep w = removeForbidden . WalkableWorld $ combineAsciiWorlds $ map (\dir -> moveNamedMask "O" dir (wwRawAsciiWorld w)) lrduDirs
+-- progressByAStep w = removeForbidden . WalkableWorld $ combineAsciiWorlds $ map (\dir -> moveMaskOfNameBy "O" dir (wwRawAsciiWorld w)) lrduDirs
 
 -- setOAtS :: (Ord km, Ord kp) => WalkableWorld km kp -> WalkableWorld km kp
 -- setOAtS = WalkableWorld . fromJust . insertMaskAtPoint "O" "S" . wwRawAsciiWorld
@@ -150,9 +150,9 @@ printRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder = putStrLn .
 totalHorizontalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalHorizontalEdgesOverPoints maskName w =
     w & wwRawAsciiWorld
-      & copyNamedMask (WWExternal maskName) (WWInternal Marked)
-      & moveNamedMask (WWInternal Marked) (0,1)
-      & applyNamedMask bitwiseXor (WWExternal maskName) (WWInternal Marked)
+      & copyMask (WWExternal maskName) (WWInternal Marked)
+      & moveMaskOfNameBy (WWInternal Marked) (0,1)
+      & applyMask bitwiseXor (WWExternal maskName) (WWInternal Marked)
       & getMarked
       & countMaskPoints
   
@@ -162,9 +162,9 @@ totalHorizontalEdgesOverPoints maskName w =
 totalVerticalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalVerticalEdgesOverPoints maskName w =
     w & wwRawAsciiWorld
-      & copyNamedMask (WWExternal maskName) (WWInternal Marked)
-      & moveNamedMask (WWInternal Marked) (1,0)
-      & applyNamedMask bitwiseXor (WWExternal maskName) (WWInternal Marked)
+      & copyMask (WWExternal maskName) (WWInternal Marked)
+      & moveMaskOfNameBy (WWInternal Marked) (1,0)
+      & applyMask bitwiseXor (WWExternal maskName) (WWInternal Marked)
       & getMarked
       & countMaskPoints
   where
@@ -215,7 +215,7 @@ partitionMaskByReachableLRDU maskName w = undefined --WalkableWorld newAsciiWorl
                             Just point -> point
                             Nothing -> error $ "middlePoint failed: \"" ++ maskName  ++ "\" not found in " ++ show w'
         wWithXMidpointMask = deletePoints (WWInternal TemporaryPoints) . fromJust . insertMaskFromPoints (WWInternal MidPointMask) (WWInternal TemporaryPoints) . setPoint (WWInternal TemporaryPoints) middlePoint $ w'
-        wWithMidpointXoredWithMaskName = deleteMask (WWInternal MidPointMask) . applyNamedMask bitwiseXor (WWInternal MidPointMask) (WWExternal maskName) $ wWithXMidpointMask
+        wWithMidpointXoredWithMaskName = deleteMask (WWInternal MidPointMask) . applyMask bitwiseXor (WWInternal MidPointMask) (WWExternal maskName) $ wWithXMidpointMask
         newAsciiWorld = wWithMidpointXoredWithMaskName
 
 test = do
@@ -240,7 +240,7 @@ test = do
                             Nothing -> error $ "middlePoint failed: \"" ++ [maskNameToKeep]  ++ "\" not found in " ++ show w'
         wWithXMidpointMask = deletePoints (WWInternal TemporaryPoints) . fromJust . insertMaskFromPoints (WWInternal MidPointMask) (WWInternal TemporaryPoints) . setPoint (WWInternal TemporaryPoints) middlePoint $ w'
         
-        wWithMidpointXoredWithMaskName = applyNamedMask bitwiseXor (WWInternal MidPointMask) (WWExternal maskNameToKeep) $ wWithXMidpointMask
+        wWithMidpointXoredWithMaskName = applyMask bitwiseXor (WWInternal MidPointMask) (WWExternal maskNameToKeep) $ wWithXMidpointMask
         newAsciiWorld = wWithMidpointXoredWithMaskName
         
         newWorld = WalkableWorld height newAsciiWorld
