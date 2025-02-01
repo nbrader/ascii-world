@@ -35,7 +35,16 @@ import Data.Ord
 import Data.Bits
 
 import Util ( lrduDirs )
-import Mask ( Mask, bitwiseSubtract, bitwiseXor, msbIndex, middleIndex, msbPoint, middlePoint, pointToMask )
+import Mask ( Mask
+            , bitwiseSubtract
+            , bitwiseOr
+            , bitwiseXor
+            , bitwiseAnd
+            , msbIndex
+            , middleIndex
+            , msbPoint
+            , middlePoint
+            , pointToMask )
 
 import AsciiWorld as AW ( AsciiWorld(..)
                         , WorldKey(..)
@@ -66,7 +75,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , msbPointOfMask
                         , middlePointOfMask )
 
-data WWMaskKey = NoGo | TemporaryMask | Visited | CopyOfTargetMask deriving (Show, Eq, Ord, Enum, Bounded)
+data WWMaskKey = NoGo | TemporaryMask | Visited | Unvisited | LatestVisited deriving (Show, Eq, Ord, Enum, Bounded)
 data WWPointsKey = TemporaryPoints deriving (Show, Eq, Ord, Enum, Bounded)
 allWWMaskKeys :: [WWMaskKey]
 allWWMaskKeys = [minBound .. maxBound]
@@ -248,7 +257,7 @@ partitionMaskByReachableLRDU maskName w = undefined --WalkableWorld newAsciiWorl
         newAsciiWorld = wWithMidpointXoredWithMaskName
 
 test = do
-    contents <- readFile "day12 (data).csv"
+    contents <- readFile "day12 (example).csv"
     
     let 
         maskNameToKeep = 'C'
@@ -265,14 +274,25 @@ test = do
                             Just point -> point
                             Nothing -> error $ "middlePoint failed: \"" ++ [maskNameToKeep]  ++ "\" not found in " ++ show worldBeforePartition
         
-        visited = [middlePoint]
-        wWithVisitedMask = insertMaskFromPoints (WWInternal Visited) visited worldBeforePartition
-        wWithVisitedMaskAndCopyOfTargetMask = copyMask (WWExternal maskNameToKeep) (WWInternal CopyOfTargetMask) wWithVisitedMask
-        wWithMidpointWithCopyOfTargetMaskXoredWithVisited = applyMask bitwiseXor (WWInternal Visited) (WWExternal maskNameToKeep) wWithVisitedMaskAndCopyOfTargetMask
+        initLatestVisitedMask = [middlePoint]
+        wWithInitLatestVisitedMask = addMask (WWInternal Visited) 0 $ insertMaskFromPoints (WWInternal LatestVisited) initLatestVisitedMask worldBeforePartition
+        wWithVisitedMask = applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithInitLatestVisitedMask
+        wWithVisitedMaskAndUnvisited = copyMask (WWExternal maskNameToKeep) (WWInternal Unvisited) wWithVisitedMask
+        wWithUnvisitedXoredByVisited = applyMask bitwiseXor (WWInternal LatestVisited) (WWInternal Unvisited) wWithVisitedMaskAndUnvisited
+        combinedMaskFromAllShiftedCopiesOfVisited =
+            lrduDirs
+                & combineAsciiWorlds . map (\dir -> moveMaskOfNameBy (WWInternal LatestVisited) dir wWithUnvisitedXoredByVisited)
+                & fromJust . lookupMask (WWInternal LatestVisited)
         
-        newAsciiWorld = filterMaskKeys (\x -> case x of {WWExternal _ -> False; _ -> True}) wWithMidpointWithCopyOfTargetMaskXoredWithVisited
-        newAsciiWorld' = filterMaskKeys (\x -> case x of {WWInternal CopyOfTargetMask -> False; _ -> True}) newAsciiWorld
-        newWorld = WalkableWorld height newAsciiWorld'
+        wWithLatestVisited =
+            wWithUnvisitedXoredByVisited
+                & addMask (WWInternal LatestVisited) combinedMaskFromAllShiftedCopiesOfVisited
+                & applyMask bitwiseAnd (WWInternal Unvisited) (WWInternal LatestVisited)
+                & applyMask bitwiseXor (WWInternal LatestVisited) (WWInternal Unvisited)
+        
+        newAsciiWorld = filterMaskKeys (\x -> case x of {WWExternal _ -> False; _ -> True}) wWithLatestVisited
+        -- newAsciiWorld' = filterMaskKeys (\x -> case x of {WWInternal Unvisited -> False; _ -> True}) newAsciiWorld
+        newWorld = WalkableWorld height newAsciiWorld
     
     -- printWorld '.' (either id (head . show) . eitherFromWWKey) (either id (head . show) . eitherFromWWKey) (comparing id) newWorld
     -- putStrLn "\n"
