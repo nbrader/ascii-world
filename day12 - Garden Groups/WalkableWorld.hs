@@ -236,7 +236,7 @@ maskNames w =
 partitionMaskByReachableLRDU :: (Show km, Ord km, Show kp, Ord kp) => km -> WalkableWorld km kp -> [Mask]
 partitionMaskByReachableLRDU maskKey initWorld = [] -- To Do: Implement with the below testLogic
 
--- testLogic :: (Show km, Ord km, Show kp, Ord kp) => km -> WalkableWorld km kp -> WalkableWorld km kp
+testLogic :: (Show km, Show kp, Ord km, Ord kp) => km -> WalkableWorld km kp -> AsciiWorld (WWKey km WWMaskKey) (WWKey kp WWPointsKey)
 testLogic maskKey initWorld = wWithVisitedMask
   where masksToDelete = map WWExternal . delete maskKey . maskNames $ initWorld
         
