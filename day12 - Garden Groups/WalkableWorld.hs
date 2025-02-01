@@ -245,10 +245,7 @@ test = do
                             Just point -> point
                             Nothing -> error $ "middlePoint failed: \"" ++ [maskNameToKeep]  ++ "\" not found in " ++ show worldBeforePartition
         
-        wWithXMidpointMask =
-            worldBeforePartition    & setPoint (WWInternal TemporaryPoints) middlePoint
-                                    & fromJust . insertMaskFromNamedPoints (WWInternal MidPointMask) (WWInternal TemporaryPoints)
-                                    & deletePoints (WWInternal TemporaryPoints)
+        wWithXMidpointMask = worldBeforePartition & insertMaskFromPoints (WWInternal MidPointMask) [middlePoint]
         
         wWithMidpointXoredWithMaskName =
             wWithXMidpointMask  & applyMask bitwiseXor (WWInternal MidPointMask) (WWExternal maskNameToKeep)
