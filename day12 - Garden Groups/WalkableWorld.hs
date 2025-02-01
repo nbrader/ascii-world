@@ -36,6 +36,7 @@ import Util ( lrduDirs )
 import Mask ( bitwiseSubtract, bitwiseXor, msbIndex, middleIndex, msbPoint, middlePoint )
 
 import AsciiWorld as AW ( AsciiWorld(..)
+                        , WorldKey(..)
                         , readAsciiWorld
                         , showAsciiWorld
                         , combineAsciiWorlds
@@ -56,9 +57,9 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , middlePointOfMask )
 
 data WWMaskKey = NoGo | Marked | MidPointMask deriving (Show, Eq, Ord)
-data WWPointKey = Agent | TemporaryPoints deriving (Show, Eq, Ord)
-type RawAsciiWorld km kp = AsciiWorld (Either km WWMaskKey) (Either kp WWPointKey)
-type WWNameZComp km kp = (Either (Either km WWMaskKey) (Either kp WWPointKey) -> Either (Either km WWMaskKey) (Either kp WWPointKey) -> Ordering)
+data WWPointsKey = Agent | TemporaryPoints deriving (Show, Eq, Ord)
+type RawAsciiWorld km kp = AsciiWorld (Either km WWMaskKey) (Either kp WWPointsKey)
+type WWNameZComp km kp = (WorldKey (Either km WWMaskKey) (Either kp WWPointsKey) -> WorldKey (Either km WWMaskKey) (Either kp WWPointsKey) -> Ordering)
 newtype WalkableWorld km kp = WalkableWorld {getRawAsciiWorld :: RawAsciiWorld km kp} deriving (Show)
 
 addNoGoToRightAndTop :: (Ord km, Ord kp) => RawAsciiWorld km kp -> RawAsciiWorld km kp
@@ -67,21 +68,21 @@ addNoGoToRightAndTop w = undefined -- To Do: Implement this
 removeNoGoFromRightAndTop :: (Ord km, Ord kp) => RawAsciiWorld km kp -> RawAsciiWorld km kp
 removeNoGoFromRightAndTop w = undefined -- To Do: Implement this
 
-addWalkableWorldParts :: (Ord km, Ord kp) => AsciiWorld (Either km WWMaskKey) (Either kp WWPointKey) -> WalkableWorld km kp
+addWalkableWorldParts :: (Ord km, Ord kp) => AsciiWorld (Either km WWMaskKey) (Either kp WWPointsKey) -> WalkableWorld km kp
 addWalkableWorldParts = WalkableWorld . addNoGoToRightAndTop . changeWidthBy 1
 
-undoWalkableWorldParts :: (Ord km, Ord kp) => WalkableWorld km kp -> AsciiWorld (Either km WWMaskKey) (Either kp WWPointKey)
+undoWalkableWorldParts :: (Ord km, Ord kp) => WalkableWorld km kp -> AsciiWorld (Either km WWMaskKey) (Either kp WWPointsKey)
 undoWalkableWorldParts = changeWidthBy (-1) . removeNoGoFromRightAndTop . getRawAsciiWorld
 
 -- Assumes all rows have equal length
-readWorld :: (Ord km, Ord kp) => (Char -> Maybe (Either km kp)) -> String -> (Int, WalkableWorld km kp)
+readWorld :: (Ord km, Ord kp) => (Char -> Maybe (WorldKey km kp)) -> String -> (Int, WalkableWorld km kp)
 readWorld charMap = fmap addWalkableWorldParts . readAsciiWorld charMap'
   where charMap' c
             = do
                 c' <- charMap c
                 return $ case c' of
-                    Left  x1 -> Left (Left x1)
-                    Right x2 -> Right (Left x2)
+                    WKMask   x1 -> WKMask   (Left x1)
+                    WKPoints x2 -> WKPoints (Left x2)
 
 -- This modify modifies the underlying asciiWorld directly, including all of the stuff that WalkableWorld did to it (such as NoGos and underscores in names)
 modifyRawAsciiWorld :: (Ord km, Ord kp) => (RawAsciiWorld km kp -> RawAsciiWorld km kp) -> WalkableWorld km kp -> WalkableWorld km kp
@@ -91,19 +92,19 @@ modifyRawAsciiWorld f = WalkableWorld . f . getRawAsciiWorld
 modifyAsciiWorld :: (Ord km, Ord kp) => (AsciiWorld km kp -> AsciiWorld km kp) -> WalkableWorld km kp -> WalkableWorld km kp
 modifyAsciiWorld f = undefined -- Ensure the NoGos, underscores and whatever else are torn down before applying f before putting them back after.
 
-showWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
+showWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
 showWorld height bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder . undoWalkableWorldParts $ w
 
 -- Shows the raw underlying ascii world except for underscores which are stripped so that there aren't just underscores for all non-background point.
-showRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
+showRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
 showRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrderWithSpecials . getRawAsciiWorld $ w
   where --nameZOrderWithSpecials :: String -> String -> Ordering
         nameZOrderWithSpecials = undefined -- To Do: Make this more useful
 
-printWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> IO ()
+printWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> IO ()
 printWorld height bgChar maskToChar pointsToChar nameZOrder = putStrLn . showWorld height bgChar maskToChar pointsToChar nameZOrder
 
-printRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> IO ()
+printRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> IO ()
 printRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder = putStrLn . showRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder
 
 -- removeForbidden :: (Ord km, Ord kp) => WalkableWorld km kp -> WalkableWorld km kp
@@ -160,7 +161,7 @@ test = do
         maskNameToKeep = 'C'
         masksToDelete = map Left . delete maskNameToKeep . nub $ contents
         
-        charMap c = Just (Left c)
+        charMap c = Just (WKMask c)
         
         (height, initWorld) = readWorld charMap contents
         worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld masksToDelete
