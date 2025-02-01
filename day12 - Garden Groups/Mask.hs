@@ -93,10 +93,10 @@ reduceMaskWidth oldWidth delta x
                       remaining = bitsOnThisRow - (choppedBits `shift` (oldWidth-delta))
                   in remaining + ((reduceMaskWidth oldWidth delta bitsOnHigherRows) `shift` (oldWidth-delta))
 
-changeMaskWidth :: Int -> Int -> Mask -> Mask
-changeMaskWidth oldWidth delta x
+changeMaskWidthBy :: Int -> Int -> Mask -> Mask
+changeMaskWidthBy oldWidth delta x
     | delta <= 0 = reduceMaskWidth oldWidth (-delta) x
     | otherwise  = expandMaskWidth oldWidth delta x
 
 setMaskWidth :: Int -> Int -> Mask -> Mask
-setMaskWidth oldWidth newWidth x = changeMaskWidth oldWidth (newWidth - oldWidth) x
+setMaskWidth oldWidth newWidth x = changeMaskWidthBy oldWidth (newWidth - oldWidth) x
