@@ -269,16 +269,21 @@ test = do
         
         (WalkableWorld height worldBeforePartition) = foldl' (\w maskName -> modifyRawAsciiWorld (deleteMask maskName) w) initWorld masksToDelete
         
+        -- Start Loop until all connected parts of target mask found
+        
         middlePoint = let maybeMiddlePoint = middlePointOfMask (WWExternal maskNameToKeep) worldBeforePartition
                        in case maybeMiddlePoint of
                             Just point -> point
                             Nothing -> error $ "middlePoint failed: \"" ++ [maskNameToKeep]  ++ "\" not found in " ++ show worldBeforePartition
         
+        -- Init Loop until LatestVisited is empty
         initLatestVisitedMask = [middlePoint]
         wWithInitLatestVisitedMask = addMask (WWInternal Visited) 0 $ insertMaskFromPoints (WWInternal LatestVisited) initLatestVisitedMask worldBeforePartition
-        wWithVisitedMask = applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithInitLatestVisitedMask
-        wWithVisitedMaskAndUnvisited = copyMask (WWExternal maskNameToKeep) (WWInternal Unvisited) wWithVisitedMask
-        wWithUnvisitedXoredByVisited = applyMask bitwiseXor (WWInternal LatestVisited) (WWInternal Unvisited) wWithVisitedMaskAndUnvisited
+        wWithInitLatestVisitedMaskAndUnvisited = copyMask (WWExternal maskNameToKeep) (WWInternal Unvisited) wWithInitLatestVisitedMask
+        wWithInitVisitedMask = applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithInitLatestVisitedMaskAndUnvisited
+        
+        -- Start Loop until LatestVisited is empty
+        wWithUnvisitedXoredByVisited = applyMask bitwiseXor (WWInternal LatestVisited) (WWInternal Unvisited) wWithInitVisitedMask
         combinedMaskFromAllShiftedCopiesOfVisited =
             lrduDirs
                 & combineAsciiWorlds . map (\dir -> moveMaskOfNameBy (WWInternal LatestVisited) dir wWithUnvisitedXoredByVisited)
@@ -290,7 +295,16 @@ test = do
                 & applyMask bitwiseAnd (WWInternal Unvisited) (WWInternal LatestVisited)
                 & applyMask bitwiseXor (WWInternal LatestVisited) (WWInternal Unvisited)
         
-        newAsciiWorld = filterMaskKeys (\x -> case x of {WWExternal _ -> False; _ -> True}) wWithLatestVisited
+        wWithVisitedMask = applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithLatestVisited
+        -- End Loop until LatestVisited is empty
+        
+        -- Visited should now contain one of the connected components for the target mask.
+        
+        -- Add this as new numbered mask of its own (or perhaps I should be returning a list of masks to do with what I will...) and subtract it from the a copy of the target layer
+        
+        -- End Loop until all connected parts of target mask found
+        
+        newAsciiWorld = filterMaskKeys (\x -> case x of {WWExternal _ -> False; _ -> True}) wWithVisitedMask
         -- newAsciiWorld' = filterMaskKeys (\x -> case x of {WWInternal Unvisited -> False; _ -> True}) newAsciiWorld
         newWorld = WalkableWorld height newAsciiWorld
     
