@@ -233,53 +233,26 @@ maskNames w =
 --              Loop until latest found points are empty
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
-partitionMaskByReachableLRDU :: (Show kp, Ord kp) => [Char] -> WalkableWorld [Char] kp -> WalkableWorld [Char] kp
-partitionMaskByReachableLRDU maskName w = undefined --WalkableWorld newAsciiWorld
-  where -- To Do: This implementation is a WIP. Make it behave like the above explained algorithm.
-        --        Currently, what it does is simply removes the midpoint of every mask.
-        
-        (_,w') = toHeightAndRawAsciiWorld w
-        
-        middlePoint = let maybeMiddlePoint = middlePointOfMask (WWExternal maskName) w'
-                       in case maybeMiddlePoint of
-                            Just point -> point
-                            Nothing -> error $ "middlePoint failed: \"" ++ maskName  ++ "\" not found in " ++ show w'
-        
-        wWithXMidpointMask =
-            w'  & setPoint (WWInternal TemporaryPoints) middlePoint
-                & fromJust . insertMaskFromNamedPoints (WWInternal TemporaryMask) (WWInternal TemporaryPoints)
-                & deletePoints (WWInternal TemporaryPoints)
-        
-        wWithMidpointXoredWithMaskName =
-            wWithXMidpointMask  & deleteMask (WWInternal TemporaryMask)
-                                & applyMask bitwiseXor (WWInternal TemporaryMask) (WWExternal maskName)
-        
-        newAsciiWorld = wWithMidpointXoredWithMaskName
+partitionMaskByReachableLRDU :: (Show km, Ord km, Show kp, Ord kp) => km -> WalkableWorld km kp -> [Mask]
+partitionMaskByReachableLRDU maskKey initWorld = [] -- To Do: Implement with the below testLogic
 
-test = do
-    contents <- readFile "day12 (example).csv"
-    
-    let 
-        maskNameToKeep = 'C'
-        masksToDelete = map WWExternal . delete maskNameToKeep . nub $ contents
+-- testLogic :: (Show km, Ord km, Show kp, Ord kp) => km -> WalkableWorld km kp -> WalkableWorld km kp
+testLogic maskKey initWorld = wWithVisitedMask
+  where masksToDelete = map WWExternal . delete maskKey . maskNames $ initWorld
         
-        charMap c = Just (WKMask c)
-        
-        initWorld = readWorld charMap contents
-        
-        (WalkableWorld height worldBeforePartition) = foldl' (\w maskName -> modifyRawAsciiWorld (deleteMask maskName) w) initWorld masksToDelete
+        (WalkableWorld height worldBeforePartition) = foldl' (\w maskKey' -> modifyRawAsciiWorld (deleteMask maskKey') w) initWorld masksToDelete
         
         -- Start Loop until all connected parts of target mask found
         
-        middlePoint = let maybeMiddlePoint = middlePointOfMask (WWExternal maskNameToKeep) worldBeforePartition
+        middlePoint = let maybeMiddlePoint = middlePointOfMask (WWExternal maskKey) worldBeforePartition
                        in case maybeMiddlePoint of
                             Just point -> point
-                            Nothing -> error $ "middlePoint failed: \"" ++ [maskNameToKeep]  ++ "\" not found in " ++ show worldBeforePartition
+                            Nothing -> error $ "middlePoint failed: \"" ++ show maskKey ++ "\" not found in " ++ show worldBeforePartition
         
         -- Init Loop until LatestVisited is empty
         initLatestVisitedMask = [middlePoint]
         wWithInitLatestVisitedMask = addMask (WWInternal Visited) 0 $ insertMaskFromPoints (WWInternal LatestVisited) initLatestVisitedMask worldBeforePartition
-        wWithInitLatestVisitedMaskAndUnvisited = copyMask (WWExternal maskNameToKeep) (WWInternal Unvisited) wWithInitLatestVisitedMask
+        wWithInitLatestVisitedMaskAndUnvisited = copyMask (WWExternal maskKey) (WWInternal Unvisited) wWithInitLatestVisitedMask
         wWithInitVisitedMask = applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithInitLatestVisitedMaskAndUnvisited
         
         -- Start Loop until LatestVisited is empty
@@ -303,6 +276,16 @@ test = do
         -- Add this as new numbered mask of its own (or perhaps I should be returning a list of masks to do with what I will...) and subtract it from the a copy of the target layer
         
         -- End Loop until all connected parts of target mask found
+
+test = do
+    contents <- readFile "day12 (example).csv"
+    
+    let 
+        maskNameToKeep = 'C'
+        charMap c = Just (WKMask c)
+        initWorld = readWorld charMap contents
+        (WalkableWorld height _) = initWorld
+        wWithVisitedMask = testLogic maskNameToKeep initWorld
         
         newAsciiWorld = filterMaskKeys (\x -> case x of {WWExternal _ -> False; _ -> True}) wWithVisitedMask
         -- newAsciiWorld' = filterMaskKeys (\x -> case x of {WWInternal Unvisited -> False; _ -> True}) newAsciiWorld
