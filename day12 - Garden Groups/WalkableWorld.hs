@@ -126,7 +126,7 @@ modifyAsAsciiWorld f = fromHeightAndRawAsciiWorld . fmap (mapKeyForMasks WWExter
 showWorld :: (Ord km, Ord kp) => Char -> (WWKey km WWMaskKey -> Char) -> (WWKey kp WWPointsKey -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> WalkableWorld km kp -> String
 showWorld bgChar maskToChar pointsToChar nameZOrder w = (\(height, w') -> showAsciiWorld height bgChar maskToChar pointsToChar nameZOrderWithSpecials w') . undoWalkableWorldParts $ w
   where nameZOrderWithSpecials = nameZOrder `on` conversion
-        conversion = toWorldKey . bimap fromWWExternal fromWWExternal . fromWorldKey  -- To Do: Make this more useful
+        conversion = toWorldKey . bimap fromWWExternal fromWWExternal . fromWorldKey
 
 -- Shows the raw underlying ascii world except for underscores which are stripped so that there aren't just underscores for all non-background point.
 showRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (WWKey km WWMaskKey -> Char) -> (WWKey kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
