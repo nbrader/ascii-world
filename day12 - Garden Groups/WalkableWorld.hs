@@ -56,7 +56,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , middlePointOfMask )
 
 data WWMaskKey = NoGo | Marked | MidPointMask deriving (Show, Eq, Ord)
-data WWPointKey = Agent | MidPoint | TemporaryPoints deriving (Show, Eq, Ord)
+data WWPointKey = Agent | TemporaryPoints deriving (Show, Eq, Ord)
 type RawAsciiWorld km kp = AsciiWorld (Either km WWMaskKey) (Either kp WWPointKey)
 type WWNameZComp km kp = (Either (Either km WWMaskKey) (Either kp WWPointKey) -> Either (Either km WWMaskKey) (Either kp WWPointKey) -> Ordering)
 newtype WalkableWorld km kp = WalkableWorld {getRawAsciiWorld :: RawAsciiWorld km kp} deriving (Show)
@@ -149,36 +149,38 @@ partitionMaskByReachableLRDU maskName (WalkableWorld w') = WalkableWorld newAsci
                        in case maybeMiddlePoint of
                             Just point -> point
                             Nothing -> error $ "middlePoint failed: \"" ++ maskName  ++ "\" not found in " ++ show w'
-        wWithXMidpointMask = deletePoints (Right TemporaryPoints) . fromJust . insertMaskFromPoints (Right MidPointMask) (Right MidPoint) . setPoint (Right TemporaryPoints) middlePoint $ w'
+        wWithXMidpointMask = deletePoints (Right TemporaryPoints) . fromJust . insertMaskFromPoints (Right MidPointMask) (Right TemporaryPoints) . setPoint (Right TemporaryPoints) middlePoint $ w'
         wWithMidpointXoredWithMaskName = deleteMask (Right MidPointMask) . applyNamedMask bitwiseXor (Right MidPointMask) (Left maskName) $ wWithXMidpointMask
         newAsciiWorld = wWithMidpointXoredWithMaskName
 
--- test = do
-    -- contents <- readFile "day12 (example).csv"
+test = do
+    contents <- readFile "day12 (data).csv"
     
-    -- let masksToDelete = ("#":) . map (('_':) . (:[])) . delete 'C' . nub $ contents
-        -- (height, initWorld) = readWorld '.' [] contents
-        -- worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld masksToDelete
+    let 
+        maskNameToKeep = 'C'
+        masksToDelete = map Left . delete maskNameToKeep . nub $ contents
         
-        -- -- world = partitionMaskByReachableLRDU "C" worldBeforePartition
-        -- maskName = "C"
-        -- (WalkableWorld w') = worldBeforePartition
+        charMap c = Just (Left c)
         
-        -- maskName' = ('_':) maskName -- Tag the name to avoid collisions with internal representations
+        (height, initWorld) = readWorld charMap contents
+        worldBeforePartition = foldl' (\asciiWorld maskName -> modifyRawAsciiWorld (deleteMask maskName) asciiWorld) initWorld masksToDelete
         
-        -- middlePoint = let maybeMiddlePoint = middlePointOfMask maskName' w'
-                       -- in case maybeMiddlePoint of
-                            -- Just point -> point
-                            -- Nothing -> error $ "middlePoint failed: \"" ++ maskName'  ++ "\" not found in " ++ show w'
-        -- wWithXMidpointMask = deletePoint "temp" . fromJust . insertMaskFromPoints "midpoint" "temp" . setPoint "temp" middlePoint $ w'
+        -- world = partitionMaskByReachableLRDU "C" worldBeforePartition
+        (WalkableWorld w') = worldBeforePartition
         
-        -- wWithMidpointXoredWithMaskName = copyNamedMask "midpoint" "visited" $ applyNamedMask bitwiseXor "midpoint" maskName' $ wWithXMidpointMask
-        -- newAsciiWorld = wWithMidpointXoredWithMaskName
+        middlePoint = let maybeMiddlePoint = middlePointOfMask (Left maskNameToKeep) w'
+                       in case maybeMiddlePoint of
+                            Just point -> point
+                            Nothing -> error $ "middlePoint failed: \"" ++ [maskNameToKeep]  ++ "\" not found in " ++ show w'
+        wWithXMidpointMask = deletePoints (Right TemporaryPoints) . fromJust . insertMaskFromPoints (Right MidPointMask) (Right TemporaryPoints) . setPoint (Right TemporaryPoints) middlePoint $ w'
         
-        -- newWorld = WalkableWorld newAsciiWorld
+        wWithMidpointXoredWithMaskName = applyNamedMask bitwiseXor (Right MidPointMask) (Left maskNameToKeep) $ wWithXMidpointMask
+        newAsciiWorld = wWithMidpointXoredWithMaskName
+        
+        newWorld = WalkableWorld newAsciiWorld
     
-    -- printRawAsciiWorld height (comparing id) newWorld
-    -- print newWorld
+    printRawAsciiWorld height '.' (either id (head . show)) (either id (head . show)) (comparing id) newWorld
+    print newWorld
 
 partitionAllMasksByReachableLRDU :: (Ord km, Ord kp) => WalkableWorld km kp -> WalkableWorld km kp
 -- partitionAllMasksByReachableLRDU w = foldl' (flip partitionMaskByReachableLRDU) w (maskNames w)
