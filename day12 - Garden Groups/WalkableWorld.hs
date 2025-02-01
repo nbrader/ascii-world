@@ -29,6 +29,7 @@ import Data.List ( findIndex, foldl', nub, delete )
 import qualified Data.Map as M
 import Data.Maybe ( fromJust )
 import Data.Either ( lefts )
+import Data.Function
 import Data.Ord
 import Data.Bits
 
@@ -125,19 +126,50 @@ printRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder = putStrLn .
 -- setOAtS = WalkableWorld . fromJust . insertMaskAtPoint "O" "S" . getRawAsciiWorld
 
 totalHorizontalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
-totalHorizontalEdgesOverPoints maskName w = toInteger . popCount . fromJust . M.lookup (WWInternal Marked) . asciiWorldMasks . applyNamedMask bitwiseXor (WWExternal maskName) (WWInternal Marked) . moveNamedMask (WWInternal Marked) (0,1) . copyNamedMask (WWExternal maskName) (WWInternal Marked) . getRawAsciiWorld $ w
+totalHorizontalEdgesOverPoints maskName w =
+    w & getRawAsciiWorld
+      & copyNamedMask (WWExternal maskName) (WWInternal Marked)
+      & moveNamedMask (WWInternal Marked) (0,1)
+      & applyNamedMask bitwiseXor (WWExternal maskName) (WWInternal Marked)
+      & getMarked
+      & countMaskPoints
+  
+  where getMarked = fromJust . M.lookup (WWInternal Marked) . asciiWorldMasks
+        countMaskPoints = toInteger . popCount
 
 totalVerticalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
-totalVerticalEdgesOverPoints maskName w = toInteger . popCount . fromJust . M.lookup (WWInternal Marked) . asciiWorldMasks . applyNamedMask bitwiseXor (WWExternal maskName) (WWInternal Marked) . moveNamedMask (WWInternal Marked) (1,0) . copyNamedMask (WWExternal maskName) (WWInternal Marked) . getRawAsciiWorld $ w
+totalVerticalEdgesOverPoints maskName w =
+    w & getRawAsciiWorld
+      & copyNamedMask (WWExternal maskName) (WWInternal Marked)
+      & moveNamedMask (WWInternal Marked) (1,0)
+      & applyNamedMask bitwiseXor (WWExternal maskName) (WWInternal Marked)
+      & getMarked
+      & countMaskPoints
+  where
+    getMarked = fromJust . M.lookup (WWInternal Marked) . asciiWorldMasks
+    countMaskPoints = toInteger . popCount
 
 totalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
-totalEdgesOverPoints maskName w = totalHorizontalEdgesOverPoints maskName w + totalVerticalEdgesOverPoints maskName w
+totalEdgesOverPoints maskName w =
+    totalHorizontalEdgesOverPoints maskName w +
+    totalVerticalEdgesOverPoints maskName w
 
 totalPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
-totalPoints maskName w = toInteger . popCount . fromJust . M.lookup (WWExternal maskName) . asciiWorldMasks . getRawAsciiWorld $ w
+totalPoints maskName w =
+    w & getRawAsciiWorld
+      & getMask
+      & countMaskPoints
+  where
+    getMask = fromJust . M.lookup (WWExternal maskName) . asciiWorldMasks
+    countMaskPoints = toInteger . popCount
 
 maskNames :: WalkableWorld a kp -> [a]
-maskNames = lefts . map fromWWKey . M.keys . asciiWorldMasks . getRawAsciiWorld
+maskNames w =
+    w & getRawAsciiWorld
+      & asciiWorldMasks
+      & M.keys
+      & map fromWWKey
+      & lefts
 
 -- Make partitioner which gives every disconnected part of a layer its own name by tacking on the next number not already existing in the bit mask map
 --      Have the disconnected portions found by a flood fill algorithm using bit mask operations:
