@@ -3,6 +3,8 @@
 
 module AsciiWorld   ( AsciiWorld(..)
                     , WorldKey(..)
+                    , fromWorldKey
+                    , toWorldKey
                     , readAsciiWorld
                     , showAsciiWorld
                     , combineAsciiWorlds
