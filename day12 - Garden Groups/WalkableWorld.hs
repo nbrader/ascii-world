@@ -93,7 +93,7 @@ removeNoGoFromRightAndTop :: (Ord km, Ord kp) => RawAsciiWorld km kp -> RawAscii
 removeNoGoFromRightAndTop w = deleteMask (WWInternal NoGo) w
 
 addWalkableWorldParts :: (Ord km, Ord kp) => (Int, RawAsciiWorld km kp) -> WalkableWorld km kp
-addWalkableWorldParts (height, w) = WalkableWorld height . addNoGoToRightAndTop height . changeWidthBy 1 $ w
+addWalkableWorldParts (height, w) = WalkableWorld height . addNoGoToRightAndTop (height+1) . changeWidthBy 1 $ w
 
 undoWalkableWorldParts :: (Ord km, Ord kp) => WalkableWorld km kp -> (Int, RawAsciiWorld km kp)
 undoWalkableWorldParts w = (wwHeight w, changeWidthBy (-1) . removeNoGoFromRightAndTop . wwRawAsciiWorld $ w)
@@ -216,7 +216,7 @@ partitionMaskByReachableLRDU maskName w = undefined --WalkableWorld newAsciiWorl
         newAsciiWorld = wWithMidpointXoredWithMaskName
 
 test = do
-    contents <- readFile "day12 (data).csv"
+    contents <- readFile "day12 (example).csv"
     
     let 
         maskNameToKeep = 'C'
@@ -242,9 +242,9 @@ test = do
         
         newWorld = WalkableWorld height newAsciiWorld
     
-    -- printWorld '.' (either id (head . show) . fromWWKey) (either id (head . show) . fromWWKey) (comparing id) newWorld
-    -- putStrLn "\n"
-    printRawAsciiWorld height '.' (either id (head . show) . fromWWKey) (either id (head . show) . fromWWKey) (comparing id) newWorld
+    printWorld '.' (either id (head . show) . fromWWKey) (either id (head . show) . fromWWKey) (comparing id) newWorld
+    putStrLn "\n"
+    printRawAsciiWorld (height+1) '.' (either id (head . show) . fromWWKey) (either id (head . show) . fromWWKey) (comparing id) newWorld
     print newWorld
 
 partitionAllMasksByReachableLRDU :: (Ord km, Ord kp) => WalkableWorld km kp -> WalkableWorld km kp
