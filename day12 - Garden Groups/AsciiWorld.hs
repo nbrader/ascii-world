@@ -105,6 +105,12 @@ setWidth newWidth w = w { asciiWorldMasks = M.map (setMaskWidth oldWidth newWidt
             | newWidth < oldWidth = M.map (filter (\(x,_) -> x >= newWidth)) oldPoints
             | otherwise = oldPoints
 
+mapKeyForMasks  :: (Ord km1, Ord km2, Ord kp)  => (km1 -> km2) -> AsciiWorld km1 kp -> AsciiWorld km2 kp
+mapKeyForMasks f w = w { asciiWorldMasks = M.mapKeys f (asciiWorldMasks w) }
+
+mapKeyForPoints :: (Ord km,  Ord kp1, Ord kp2) => (kp1 -> kp2) -> AsciiWorld km kp1 -> AsciiWorld km kp2
+mapKeyForPoints f w = w { asciiWorldPoints = M.mapKeys f (asciiWorldPoints w) }
+
 showAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (km -> Char) -> (kp -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> AsciiWorld km kp -> String
 showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromMasksAndPoints
   where (AsciiWorld masks points width) = asciiWorld

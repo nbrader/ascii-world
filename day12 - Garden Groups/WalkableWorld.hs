@@ -49,6 +49,8 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , insertMaskFromPoints
                         , setWidth
                         , changeWidthBy
+                        , mapKeyForMasks
+                        , mapKeyForPoints
                         , deleteMask
                         , lookupMask
                         , adjustMask
@@ -66,6 +68,8 @@ fromWWKey (WWInternal y) = Right y
 toWWKey :: Either kExt kInt -> WWKey kExt kInt
 toWWKey (Left x)  = WWExternal x
 toWWKey (Right y) = WWInternal y
+fromWWExternal (WWExternal x) = x
+
 type RawAsciiWorld km kp = AsciiWorld (WWKey km WWMaskKey) (WWKey kp WWPointsKey)
 
 type WWNameZComp km kp = (WorldKey (WWKey km WWMaskKey) (WWKey kp WWPointsKey) -> WorldKey (WWKey km WWMaskKey) (WWKey kp WWPointsKey) -> Ordering)
@@ -77,10 +81,10 @@ addNoGoToRightAndTop w = undefined -- To Do: Implement this
 removeNoGoFromRightAndTop :: (Ord km, Ord kp) => RawAsciiWorld km kp -> RawAsciiWorld km kp
 removeNoGoFromRightAndTop w = undefined -- To Do: Implement this
 
-addWalkableWorldParts :: (Ord km, Ord kp) => AsciiWorld (WWKey km WWMaskKey) (WWKey kp WWPointsKey) -> WalkableWorld km kp
+addWalkableWorldParts :: (Ord km, Ord kp) => RawAsciiWorld km kp -> WalkableWorld km kp
 addWalkableWorldParts = WalkableWorld . addNoGoToRightAndTop . changeWidthBy 1
 
-undoWalkableWorldParts :: (Ord km, Ord kp) => WalkableWorld km kp -> AsciiWorld (WWKey km WWMaskKey) (WWKey kp WWPointsKey)
+undoWalkableWorldParts :: (Ord km, Ord kp) => WalkableWorld km kp -> RawAsciiWorld km kp
 undoWalkableWorldParts = changeWidthBy (-1) . removeNoGoFromRightAndTop . getRawAsciiWorld
 
 -- Assumes all rows have equal length
@@ -98,8 +102,9 @@ modifyRawAsciiWorld :: (Ord km, Ord kp) => (RawAsciiWorld km kp -> RawAsciiWorld
 modifyRawAsciiWorld f = WalkableWorld . f . getRawAsciiWorld
 
 -- This modify allows you to modify the world in a way ignorant to the stuff that WalkableWorld added (such as NoGos and underscores in names)
+-- Warning: I think this function will perform badly.
 modifyAsciiWorld :: (Ord km, Ord kp) => (AsciiWorld km kp -> AsciiWorld km kp) -> WalkableWorld km kp -> WalkableWorld km kp
-modifyAsciiWorld f = undefined -- Ensure the NoGos, underscores and whatever else are torn down before applying f before putting them back after.
+modifyAsciiWorld f = addWalkableWorldParts . mapKeyForMasks WWExternal . mapKeyForPoints WWExternal . f . mapKeyForPoints fromWWExternal . mapKeyForMasks fromWWExternal . undoWalkableWorldParts
 
 showWorld :: (Ord km, Ord kp) => Int -> Char -> (WWKey km WWMaskKey -> Char) -> (WWKey kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
 showWorld height bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder . undoWalkableWorldParts $ w
