@@ -62,10 +62,10 @@ type WWNameZComp km kp = (Either (Either km WWMaskKey) (Either kp WWPointKey) ->
 newtype WalkableWorld km kp = WalkableWorld {getRawAsciiWorld :: RawAsciiWorld km kp} deriving (Show)
 
 addNoGoToRightAndTop :: (Ord km, Ord kp) => RawAsciiWorld km kp -> RawAsciiWorld km kp
-addNoGoToRightAndTop w = w -- To Do: Implement this
+addNoGoToRightAndTop w = undefined -- To Do: Implement this
 
 removeNoGoFromRightAndTop :: (Ord km, Ord kp) => RawAsciiWorld km kp -> RawAsciiWorld km kp
-removeNoGoFromRightAndTop w = w -- To Do: Implement this
+removeNoGoFromRightAndTop w = undefined -- To Do: Implement this
 
 addWalkableWorldParts :: (Ord km, Ord kp) => AsciiWorld (Either km WWMaskKey) (Either kp WWPointKey) -> WalkableWorld km kp
 addWalkableWorldParts = WalkableWorld . addNoGoToRightAndTop . changeWidthBy 1
@@ -98,7 +98,7 @@ showWorld height bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld he
 showRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
 showRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrderWithSpecials . getRawAsciiWorld $ w
   where --nameZOrderWithSpecials :: String -> String -> Ordering
-        nameZOrderWithSpecials = nameZOrder -- To Do: Make this more useful
+        nameZOrderWithSpecials = undefined -- To Do: Make this more useful
 
 printWorld :: (Ord km, Ord kp) => Int -> Char -> (Either km WWMaskKey -> Char) -> (Either kp WWPointKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> IO ()
 printWorld height bgChar maskToChar pointsToChar nameZOrder = putStrLn . showWorld height bgChar maskToChar pointsToChar nameZOrder
@@ -141,7 +141,7 @@ maskNames = map (fromLeft) . filter (isLeft) . M.keys . asciiWorldMasks . getRaw
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
 partitionMaskByReachableLRDU :: (Show kp, Ord kp) => [Char] -> WalkableWorld [Char] kp -> WalkableWorld [Char] kp
-partitionMaskByReachableLRDU maskName (WalkableWorld w') = WalkableWorld newAsciiWorld
+partitionMaskByReachableLRDU maskName (WalkableWorld w') = undefined --WalkableWorld newAsciiWorld
   where -- To Do: This implementation is a WIP. Make it behave like the above explained algorithm.
         --        Currently, what it does is simply removes the midpoint of every mask.
         
