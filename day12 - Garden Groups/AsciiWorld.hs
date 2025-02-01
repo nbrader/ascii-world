@@ -20,7 +20,7 @@ import Data.Foldable
 import Safe (atMay)
 
 import Util ( replace, maximumMaybeBy )
-import Mask ( Point, Mask, pointToIndex, pointToMask, moveMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, msbPoint, middlePoint, changeMaskWidth, setMaskWidth )
+import Mask ( Point, Mask, pointToIndex, pointToMask, moveMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, msbPoint, middlePoint, changeMaskWidthBy, setMaskWidth )
 
 -- Each obj has a shape encoded as bits of an Integer.
 
@@ -73,8 +73,8 @@ readAsciiWorld charMap inStr
 
         setBitInMask (x, y) maybeMask = Just $ setBit (fromMaybe 0 maybeMask) (y * width + x)
 
-changeWidth :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
-changeWidth delta w = w { asciiWorldMasks = M.map (changeMaskWidth oldWidth delta) (asciiWorldMasks w)
+changeWidthBy :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
+changeWidthBy delta w = w { asciiWorldMasks = M.map (changeMaskWidthBy oldWidth delta) (asciiWorldMasks w)
                         , asciiWorldPoints = newPoints
                         , asciiWorldWidth = newWidth }
   where oldWidth = asciiWorldWidth w
