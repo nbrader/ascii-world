@@ -7,6 +7,7 @@ module AsciiWorld   ( AsciiWorld(..)
                     , toWorldKey
                     , readAsciiWorld
                     , showAsciiWorld
+                    , printAsciiWorld
                     , combineAsciiWorlds
                     , moveMaskOfNameBy
                     , movePointsOfNameBy
