@@ -241,11 +241,11 @@ testLogic :: (Show km, Show kp, Ord km, Ord kp) => km -> WalkableWorld km kp -> 
 testLogic maskKey initWorld = wWithVisitedMask
   where masksToDelete = map WWExternal . delete maskKey . maskNames $ initWorld
         
-        (WalkableWorld height worldBeforePartition) = foldl' (\w maskKey' -> modifyRawAsciiWorld (deleteMask maskKey') w) initWorld masksToDelete
+        (WalkableWorld height worldBeforePartition) = initWorld --foldl' (\w maskKey' -> modifyRawAsciiWorld (deleteMask maskKey') w) initWorld masksToDelete
         
         -- Start Loop until all connected parts of target mask found
         
-        middlePoint = let maybeMiddlePoint = middlePointOfMask (WWExternal maskKey) worldBeforePartition
+        middlePoint = let maybeMiddlePoint = middlePointOfMask (WWExternal maskKey) (printTrace "worldBeforePartition" worldBeforePartition)
                        in case maybeMiddlePoint of
                             Just point -> point
                             Nothing -> error $ "middlePoint failed: \"" ++ show maskKey ++ "\" not found in " ++ show worldBeforePartition
@@ -275,8 +275,8 @@ testLogic maskKey initWorld = wWithVisitedMask
                 wWithVisitedMask = applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithLatestVisited
         -- End Loop until LatestVisited is empty
         
-        showW = showAsciiWorld (height+1) '.' (either (head . show) (head . show) . eitherFromWWKey) (either (head . show) (head . show) . eitherFromWWKey) (comparing id)
-                    . filterMaskKeys (\x -> case x of {WWInternal Unvisited -> True; WWInternal LatestVisited -> True; _ -> True})
+        showW = showAsciiWorld (height+1) '.' (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromWWKey) (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromWWKey) (comparing id)
+                    . filterMaskKeys (\x -> case x of {WWExternal _ -> False; _ -> True})
         
         wWithVisitedMask = until ((== 0) . fromJust . lookupMask (WWInternal LatestVisited)) (printTrace "wWithVisitedMask1" . innerLoop) wWithInitVisitedMask
         
@@ -287,7 +287,7 @@ testLogic maskKey initWorld = wWithVisitedMask
         -- End Loop until all connected parts of target mask found
 
 test = do
-    contents <- readFile "day12 (data).csv"
+    contents <- readFile "day12 (example 3).csv"
     
     let 
         maskNameToKeep = 'C'
@@ -298,6 +298,7 @@ test = do
         
         newAsciiWorld = filterMaskKeys (\x -> case x of {WWExternal _ -> False; _ -> True}) wWithVisitedMask
         newAsciiWorld' = filterMaskKeys (\x -> case x of {WWInternal Unvisited -> False; _ -> True}) newAsciiWorld
+        -- newAsciiWorld' = wWithVisitedMask
         newWorld = WalkableWorld height newAsciiWorld'
     
     -- printWorld '.' (either id (head . show) . eitherFromWWKey) (either id (head . show) . eitherFromWWKey) (comparing id) newWorld
