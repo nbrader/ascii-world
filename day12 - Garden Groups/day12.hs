@@ -39,13 +39,14 @@ import Control.Concurrent ( threadDelay )
 import System.Console.ANSI ( clearScreen, setCursorPosition )
 
 import WalkableWorld ( WalkableWorld(..)
+                     , WorldKey(..)
                      , readWorld
                      , showWorld
                      , printWorld
                      , partitionMaskByReachableLRDU
                      , partitionAllMasksByReachableLRDU
                      , totalEdgesOverPoints
-                     , maskNames
+                     , maskKeys
                      , totalPoints )
 
 
@@ -61,13 +62,29 @@ type AreasGrid = Array (V2 Int) Int
 type PerimetersGrid = Array (V2 Int) Int
 
 day12part1 = do
-    contents <- readFile "day12 (example 2).csv"
-    let (height, worldBeforePartition) = readWorld '.' [] contents
-        world = partitionAllMasksByReachableLRDU worldBeforePartition
-    printWorld height (comparing id) world
+    contents <- readFile "day12 (data).csv"
+    let initWorld :: WalkableWorld Char Char
+        initWorld = readWorld (Just . WKMask) contents
+        parts = partitionAllMasksByReachableLRDU initWorld
+        
+        bgChar :: Char
+        bgChar = '.'
+        
+        maskToChar :: Char -> Char
+        maskToChar   = head . dropWhile (== '\'') . show
+        
+        pointsToChar :: Char -> Char
+        pointsToChar = head . dropWhile (== '\'') . show
+        
+        nameZOrder :: WorldKey Char Char -> WorldKey Char Char -> Ordering
+        nameZOrder = compare
     
-    let names = maskNames world
-        totalEdges = map (\n -> (totalPoints n world, totalEdgesOverPoints n world)) names
+    -- printWorld bgChar maskToChar pointsToChar nameZOrder initWorld
+    -- print parts
+    print (M.map (map popCount) parts)
+    
+    let keys = maskKeys initWorld
+        totalEdges = map (\n -> (totalPoints n initWorld, totalEdgesOverPoints n initWorld)) keys
     
     print totalEdges
 

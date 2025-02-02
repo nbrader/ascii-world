@@ -13,6 +13,7 @@
 -- Make non-zero bit with highest vertical position component tracked by data structure.
 
 module WalkableWorld ( WalkableWorld(..)
+                     , WorldKey(..)
                      , readWorld
                      , showWorld
                      , printWorld
@@ -33,7 +34,7 @@ import Data.Function
 import Data.Bifunctor
 import Data.Ord
 import Data.Bits
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 import Util ( lrduDirs )
 import Mask ( Mask
@@ -92,7 +93,7 @@ eitherFromExt_Int (Internal y) = Right y
 eitherToExt_Int :: Either kExt kInt -> Ext_Int kExt kInt
 eitherToExt_Int (Left x)  = External x
 eitherToExt_Int (Right y) = Internal y
-fromExt_Int (External x) = x
+fromExternal (External x) = x
 
 data WWMaskKey = NoGo | TemporaryMask | VisitedThisSearch | Unvisited | LatestVisited | ToBePartitioned deriving (Show, Eq, Ord, Enum, Bounded)
 data WWPointsKey = TemporaryPoints deriving (Show, Eq, Ord, Enum, Bounded)
@@ -121,18 +122,20 @@ modifyHeightAndRawAsciiWorld f = fromHeightAndRawAsciiWorld . f . toHeightAndRaw
 -- This modify allows you to modify the world in a way ignorant to the stuff that WalkableWorld added (such as NoGos and underscores in names)
 -- Warning: I think this function will perform badly. Also, it's not been properly tested.
 modifyAsAsciiWorld :: (Ord km, Ord kp) => (AsciiWorld km kp -> AsciiWorld km kp) -> WalkableWorld km kp -> WalkableWorld km kp
-modifyAsAsciiWorld f = addWalkableWorldParts . fmap (mapKeyForMasks External) . fmap (mapKeyForPoints External) . fmap f . fmap (mapKeyForPoints fromExt_Int) . fmap (mapKeyForMasks fromExt_Int) . undoNoGo
+modifyAsAsciiWorld f = addWalkableWorldParts . fmap (mapKeyForMasks External) . fmap (mapKeyForPoints External) . fmap f . fmap (mapKeyForPoints fromExternal) . fmap (mapKeyForMasks fromExternal) . undoNoGo
 
-showWorld :: (Ord km, Ord kp) => Char -> (Ext_Int km WWMaskKey -> Char) -> (Ext_Int kp WWPointsKey -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> WalkableWorld km kp -> String
-showWorld bgChar maskToChar pointsToChar nameZOrder w = (\(height, w') -> showAsciiWorld height bgChar maskToChar pointsToChar nameZOrderWithSpecials w') . undoWalkableWorldParts $ w
-  where nameZOrderWithSpecials = nameZOrder `on` conversion
-        conversion = toWorldKey . bimap fromExt_Int fromExt_Int . fromWorldKey
+showWorld :: (Ord km, Ord kp) => Char -> (km -> Char) -> (kp -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> WalkableWorld km kp -> String
+showWorld bgChar maskToChar pointsToChar nameZOrder w = (\(height, w') -> showAsciiWorld height bgChar maskToChar' pointsToChar' nameZOrder' w') . undoWalkableWorldParts $ w
+  where maskToChar'   = maskToChar . fromExternal
+        pointsToChar' = pointsToChar . fromExternal
+        nameZOrder'   = nameZOrder `on` conversion
+        conversion = toWorldKey . bimap fromExternal fromExternal . fromWorldKey
 
 -- Shows the raw underlying ascii world except for underscores which are stripped so that there aren't just underscores for all non-background point.
 showRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Ext_Int km WWMaskKey -> Char) -> (Ext_Int kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
 showRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder . wwRawAsciiWorld $ w
 
-printWorld :: (Ord km, Ord kp) => Char -> (Ext_Int km WWMaskKey -> Char) -> (Ext_Int kp WWPointsKey -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> WalkableWorld km kp -> IO ()
+printWorld :: (Ord km, Ord kp) => Char -> (km -> Char) -> (kp -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> WalkableWorld km kp -> IO ()
 printWorld bgChar maskToChar pointsToChar nameZOrder = putStrLn . showWorld bgChar maskToChar pointsToChar nameZOrder
 
 printRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Ext_Int km WWMaskKey -> Char) -> (Ext_Int kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> IO ()
@@ -236,17 +239,14 @@ totalPoints maskName w =
 --                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
 --                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
 partitionMaskByReachableLRDU :: (Show km, Ord km, Show kp, Ord kp) => km -> WalkableWorld km kp -> [Mask]
-partitionMaskByReachableLRDU maskKey initWorld = [] -- To Do: Implement with the below testLogic
-
-testLogic :: (Show km, Show kp, Ord km, Ord kp) => km -> WalkableWorld km kp -> AsciiWorld (Ext_Int km WWMaskKey) (Ext_Int kp WWPointsKey)
-testLogic maskKey (WalkableWorld height worldBeforePartition) = outerFinalWorld
-  where worldAfterCopyingTargetMaskToToBePartitioned = 
+partitionMaskByReachableLRDU maskKey (WalkableWorld height worldBeforePartition) = finalParts
+  where worldAfterCopyingTargetMaskToToBePartitioned =
             worldBeforePartition
                 & copyMask (External maskKey) (Internal ToBePartitioned)
         
         -- Start Loop until all connected parts of target mask found
-        outerLoop outerInputWorld = innerFinalWorld
-          where middlePoint = let maybeMiddlePoint = middlePointOfMask (Internal ToBePartitioned) (printTrace "outerInputWorld" outerInputWorld)
+        outerLoop (oldParts, outerInputWorld) = (newPart:oldParts, innerFinalWorld)
+          where middlePoint = let maybeMiddlePoint = middlePointOfMask (Internal ToBePartitioned) outerInputWorld
                                in case maybeMiddlePoint of
                                     Just point -> point
                                     Nothing -> error $ "middlePoint failed: \"" ++ show maskKey ++ "\" not found in " ++ show outerInputWorld
@@ -281,44 +281,26 @@ testLogic maskKey (WalkableWorld height worldBeforePartition) = outerFinalWorld
                 
                 innerFinalWorld =
                     worldWithInitLatestVisitedAndUnvisited
-                        & until ((== 0) . fromJust . lookupMask (Internal LatestVisited)) (printTrace "innerLoop" . innerLoop)
+                        & until ((== 0) . fromJust . lookupMask (Internal LatestVisited)) innerLoop
                         & applyMask bitwiseXor (Internal VisitedThisSearch) (Internal ToBePartitioned)
+                
+                newPart = fromJust . lookupMask (Internal VisitedThisSearch) $ innerFinalWorld
                 
                 -- VisitedThisSearch should now contain one of the connected components for the target mask.
                 
                 -- Add this as new numbered mask of its own (or perhaps I should be returning a list of masks to do with what I will...) and subtract it from the a copy of the target layer
         
-        outerFinalWorld =
-            worldAfterCopyingTargetMaskToToBePartitioned
-                & until ((== 0) . fromJust . lookupMask (Internal ToBePartitioned)) (printTrace "outerLoop" . outerLoop) 
+        (finalParts, outerFinalWorld) =
+            ([],worldAfterCopyingTargetMaskToToBePartitioned)
+                & until ((== 0) . fromJust . lookupMask (Internal ToBePartitioned) . snd) outerLoop
         
         -- End Loop until all connected parts of target mask found
         
         
         -- PRINTING HELPER
-        printTrace label w = trace (label ++ "\n" ++ showW w) w
-          where showW = showAsciiWorld (height+1) '.' (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (comparing id)
-                        . filterMaskKeys (\x -> case x of {External _ -> False; (Internal ToBePartitioned) -> False; _ -> True})
-
-test = do
-    contents <- readFile "day12 (example 3).csv"
-    
-    let 
-        maskNameToKeep = 'C'
-        charMap c = Just (WKMask c)
-        initWorld = readWorld charMap contents
-        (WalkableWorld height _) = initWorld
-        worldWithVisitedThisSearchMask = testLogic maskNameToKeep initWorld
-        
-        newAsciiWorld = filterMaskKeys (\x -> case x of {External _ -> False; _ -> True}) worldWithVisitedThisSearchMask
-        newAsciiWorld' = filterMaskKeys (\x -> case x of {Internal Unvisited -> False; _ -> True}) newAsciiWorld
-        -- newAsciiWorld' = worldWithVisitedThisSearchMask
-        newWorld = WalkableWorld height newAsciiWorld'
-    
-    -- printWorld '.' (either id (head . show) . eitherFromExt_Int) (either id (head . show) . eitherFromExt_Int) (comparing id) newWorld
-    -- putStrLn "\n"
-    printRawAsciiWorld (height+1) '.' (either id (head . show) . eitherFromExt_Int) (either id (head . show) . eitherFromExt_Int) (comparing id) newWorld
-    print newWorld
+        -- printTrace label w = trace (label ++ "\n" ++ showW w) w
+          -- where showW = showAsciiWorld (height+1) '.' (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (comparing id)
+                        -- . filterMaskKeys (\x -> case x of {External _ -> False; (Internal ToBePartitioned) -> False; _ -> True})
 
 partitionAllMasksByReachableLRDU :: (Show km, Ord km, Show kp, Ord kp) => WalkableWorld km kp -> M.Map km [Mask]
 partitionAllMasksByReachableLRDU w = M.fromList $ map (\maskKey -> (maskKey, partitionMaskByReachableLRDU maskKey w)) (maskKeys w)
