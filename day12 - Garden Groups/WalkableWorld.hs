@@ -17,7 +17,7 @@ module WalkableWorld ( WalkableWorld(..)
                      , showWorld
                      , printWorld
                      , totalEdgesOverPoints
-                     , maskNames
+                     , maskKeys
                      , totalPoints
                      , partitionMaskByReachableLRDU
                      , partitionAllMasksByReachableLRDU ) where
@@ -94,7 +94,7 @@ eitherToExt_Int (Left x)  = External x
 eitherToExt_Int (Right y) = Internal y
 fromExt_Int (External x) = x
 
-data WWMaskKey = NoGo | TemporaryMask | Visited | Unvisited | LatestVisited deriving (Show, Eq, Ord, Enum, Bounded)
+data WWMaskKey = NoGo | TemporaryMask | VisitedThisSearch | Unvisited | LatestVisited | ToBePartitioned deriving (Show, Eq, Ord, Enum, Bounded)
 data WWPointsKey = TemporaryPoints deriving (Show, Eq, Ord, Enum, Bounded)
 allWWMaskKeys :: [WWMaskKey]
 allWWMaskKeys = [minBound .. maxBound]
@@ -178,8 +178,8 @@ addWalkableWorldParts (height, w) = WalkableWorld height . addNoGoToRightAndTop 
 undoWalkableWorldParts :: (Ord km, Ord kp) => WalkableWorld km kp -> (Int, RawAsciiWorld km kp)
 undoWalkableWorldParts w = (wwHeight w, changeWidthBy (-1) . removeInternalMasksAndPoints . wwRawAsciiWorld $ w)
 
-maskNames :: WalkableWorld a kp -> [a]
-maskNames w =
+maskKeys :: WalkableWorld a kp -> [a]
+maskKeys w =
     w & wwRawAsciiWorld
       & asciiWorldMasks
       & M.keys
@@ -239,45 +239,58 @@ partitionMaskByReachableLRDU :: (Show km, Ord km, Show kp, Ord kp) => km -> Walk
 partitionMaskByReachableLRDU maskKey initWorld = [] -- To Do: Implement with the below testLogic
 
 testLogic :: (Show km, Show kp, Ord km, Ord kp) => km -> WalkableWorld km kp -> AsciiWorld (Ext_Int km WWMaskKey) (Ext_Int kp WWPointsKey)
-testLogic maskKey (WalkableWorld height worldBeforePartition) = finalWorld
-  where -- Start Loop until all connected parts of target mask found
-        
-        middlePoint = let maybeMiddlePoint = middlePointOfMask (External maskKey) (printTrace "worldBeforePartition" worldBeforePartition)
-                       in case maybeMiddlePoint of
-                            Just point -> point
-                            Nothing -> error $ "middlePoint failed: \"" ++ show maskKey ++ "\" not found in " ++ show worldBeforePartition
-        
-        -- Init Loop until LatestVisited is empty
-        initLatestVisitedMask = [middlePoint]
-        
-        wWithInitLatestVisitedAndUnvisited =
+testLogic maskKey (WalkableWorld height worldBeforePartition) = outerFinalWorld
+  where worldAfterCopyingTargetMaskToToBePartitioned = 
             worldBeforePartition
-                & insertMaskFromPoints (Internal LatestVisited) initLatestVisitedMask
-                & addMask (Internal Visited) 0
-                & copyMask (External maskKey) (Internal Unvisited)
-                & applyMask bitwiseOr (Internal LatestVisited) (Internal Visited)
+                & copyMask (External maskKey) (Internal ToBePartitioned)
         
-        -- Start Loop until LatestVisited is empty
-        innerLoop inputWorld = wAfterOneIteration
-          where wWithUnvisitedXoredByVisited = applyMask bitwiseXor (Internal LatestVisited) (Internal Unvisited) inputWorld
+        -- Start Loop until all connected parts of target mask found
+        outerLoop outerInputWorld = innerFinalWorld
+          where middlePoint = let maybeMiddlePoint = middlePointOfMask (Internal ToBePartitioned) (printTrace "outerInputWorld" outerInputWorld)
+                               in case maybeMiddlePoint of
+                                    Just point -> point
+                                    Nothing -> error $ "middlePoint failed: \"" ++ show maskKey ++ "\" not found in " ++ show outerInputWorld
                 
-                combinedMaskFromAllShiftedCopiesOfVisited =
-                    lrduDirs
-                        & combineAsciiWorlds . map (\dir -> moveMaskOfNameBy (Internal LatestVisited) dir wWithUnvisitedXoredByVisited)
-                        & fromJust . lookupMask (Internal LatestVisited)
+                -- Init Loop until LatestVisited is empty
+                initLatestVisitedMask = [middlePoint]
                 
-                wAfterOneIteration =
-                    wWithUnvisitedXoredByVisited
-                        & addMask (Internal LatestVisited) combinedMaskFromAllShiftedCopiesOfVisited
-                        & applyMask bitwiseAnd (Internal Unvisited) (Internal LatestVisited)
-                        & applyMask bitwiseOr (Internal LatestVisited) (Internal Visited)
-        -- End Loop until LatestVisited is empty
+                worldWithInitLatestVisitedAndUnvisited =
+                    outerInputWorld
+                        & insertMaskFromPoints (Internal LatestVisited) initLatestVisitedMask
+                        & addMask (Internal VisitedThisSearch) 0
+                        & copyMask (Internal ToBePartitioned) (Internal Unvisited)
+                        & applyMask bitwiseOr (Internal LatestVisited) (Internal VisitedThisSearch)
+                
+                -- Start Loop until LatestVisited is empty
+                innerLoop innerInputWorld = wAfterOneIteration
+                  where worldWithUnvisitedXoredByVisitedThisSearch =
+                            innerInputWorld
+                                & applyMask bitwiseXor (Internal LatestVisited) (Internal Unvisited)
+                        
+                        combinedMaskFromAllShiftedCopiesOfVisitedThisSearch =
+                            lrduDirs
+                                & combineAsciiWorlds . map (\dir -> moveMaskOfNameBy (Internal LatestVisited) dir worldWithUnvisitedXoredByVisitedThisSearch)
+                                & fromJust . lookupMask (Internal LatestVisited)
+                        
+                        wAfterOneIteration =
+                            worldWithUnvisitedXoredByVisitedThisSearch
+                                & addMask (Internal LatestVisited) combinedMaskFromAllShiftedCopiesOfVisitedThisSearch
+                                & applyMask bitwiseAnd (Internal Unvisited) (Internal LatestVisited)
+                                & applyMask bitwiseOr (Internal LatestVisited) (Internal VisitedThisSearch)
+                -- End Loop until LatestVisited is empty
+                
+                innerFinalWorld =
+                    worldWithInitLatestVisitedAndUnvisited
+                        & until ((== 0) . fromJust . lookupMask (Internal LatestVisited)) (printTrace "innerLoop" . innerLoop)
+                        & applyMask bitwiseXor (Internal VisitedThisSearch) (Internal ToBePartitioned)
+                
+                -- VisitedThisSearch should now contain one of the connected components for the target mask.
+                
+                -- Add this as new numbered mask of its own (or perhaps I should be returning a list of masks to do with what I will...) and subtract it from the a copy of the target layer
         
-        finalWorld = until ((== 0) . fromJust . lookupMask (Internal LatestVisited)) (printTrace "wWithVisitedMask1" . innerLoop) wWithInitLatestVisitedAndUnvisited
-        
-        -- Visited should now contain one of the connected components for the target mask.
-        
-        -- Add this as new numbered mask of its own (or perhaps I should be returning a list of masks to do with what I will...) and subtract it from the a copy of the target layer
+        outerFinalWorld =
+            worldAfterCopyingTargetMaskToToBePartitioned
+                & until ((== 0) . fromJust . lookupMask (Internal ToBePartitioned)) (printTrace "outerLoop" . outerLoop) 
         
         -- End Loop until all connected parts of target mask found
         
@@ -285,7 +298,7 @@ testLogic maskKey (WalkableWorld height worldBeforePartition) = finalWorld
         -- PRINTING HELPER
         printTrace label w = trace (label ++ "\n" ++ showW w) w
           where showW = showAsciiWorld (height+1) '.' (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (comparing id)
-                        . filterMaskKeys (\x -> case x of {External _ -> False; _ -> True})
+                        . filterMaskKeys (\x -> case x of {External _ -> False; (Internal ToBePartitioned) -> False; _ -> True})
 
 test = do
     contents <- readFile "day12 (example 3).csv"
@@ -295,11 +308,11 @@ test = do
         charMap c = Just (WKMask c)
         initWorld = readWorld charMap contents
         (WalkableWorld height _) = initWorld
-        wWithVisitedMask = testLogic maskNameToKeep initWorld
+        worldWithVisitedThisSearchMask = testLogic maskNameToKeep initWorld
         
-        newAsciiWorld = filterMaskKeys (\x -> case x of {External _ -> False; _ -> True}) wWithVisitedMask
+        newAsciiWorld = filterMaskKeys (\x -> case x of {External _ -> False; _ -> True}) worldWithVisitedThisSearchMask
         newAsciiWorld' = filterMaskKeys (\x -> case x of {Internal Unvisited -> False; _ -> True}) newAsciiWorld
-        -- newAsciiWorld' = wWithVisitedMask
+        -- newAsciiWorld' = worldWithVisitedThisSearchMask
         newWorld = WalkableWorld height newAsciiWorld'
     
     -- printWorld '.' (either id (head . show) . eitherFromExt_Int) (either id (head . show) . eitherFromExt_Int) (comparing id) newWorld
@@ -307,6 +320,5 @@ test = do
     printRawAsciiWorld (height+1) '.' (either id (head . show) . eitherFromExt_Int) (either id (head . show) . eitherFromExt_Int) (comparing id) newWorld
     print newWorld
 
-partitionAllMasksByReachableLRDU :: (Ord km, Ord kp) => WalkableWorld km kp -> WalkableWorld km kp
--- partitionAllMasksByReachableLRDU w = foldl' (flip partitionMaskByReachableLRDU) w (maskNames w)
-partitionAllMasksByReachableLRDU w = undefined
+partitionAllMasksByReachableLRDU :: (Show km, Ord km, Show kp, Ord kp) => WalkableWorld km kp -> M.Map km [Mask]
+partitionAllMasksByReachableLRDU w = M.fromList $ map (\maskKey -> (maskKey, partitionMaskByReachableLRDU maskKey w)) (maskKeys w)
