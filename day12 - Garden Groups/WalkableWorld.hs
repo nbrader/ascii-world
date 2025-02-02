@@ -33,6 +33,7 @@ import Data.Function
 import Data.Bifunctor
 import Data.Ord
 import Data.Bits
+import Debug.Trace (trace)
 
 import Util ( lrduDirs )
 import Mask ( Mask
@@ -251,25 +252,36 @@ testLogic maskKey initWorld = wWithVisitedMask
         
         -- Init Loop until LatestVisited is empty
         initLatestVisitedMask = [middlePoint]
-        wWithInitLatestVisitedMask = addMask (WWInternal Visited) 0 $ insertMaskFromPoints (WWInternal LatestVisited) initLatestVisitedMask worldBeforePartition
-        wWithInitLatestVisitedMaskAndUnvisited = copyMask (WWExternal maskKey) (WWInternal Unvisited) wWithInitLatestVisitedMask
-        wWithInitVisitedMask = applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithInitLatestVisitedMaskAndUnvisited
+        wWithInitLatestVisitedMask = printTrace "wWithInitLatestVisitedMask" $ addMask (WWInternal Visited) 0 $ insertMaskFromPoints (WWInternal LatestVisited) initLatestVisitedMask worldBeforePartition
+        wWithInitLatestVisitedMaskAndUnvisited = printTrace "wWithInitLatestVisitedMaskAndUnvisited" $ copyMask (WWExternal maskKey) (WWInternal Unvisited) wWithInitLatestVisitedMask
+        wWithInitVisitedMask = printTrace "wWithInitVisitedMask" $ applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithInitLatestVisitedMaskAndUnvisited
+        
+        printTrace label w = trace (label ++ "\n" ++ showW w) w
         
         -- Start Loop until LatestVisited is empty
-        wWithUnvisitedXoredByVisited = applyMask bitwiseXor (WWInternal LatestVisited) (WWInternal Unvisited) wWithInitVisitedMask
-        combinedMaskFromAllShiftedCopiesOfVisited =
-            lrduDirs
-                & combineAsciiWorlds . map (\dir -> moveMaskOfNameBy (WWInternal LatestVisited) dir wWithUnvisitedXoredByVisited)
-                & fromJust . lookupMask (WWInternal LatestVisited)
-        
-        wWithLatestVisited =
-            wWithUnvisitedXoredByVisited
-                & addMask (WWInternal LatestVisited) combinedMaskFromAllShiftedCopiesOfVisited
-                & applyMask bitwiseAnd (WWInternal Unvisited) (WWInternal LatestVisited)
-                & applyMask bitwiseXor (WWInternal LatestVisited) (WWInternal Unvisited)
-        
-        wWithVisitedMask = applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithLatestVisited
+        innerLoop inputWorld = wWithVisitedMask
+          where wWithUnvisitedXoredByVisited = printTrace "wWithUnvisitedXoredByVisited" $ applyMask bitwiseXor (WWInternal LatestVisited) (WWInternal Unvisited) inputWorld
+                
+                combinedMaskFromAllShiftedCopiesOfVisited =
+                    lrduDirs
+                        & combineAsciiWorlds . map (\dir -> moveMaskOfNameBy (WWInternal LatestVisited) dir wWithUnvisitedXoredByVisited)
+                        & fromJust . lookupMask (WWInternal LatestVisited)
+                
+                wWithLatestVisited = printTrace "wWithLatestVisited" $ 
+                    wWithUnvisitedXoredByVisited
+                        & addMask (WWInternal LatestVisited) combinedMaskFromAllShiftedCopiesOfVisited
+                        & applyMask bitwiseAnd (WWInternal Unvisited) (WWInternal LatestVisited)
+                
+                wWithVisitedMask = printTrace "wWithVisitedMask" $ applyMask bitwiseOr (WWInternal LatestVisited) (WWInternal Visited) wWithLatestVisited
         -- End Loop until LatestVisited is empty
+        
+        showW = showAsciiWorld (height+1) '.' (either (head . show) (head . show) . eitherFromWWKey) (either (head . show) (head . show) . eitherFromWWKey) (comparing id)
+                    . filterMaskKeys (\x -> case x of {WWInternal Unvisited -> True; WWInternal LatestVisited -> True; _ -> True})
+        
+        wWithVisitedMask1 = printTrace "wWithVisitedMask1" $ innerLoop wWithInitVisitedMask
+        wWithVisitedMask2 = printTrace "wWithVisitedMask2" $ innerLoop wWithVisitedMask1
+        wWithVisitedMask3 = printTrace "wWithVisitedMask3" $ innerLoop wWithVisitedMask2
+        wWithVisitedMask  = printTrace "wWithVisitedMask" $ innerLoop wWithVisitedMask3
         
         -- Visited should now contain one of the connected components for the target mask.
         
@@ -288,8 +300,8 @@ test = do
         wWithVisitedMask = testLogic maskNameToKeep initWorld
         
         newAsciiWorld = filterMaskKeys (\x -> case x of {WWExternal _ -> False; _ -> True}) wWithVisitedMask
-        -- newAsciiWorld' = filterMaskKeys (\x -> case x of {WWInternal Unvisited -> False; _ -> True}) newAsciiWorld
-        newWorld = WalkableWorld height newAsciiWorld
+        newAsciiWorld' = filterMaskKeys (\x -> case x of {WWInternal Unvisited -> False; _ -> True}) newAsciiWorld
+        newWorld = WalkableWorld height newAsciiWorld'
     
     -- printWorld '.' (either id (head . show) . eitherFromWWKey) (either id (head . show) . eitherFromWWKey) (comparing id) newWorld
     -- putStrLn "\n"
