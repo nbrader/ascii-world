@@ -12,16 +12,39 @@
 -- Make "WalkableWorld" with max walk distance fed in at construction to then add that much margin and so be able to detect reachability effects up to that distance.
 -- Make non-zero bit with highest vertical position component tracked by data structure.
 
-module WalkableWorld ( WalkableWorld(..)
-                     , WorldKey(..)
-                     , readWorld
-                     , showWorld
-                     , printWorld
-                     , totalEdgesOverPoints
-                     , maskKeys
-                     , totalPoints
-                     , partitionMaskByReachableLRDU
-                     , partitionAllMasksByReachableLRDU ) where
+module WalkableWorld    ( WalkableWorld(..)
+                        , WorldKey(..)
+                        , readWorld
+                        , showWorld
+                        , printWorld
+                        , totalEdgesOverPoints
+                        , maskKeys
+                        , totalPoints
+                        , partitionMaskByReachableLRDU
+                        , partitionAllMasksByReachableLRDU
+                        -- , combineTwoWalkableWorlds
+                        -- , combineWalkableWorlds
+                        -- , isNamedPointInWW
+                        -- , isInNamedMaskInWW
+                        -- , isNamedPointOrInNamedMaskInWW
+                        -- , moveMaskOfNameByInWW
+                        -- , movePointsOfNameByInWW
+                        , addMaskInWW
+                        -- , deleteMaskInWW
+                        , filterMaskKeysInWW
+                        -- , filterMasksInWW
+                        -- , lookupMaskInWW
+                        -- , adjustMaskInWW
+                        -- , updateMaskInWW
+                        -- , alterMaskInWW
+                        -- , copyMaskInWW
+                        -- , applyMaskInWW
+                        -- , setPointInWW
+                        -- , deletePointsInWW
+                        -- , insertMaskFromPointsInWW
+                        -- , insertMaskFromNamedPointsInWW
+                        -- , isOverlappingMasksInWW
+                        ) where
 
 -------------
 -- Imports --
@@ -38,6 +61,7 @@ import Data.Bits
 
 import Util ( lrduDirs )
 import Mask ( Mask
+            , Point
             , bitwiseSubtract
             , bitwiseOr
             , bitwiseXor
@@ -54,28 +78,34 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , toWorldKey
                         , readAsciiWorld
                         , showAsciiWorld
+                        , setWidth
+                        , changeWidthBy
+                        , mapKeyForMasks
+                        , mapKeyForPoints
+                        , msbPointOfMask
+                        , middlePointOfMask
+                        , combineTwoAsciiWorlds
                         , combineAsciiWorlds
+                        , isNamedPoint
+                        , isInNamedMask
+                        , isNamedPointOrInNamedMask
                         , moveMaskOfNameBy
+                        , movePointsOfNameBy
                         , addMask
+                        , deleteMask
+                        , filterMaskKeys
+                        , filterMasks
+                        , lookupMask
+                        , adjustMask
+                        , updateMask
+                        , alterMask
                         , copyMask
                         , applyMask
                         , setPoint
                         , deletePoints
                         , insertMaskFromPoints
                         , insertMaskFromNamedPoints
-                        , setWidth
-                        , changeWidthBy
-                        , mapKeyForMasks
-                        , mapKeyForPoints
-                        , deleteMask
-                        , filterMasks
-                        , filterMaskKeys
-                        , lookupMask
-                        , adjustMask
-                        , updateMask
-                        , alterMask
-                        , msbPointOfMask
-                        , middlePointOfMask )
+                        , isOverlappingMasks )
 
 data WalkableWorld km kp = WalkableWorld {wwHeight :: Int, wwRawAsciiWorld :: RawAsciiWorld km kp} deriving (Show)
 
@@ -121,8 +151,10 @@ modifyHeightAndRawAsciiWorld f = fromHeightAndRawAsciiWorld . f . toHeightAndRaw
 
 -- This modify allows you to modify the world in a way ignorant to the stuff that WalkableWorld added (such as NoGos and underscores in names)
 -- Warning: I think this function will perform badly. Also, it's not been properly tested.
+-- 			Update: I tried to use this and got bad results so I expect this is broken. Further investigation required.
+--					TO DO: See about either fixing this or better documenting how it should be used
 modifyAsAsciiWorld :: (Ord km, Ord kp) => (AsciiWorld km kp -> AsciiWorld km kp) -> WalkableWorld km kp -> WalkableWorld km kp
-modifyAsAsciiWorld f = addWalkableWorldParts . fmap (mapKeyForMasks External) . fmap (mapKeyForPoints External) . fmap f . fmap (mapKeyForPoints fromExternal) . fmap (mapKeyForMasks fromExternal) . undoNoGo
+modifyAsAsciiWorld f = addWalkableWorldParts . fmap (mapKeyForMasks External) . fmap (mapKeyForPoints External) . fmap f . fmap (mapKeyForPoints fromExternal) . fmap (mapKeyForMasks fromExternal) . undoWalkableWorldParts
 
 showWorld :: (Ord km, Ord kp) => Char -> (km -> Char) -> (kp -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> WalkableWorld km kp -> String
 showWorld bgChar maskToChar pointsToChar nameZOrder w = (\(height, w') -> showAsciiWorld height bgChar maskToChar' pointsToChar' nameZOrder' w') . undoWalkableWorldParts $ w
@@ -140,6 +172,78 @@ printWorld bgChar maskToChar pointsToChar nameZOrder = putStrLn . showWorld bgCh
 
 printRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Ext_Int km WWMaskKey -> Char) -> (Ext_Int kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> IO ()
 printRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder = putStrLn . showRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder
+
+
+
+-- Assumes worlds are same size
+-- Left-biased such that the background character and any singular points they share are taken from the left
+-- combineTwoWalkableWorlds :: (Ord km, Ord kp) => WalkableWorld km kp -> WalkableWorld km kp -> WalkableWorld km kp
+-- combineTwoWalkableWorlds (WalkableWorld h1 w1) (WalkableWorld h2 w2) = WalkableWorld (max h1 h2) $ combineTwoAsciiWorlds w1 w2
+
+-- combineWalkableWorlds :: (Ord km, Ord kp) => [WalkableWorld km kp] -> WalkableWorld km kp
+-- combineWalkableWorlds = combineAsciiWorlds
+
+-- isNamedPointInWW :: (Ord km, Ord kp) => kp -> Point -> WalkableWorld km kp -> Bool
+-- isNamedPointInWW name point (WalkableWorld _ asciiWorld) = isNamedPoint name point asciiWorld
+
+-- isInNamedMaskInWW :: (Ord km, Ord kp) => km -> Point -> WalkableWorld km kp -> Bool
+-- isInNamedMaskInWW name point (WalkableWorld _ asciiWorld) = isInNamedMask name point asciiWorld
+
+-- isNamedPointOrInNamedMaskInWW :: (Ord k) => k -> Point -> WalkableWorld k k -> Bool
+-- isNamedPointOrInNamedMaskInWW name point (WalkableWorld _ asciiWorld) = isNamedPointOrInNamedMask name point asciiWorld
+
+-- moveMaskOfNameByInWW :: (Ord km, Ord kp) => km -> (Int,Int) -> WalkableWorld km kp -> WalkableWorld km kp
+-- moveMaskOfNameByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ moveMaskOfNameBy name (dx,dy) w
+
+-- movePointsOfNameByInWW :: (Ord km, Ord kp) => kp -> (Int,Int) -> WalkableWorld km kp -> WalkableWorld km kp
+-- movePointsOfNameByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ movePointsOfNameBy name (dx,dy) w
+
+addMaskInWW :: (Ord km, Ord kp) => km -> Mask -> WalkableWorld km kp -> WalkableWorld km kp
+addMaskInWW maskKey mask (WalkableWorld height asciiWorld) = WalkableWorld height (addMask (External maskKey) mask asciiWorld)
+
+-- deleteMaskInWW :: (Ord km, Ord kp) => km -> WalkableWorld km kp -> WalkableWorld km kp
+-- deleteMaskInWW maskName (WalkableWorld height w) = WalkableWorld height $ deleteMask maskName w
+
+filterMaskKeysInWW :: (Ord km, Ord kp) => (km -> Bool) -> WalkableWorld km kp -> WalkableWorld km kp
+filterMaskKeysInWW p (WalkableWorld height asciiWorld) = WalkableWorld height (filterMaskKeys (\maskKey -> case maskKey of {External x -> p x; _ -> True}) asciiWorld)
+
+-- filterMasksInWW :: (Ord km, Ord kp) => (Mask -> Bool) -> WalkableWorld km kp -> WalkableWorld km kp
+-- filterMasksInWW p (WalkableWorld height w) = WalkableWorld height $ filterMasks p w
+
+-- lookupMaskInWW :: (Ord km, Ord kp) => km -> WalkableWorld km kp -> Maybe Mask
+-- lookupMaskInWW maskName (WalkableWorld height w) = lookupMask maskName w
+
+-- adjustMaskInWW :: (Ord km, Ord kp) => (Mask -> Mask) -> km -> WalkableWorld km kp -> WalkableWorld km kp
+-- adjustMaskInWW f maskName (WalkableWorld height w) = WalkableWorld height $ adjustMask f maskName w
+
+-- updateMaskInWW :: (Ord km, Ord kp) => (Mask -> Maybe Mask) -> km -> WalkableWorld km kp -> WalkableWorld km kp
+-- updateMaskInWW f maskName (WalkableWorld height w) = WalkableWorld height $ updateMask f maskName w
+
+-- alterMaskInWW :: (Ord km, Ord kp) => (Maybe Mask -> Maybe Mask) -> km -> WalkableWorld km kp -> WalkableWorld km kp
+-- alterMaskInWW f maskName (WalkableWorld height w) = WalkableWorld height $ alterMask f maskName w
+
+-- copyMaskInWW :: (Ord km, Ord kp) => km -> km -> WalkableWorld km kp -> WalkableWorld km kp
+-- copyMaskInWW srcName destName = modifyAsAsciiWorld (copyMask srcName destName)
+
+-- applyMaskInWW :: (Ord km, Ord kp) => (Mask -> Mask -> Mask) -> km -> km -> WalkableWorld km kp -> WalkableWorld km kp
+-- applyMaskInWW op modifier target (WalkableWorld height w) = WalkableWorld height $ applyMask op modifier target w
+
+-- setPointInWW :: (Ord km, Ord kp) => kp -> (Int,Int) -> WalkableWorld km kp -> WalkableWorld km kp
+-- setPointInWW name (x,y) (WalkableWorld height w) = WalkableWorld height $ setPoint name (x,y) w
+
+-- deletePointsInWW :: (Ord km, Ord kp) => kp -> WalkableWorld km kp -> WalkableWorld km kp
+-- deletePointsInWW name (WalkableWorld height w) = WalkableWorld height $ deletePoints name w
+
+-- insertMaskFromPointsInWW :: (Ord km, Ord kp) => km -> [Point] -> WalkableWorld km kp -> WalkableWorld km kp
+-- insertMaskFromPointsInWW newMaskName points (WalkableWorld height w) = WalkableWorld height $ insertMaskFromPoints newMaskName points w
+
+-- insertMaskFromNamedPointsInWW :: (Ord km, Ord kp) => km -> kp -> WalkableWorld km kp -> Maybe (WalkableWorld km kp)
+-- insertMaskFromNamedPointsInWW newMaskName pointsName (WalkableWorld height w) = fmap (WalkableWorld height) insertMaskFromNamedPoints newMaskName pointsName w
+
+-- isOverlappingMasksInWW :: (Ord km, Ord kp) => km -> km -> WalkableWorld km kp -> Bool
+-- isOverlappingMasksInWW name1 name2 w = isOverlappingMasks name1 name2 w
+
+
 
 -- removeForbidden :: (Ord km, Ord kp) => WalkableWorld km kp -> WalkableWorld km kp
 -- removeForbidden w = WalkableWorld $ applyMask bitwiseSubtract "#" "O" (wwRawAsciiWorld w)
@@ -176,7 +280,7 @@ removeInternalMasksAndPoints :: (Ord km, Ord kp) => RawAsciiWorld km kp -> RawAs
 removeInternalMasksAndPoints = removeInternalMasks . removeInternalPoints
 
 addWalkableWorldParts :: (Ord km, Ord kp) => (Int, RawAsciiWorld km kp) -> WalkableWorld km kp
-addWalkableWorldParts (height, w) = WalkableWorld height . addNoGoToRightAndTop (height+1) . changeWidthBy 1 $ w
+addWalkableWorldParts (height, w) = WalkableWorld height . addNoGoToRightAndTop (height + 1) . changeWidthBy 1 $ w
 
 undoWalkableWorldParts :: (Ord km, Ord kp) => WalkableWorld km kp -> (Int, RawAsciiWorld km kp)
 undoWalkableWorldParts w = (wwHeight w, changeWidthBy (-1) . removeInternalMasksAndPoints . wwRawAsciiWorld $ w)

@@ -24,13 +24,14 @@
 -------------
 -- Imports --
 -------------
-import Data.Maybe (fromJust, isNothing)
+import Data.Maybe (fromJust, isNothing, isJust)
 import Linear hiding (trace)
 import Data.List as L (foldl', transpose, findIndex)
 import Data.Array as A
 import qualified Data.Map as M
 import Data.Ord
 import Data.Bits
+import Data.Function
 
 import Util ( iterate', lrduDirs )
 import Mask ( bitwiseSubtract )
@@ -38,16 +39,39 @@ import Mask ( bitwiseSubtract )
 import Control.Concurrent ( threadDelay )
 import System.Console.ANSI ( clearScreen, setCursorPosition )
 
-import WalkableWorld ( WalkableWorld(..)
-                     , WorldKey(..)
-                     , readWorld
-                     , showWorld
-                     , printWorld
-                     , partitionMaskByReachableLRDU
-                     , partitionAllMasksByReachableLRDU
-                     , totalEdgesOverPoints
-                     , maskKeys
-                     , totalPoints )
+import WalkableWorld (    WalkableWorld(..)
+                        , WorldKey(..)
+                        , readWorld
+                        , showWorld
+                        , printWorld
+                        , partitionMaskByReachableLRDU
+                        , partitionAllMasksByReachableLRDU
+                        , totalEdgesOverPoints
+                        , maskKeys
+                        , totalPoints
+                        -- , combineTwoWalkableWorlds
+                        -- , combineWalkableWorlds
+                        -- , isNamedPointInWW
+                        -- , isInNamedMaskInWW
+                        -- , isNamedPointOrInNamedMaskInWW
+                        -- , moveMaskOfNameByInWW
+                        -- , movePointsOfNameByInWW
+                        , addMaskInWW
+                        -- , deleteMaskInWW
+                        , filterMaskKeysInWW
+                        -- , filterMasksInWW
+                        -- , lookupMaskInWW
+                        -- , adjustMaskInWW
+                        -- , updateMaskInWW
+                        -- , alterMaskInWW
+                        -- , copyMaskInWW
+                        -- , applyMaskInWW
+                        -- , setPointInWW
+                        -- , deletePointsInWW
+                        -- , insertMaskFromPointsInWW
+                        -- , insertMaskFromNamedPointsInWW
+                        -- , isOverlappingMasksInWW
+                        )
 
 
 -------------
@@ -61,32 +85,52 @@ type NumFencesGrid = Array (V2 Int) Int
 type AreasGrid = Array (V2 Int) Int
 type PerimetersGrid = Array (V2 Int) Int
 
+data KeyType = Original | Part Int deriving (Show, Eq, Ord)
+keyTypeToMaybe Original   = Nothing
+keyTypeToMaybe (Part x) = Just x
+maybeToKeyType Nothing  = Original
+maybeToKeyType (Just x) = Part x
+isOriginal = isNothing . keyTypeToMaybe
+isPart = isJust . keyTypeToMaybe
+getPartNum = fromJust . keyTypeToMaybe
+
+data Key k = Key {keyType :: KeyType, keyValue :: k} deriving (Show, Eq, Ord)
+
 day12part1 = do
     contents <- readFile "day12 (data).csv"
-    let initWorld :: WalkableWorld Char Char
-        initWorld = readWorld (Just . WKMask) contents
+    let initWorld :: WalkableWorld (Key Char) (Key Char)
+        initWorld = readWorld (Just . WKMask . Key Original) contents
         parts = partitionAllMasksByReachableLRDU initWorld
         
         bgChar :: Char
         bgChar = '.'
         
-        maskToChar :: Char -> Char
-        maskToChar   = head . dropWhile (== '\'') . show
+        maskToChar :: (Key Char) -> Char
+        maskToChar (Key Original c) = c
+        maskToChar (Key (Part n) c) = c
         
-        pointsToChar :: Char -> Char
-        pointsToChar = head . dropWhile (== '\'') . show
+        pointsToChar :: (Key Char) -> Char
+        pointsToChar (Key Original c) = c
+        pointsToChar (Key (Part n) c) = c
         
-        nameZOrder :: WorldKey Char Char -> WorldKey Char Char -> Ordering
+        nameZOrder :: WorldKey (Key Char) (Key Char) -> WorldKey (Key Char) (Key Char) -> Ordering
         nameZOrder = compare
+        
+        worldAfterPartition =
+            initWorld
+                & filterMaskKeysInWW (\maskKey -> case maskKey of {(Key Original c) -> False; _ -> True})
+                & (\w -> foldl' (\w' ((Key Original c), masks) -> foldl' (\w'' (n, mask) -> addMaskInWW (Key (Part n) c) mask w'') w' (zip [0..] masks)) w (M.toList parts))
     
-    -- printWorld bgChar maskToChar pointsToChar nameZOrder initWorld
+    -- printWorld bgChar maskToChar pointsToChar nameZOrder worldAfterPartition
     -- print parts
-    print (M.map (map popCount) parts)
+    -- mapM_ print $ M.toList (M.map (map popCount) parts)
     
-    let keys = maskKeys initWorld
-        totalEdges = map (\n -> (totalPoints n initWorld, totalEdgesOverPoints n initWorld)) keys
+    let keys = maskKeys worldAfterPartition
+        areaAndTotalEdgesForAllRegions = map (\n -> (totalPoints n worldAfterPartition, totalEdgesOverPoints n worldAfterPartition)) keys
+        score = sum [area * totalEdges | (area,totalEdges) <- areaAndTotalEdgesForAllRegions]
     
-    print totalEdges
+    -- mapM_ print $ keys
+    print score
 
 day12part1' = do
     contents <- readFile "day12 (data).csv"

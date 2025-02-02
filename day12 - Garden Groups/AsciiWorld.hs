@@ -8,13 +8,23 @@ module AsciiWorld   ( AsciiWorld(..)
                     , readAsciiWorld
                     , showAsciiWorld
                     , printAsciiWorld
+                    , setWidth
+                    , changeWidthBy
+                    , mapKeyForMasks
+                    , mapKeyForPoints
+                    , msbPointOfMask
+                    , middlePointOfMask
+                    , combineTwoAsciiWorlds
                     , combineAsciiWorlds
+                    , isNamedPoint
+                    , isInNamedMask
+                    , isNamedPointOrInNamedMask
                     , moveMaskOfNameBy
                     , movePointsOfNameBy
                     , addMask
                     , deleteMask
-                    , filterMasks
                     , filterMaskKeys
+                    , filterMasks
                     , lookupMask
                     , adjustMask
                     , updateMask
@@ -25,12 +35,7 @@ module AsciiWorld   ( AsciiWorld(..)
                     , deletePoints
                     , insertMaskFromPoints
                     , insertMaskFromNamedPoints
-                    , setWidth
-                    , changeWidthBy
-                    , mapKeyForMasks
-                    , mapKeyForPoints
-                    , msbPointOfMask
-                    , middlePointOfMask ) where
+                    , isOverlappingMasks ) where
 
 -------------
 -- Imports --
@@ -49,7 +54,21 @@ import Data.Foldable
 import Safe (atMay)
 
 import Util ( replace, maximumMaybeBy, filterKeys )
-import Mask ( Point, Mask, pointToIndex, pointToMask, moveMask, movePoint, isOverlapping, bitwiseSubtract, bitwiseAnd, bitwiseOr, bitwiseXor, msbPoint, middlePoint, changeMaskWidthBy, setMaskWidth )
+import Mask ( Point
+            , Mask
+            , pointToIndex
+            , pointToMask
+            , moveMask
+            , movePoint
+            , isOverlapping
+            , bitwiseSubtract
+            , bitwiseAnd
+            , bitwiseOr
+            , bitwiseXor
+            , msbPoint
+            , middlePoint
+            , changeMaskWidthBy
+            , setMaskWidth )
 
 -- Each obj has a shape encoded as bits of an Integer.
 
@@ -113,7 +132,7 @@ readAsciiWorld charMap inStr
 
 changeWidthBy :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
 changeWidthBy delta w = w { asciiWorldMasks = M.map (changeMaskWidthBy oldWidth delta) (asciiWorldMasks w)
-                        , asciiWorldPoints = newPoints
+                          , asciiWorldPoints = newPoints
                         , asciiWorldWidth = newWidth }
   where oldWidth = asciiWorldWidth w
         newWidth = oldWidth + delta
