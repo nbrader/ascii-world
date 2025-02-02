@@ -353,7 +353,7 @@ animateStep frameRate height world = do
     clearScreen  -- Clear the console
     setCursorPosition 0 0  -- Move cursor to top-left
     printW height world  -- Print the current state
-    threadDelay (1000000 `div` frameRate)  -- Control frame rate
+    threadDelay (50000 `div` frameRate)  -- Control frame rate
 
 printW height = printAsciiWorld (height+1) '.' (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (comparing id)
                 . filterMaskKeys (\x -> case x of {External _ -> False; (Internal ToBePartitioned) -> False; _ -> True})
