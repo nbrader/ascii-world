@@ -1,9 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-21.22 ghci --package containers-0.6.7 --package split-0.2.3.5 --package safe-0.3.19 --package QuickCheck-2.14.3 --package ansi-terminal-0.11.5
-{-
-    To build, run the following shell command in this directory:
-        stack --resolver lts-21.22 ghc --package containers-0.6.7 --package split-0.2.3.5 --package safe-0.3.19 --package QuickCheck-2.14.3 --package ansi-terminal-0.11.5 -- '.\WalkableWorld.hs' -O2
--}
+-- stack --resolver lts-21.22 ghci --package containers-0.6.7 --package split-0.2.3.5 --package safe-0.3.19 --package QuickCheck-2.14.3
 
 -- To Do:
 -- Make partitioner which gives every disconnected part of a layer it's own name by tacking on the next number not already existing in the bit mask map
@@ -16,15 +12,15 @@
 -- Make "WalkableWorld" with max walk distance fed in at construction to then add that much margin and so be able to detect reachability effects up to that distance.
 -- Make non-zero bit with highest vertical position component tracked by data structure.
 
--- module WalkableWorld ( WalkableWorld(..)
-                     -- , readWorld
-                     -- , showWorld
-                     -- , printWorld
-                     -- , totalEdgesOverPoints
-                     -- , maskKeys
-                     -- , totalPoints
-                     -- , partitionMaskByReachableLRDU
-                     -- , partitionAllMasksByReachableLRDU ) where
+module WalkableWorld ( WalkableWorld(..)
+                     , readWorld
+                     , showWorld
+                     , printWorld
+                     , totalEdgesOverPoints
+                     , maskKeys
+                     , totalPoints
+                     , partitionMaskByReachableLRDU
+                     , partitionAllMasksByReachableLRDU ) where
 
 -------------
 -- Imports --
@@ -37,9 +33,7 @@ import Data.Function
 import Data.Bifunctor
 import Data.Ord
 import Data.Bits
--- import Debug.Trace (trace)
-import Control.Concurrent (threadDelay)
-import System.Console.ANSI (clearScreen, setCursorPosition)
+import Debug.Trace (trace)
 
 import Util ( lrduDirs )
 import Mask ( Mask
@@ -59,7 +53,6 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , toWorldKey
                         , readAsciiWorld
                         , showAsciiWorld
-                        , printAsciiWorld
                         , combineAsciiWorlds
                         , moveMaskOfNameBy
                         , addMask
@@ -245,17 +238,15 @@ totalPoints maskName w =
 partitionMaskByReachableLRDU :: (Show km, Ord km, Show kp, Ord kp) => km -> WalkableWorld km kp -> [Mask]
 partitionMaskByReachableLRDU maskKey initWorld = [] -- To Do: Implement with the below testLogic
 
-testLogic :: (Show km, Show kp, Ord km, Ord kp) => km -> WalkableWorld km kp -> [AsciiWorld (Ext_Int km WWMaskKey) (Ext_Int kp WWPointsKey)]
-testLogic maskKey (WalkableWorld height worldBeforePartition) = outerFinalWorlds
+testLogic :: (Show km, Show kp, Ord km, Ord kp) => km -> WalkableWorld km kp -> AsciiWorld (Ext_Int km WWMaskKey) (Ext_Int kp WWPointsKey)
+testLogic maskKey (WalkableWorld height worldBeforePartition) = outerFinalWorld
   where worldAfterCopyingTargetMaskToToBePartitioned = 
             worldBeforePartition
                 & copyMask (External maskKey) (Internal ToBePartitioned)
         
         -- Start Loop until all connected parts of target mask found
-        outerLoop outerInputWorlds = innerFinalWorlds ++ outerInputWorlds
-          where outerInputWorld = head outerInputWorlds
-                
-                middlePoint = let maybeMiddlePoint = middlePointOfMask (Internal ToBePartitioned) outerInputWorld
+        outerLoop outerInputWorld = innerFinalWorld
+          where middlePoint = let maybeMiddlePoint = middlePointOfMask (Internal ToBePartitioned) (printTrace "outerInputWorld" outerInputWorld)
                                in case maybeMiddlePoint of
                                     Just point -> point
                                     Nothing -> error $ "middlePoint failed: \"" ++ show maskKey ++ "\" not found in " ++ show outerInputWorld
@@ -271,10 +262,8 @@ testLogic maskKey (WalkableWorld height worldBeforePartition) = outerFinalWorlds
                         & applyMask bitwiseOr (Internal LatestVisited) (Internal VisitedThisSearch)
                 
                 -- Start Loop until LatestVisited is empty
-                innerLoop innerInputWorlds = wAfterOneIteration : innerInputWorlds
-                  where innerInputWorld = head innerInputWorlds
-                        
-                        worldWithUnvisitedXoredByVisitedThisSearch =
+                innerLoop innerInputWorld = wAfterOneIteration
+                  where worldWithUnvisitedXoredByVisitedThisSearch =
                             innerInputWorld
                                 & applyMask bitwiseXor (Internal LatestVisited) (Internal Unvisited)
                         
@@ -290,36 +279,36 @@ testLogic maskKey (WalkableWorld height worldBeforePartition) = outerFinalWorlds
                                 & applyMask bitwiseOr (Internal LatestVisited) (Internal VisitedThisSearch)
                 -- End Loop until LatestVisited is empty
                 
-                innerFinalWorlds =
-                    [worldWithInitLatestVisitedAndUnvisited]
-                        & until ((== 0) . fromJust . lookupMask (Internal LatestVisited) . head) innerLoop
-                        & (\(w:ws) -> applyMask bitwiseXor (Internal VisitedThisSearch) (Internal ToBePartitioned) w : w : ws)
+                innerFinalWorld =
+                    worldWithInitLatestVisitedAndUnvisited
+                        & until ((== 0) . fromJust . lookupMask (Internal LatestVisited)) (printTrace "innerLoop" . innerLoop)
+                        & applyMask bitwiseXor (Internal VisitedThisSearch) (Internal ToBePartitioned)
                 
                 -- VisitedThisSearch should now contain one of the connected components for the target mask.
                 
                 -- Add this as new numbered mask of its own (or perhaps I should be returning a list of masks to do with what I will...) and subtract it from the a copy of the target layer
         
-        outerFinalWorlds =
-            [worldAfterCopyingTargetMaskToToBePartitioned]
-                & until ((== 0) . fromJust . lookupMask (Internal ToBePartitioned) . head) (outerLoop) 
+        outerFinalWorld =
+            worldAfterCopyingTargetMaskToToBePartitioned
+                & until ((== 0) . fromJust . lookupMask (Internal ToBePartitioned)) (printTrace "outerLoop" . outerLoop) 
         
         -- End Loop until all connected parts of target mask found
         
         
         -- PRINTING HELPER
-        -- printTrace label w = trace (label ++ "\n" ++ showW w) w
-          -- where showW = showAsciiWorld (height+1) '.' (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (comparing id)
-                        -- . filterMaskKeys (\x -> case x of {External _ -> False; (Internal ToBePartitioned) -> False; _ -> True})
+        printTrace label w = trace (label ++ "\n" ++ showW w) w
+          where showW = showAsciiWorld (height+1) '.' (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (comparing id)
+                        . filterMaskKeys (\x -> case x of {External _ -> False; (Internal ToBePartitioned) -> False; _ -> True})
 
 test = do
-    contents <- readFile "day12 (data).csv"
+    contents <- readFile "day12 (example 3).csv"
     
     let 
         maskNameToKeep = 'C'
         charMap c = Just (WKMask c)
         initWorld = readWorld charMap contents
         (WalkableWorld height _) = initWorld
-        worldWithVisitedThisSearchMask = head $ testLogic maskNameToKeep initWorld
+        worldWithVisitedThisSearchMask = testLogic maskNameToKeep initWorld
         
         newAsciiWorld = filterMaskKeys (\x -> case x of {External _ -> False; _ -> True}) worldWithVisitedThisSearchMask
         newAsciiWorld' = filterMaskKeys (\x -> case x of {Internal Unvisited -> False; _ -> True}) newAsciiWorld
@@ -330,33 +319,6 @@ test = do
     -- putStrLn "\n"
     printRawAsciiWorld (height+1) '.' (either id (head . show) . eitherFromExt_Int) (either id (head . show) . eitherFromExt_Int) (comparing id) newWorld
     print newWorld
-
-main = test2
-
-test2 = do
-    contents <- readFile "day12 (data).csv"
-    let
-        maskNameToKeep = 'C'
-        charMap c = Just (WKMask c)
-        initWorld = (readWorld :: (Char -> Maybe (WorldKey Char Char)) -> String -> WalkableWorld Char Char) charMap contents
-        (WalkableWorld height _) = initWorld
-    
-    let futureWorlds = reverse $ testLogic maskNameToKeep initWorld
-    
-    animateFrames 3 height futureWorlds
-
--- animateFrames :: Int -> Int -> [WalkableBoundedWorld] -> IO ()
-animateFrames frameRate height worlds = mapM_ (animateStep frameRate height) worlds
-
--- animateStep :: Int -> Int -> WalkableBoundedWorld -> IO ()
-animateStep frameRate height world = do
-    clearScreen  -- Clear the console
-    setCursorPosition 0 0  -- Move cursor to top-left
-    printW height world  -- Print the current state
-    threadDelay (50000 `div` frameRate)  -- Control frame rate
-
-printW height = printAsciiWorld (height+1) '.' (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (comparing id)
-                . filterMaskKeys (\x -> case x of {External _ -> False; (Internal ToBePartitioned) -> False; _ -> True})
 
 partitionAllMasksByReachableLRDU :: (Show km, Ord km, Show kp, Ord kp) => WalkableWorld km kp -> M.Map km [Mask]
 partitionAllMasksByReachableLRDU w = M.fromList $ map (\maskKey -> (maskKey, partitionMaskByReachableLRDU maskKey w)) (maskKeys w)
