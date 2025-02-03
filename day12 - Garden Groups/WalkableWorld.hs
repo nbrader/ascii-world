@@ -18,6 +18,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         , showWorld
                         , printWorld
                         , totalEdgesOverPoints
+                        , totalConnectedEdges
                         , maskKeys
                         , totalPoints
                         , partitionMaskByReachableLRDU
@@ -125,7 +126,7 @@ eitherToExt_Int (Left x)  = External x
 eitherToExt_Int (Right y) = Internal y
 fromExternal (External x) = x
 
-data WWMaskKey = NoGo | TemporaryMask | VisitedThisSearch | Unvisited | LatestVisited | ToBePartitioned deriving (Show, Eq, Ord, Enum, Bounded)
+data WWMaskKey = NoGo | TemporaryMask1 | TemporaryMask2 | VisitedThisSearch | Unvisited | LatestVisited | ToBePartitioned deriving (Show, Eq, Ord, Enum, Bounded)
 data WWPointsKey = TemporaryPoints deriving (Show, Eq, Ord, Enum, Bounded)
 allWWMaskKeys :: [WWMaskKey]
 allWWMaskKeys = [minBound .. maxBound]
@@ -297,31 +298,68 @@ maskKeys w =
 totalHorizontalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalHorizontalEdgesOverPoints maskName w =
     w & wwRawAsciiWorld
-      & copyMask (External maskName) (Internal TemporaryMask)
-      & moveMaskOfNameBy (Internal TemporaryMask) (0,1)
-      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask)
-      & getTemporaryMask
+      & copyMask (External maskName) (Internal TemporaryMask1)
+      & moveMaskOfNameBy (Internal TemporaryMask1) (0,1)
+      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask1)
+      & getTemporaryMask1
       & countMaskPoints
   
-  where getTemporaryMask = fromJust . M.lookup (Internal TemporaryMask) . asciiWorldMasks
+  where getTemporaryMask1 = fromJust . M.lookup (Internal TemporaryMask1) . asciiWorldMasks
         countMaskPoints = toInteger . popCount
 
 totalVerticalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalVerticalEdgesOverPoints maskName w =
     w & wwRawAsciiWorld
-      & copyMask (External maskName) (Internal TemporaryMask)
-      & moveMaskOfNameBy (Internal TemporaryMask) (1,0)
-      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask)
-      & getTemporaryMask
+      & copyMask (External maskName) (Internal TemporaryMask1)
+      & moveMaskOfNameBy (Internal TemporaryMask1) (1,0)
+      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask1)
+      & getTemporaryMask1
       & countMaskPoints
   where
-    getTemporaryMask = fromJust . M.lookup (Internal TemporaryMask) . asciiWorldMasks
+    getTemporaryMask1 = fromJust . M.lookup (Internal TemporaryMask1) . asciiWorldMasks
     countMaskPoints = toInteger . popCount
 
 totalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalEdgesOverPoints maskName w =
     totalHorizontalEdgesOverPoints maskName w +
     totalVerticalEdgesOverPoints maskName w
+
+totalConnectedHorizontalEdges :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
+totalConnectedHorizontalEdges maskName w =
+    w & wwRawAsciiWorld
+      & copyMask (External maskName) (Internal TemporaryMask1)
+      & moveMaskOfNameBy (Internal TemporaryMask1) (0,1)
+      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask1)
+      & copyMask (Internal TemporaryMask1) (Internal TemporaryMask2)
+      & moveMaskOfNameBy (Internal TemporaryMask2) (1,0)
+      & applyMask bitwiseXor (Internal TemporaryMask1) (Internal TemporaryMask2)
+      & getTemporaryMask2
+      & countMaskPoints
+      & (`div` 2)
+  
+  where getTemporaryMask2 = fromJust . M.lookup (Internal TemporaryMask2) . asciiWorldMasks
+        countMaskPoints = toInteger . popCount
+
+totalConnectedVerticalEdges :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
+totalConnectedVerticalEdges maskName w =
+    w & wwRawAsciiWorld
+      & copyMask (External maskName) (Internal TemporaryMask1)
+      & moveMaskOfNameBy (Internal TemporaryMask1) (1,0)
+      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask1)
+      & copyMask (Internal TemporaryMask1) (Internal TemporaryMask2)
+      & moveMaskOfNameBy (Internal TemporaryMask2) (0,1)
+      & applyMask bitwiseXor (Internal TemporaryMask1) (Internal TemporaryMask2)
+      & getTemporaryMask2
+      & countMaskPoints
+      & (`div` 2)
+  where
+    getTemporaryMask2 = fromJust . M.lookup (Internal TemporaryMask2) . asciiWorldMasks
+    countMaskPoints = toInteger . popCount
+
+totalConnectedEdges :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
+totalConnectedEdges maskName w =
+    totalConnectedHorizontalEdges maskName w +
+    totalConnectedVerticalEdges maskName w
 
 totalPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalPoints maskName w =

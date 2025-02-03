@@ -47,6 +47,7 @@ import WalkableWorld (    WalkableWorld(..)
                         , partitionMaskByReachableLRDU
                         , partitionAllMasksByReachableLRDU
                         , totalEdgesOverPoints
+                        , totalConnectedEdges
                         , maskKeys
                         , totalPoints
                         -- , combineTwoWalkableWorlds
@@ -77,7 +78,7 @@ import WalkableWorld (    WalkableWorld(..)
 -------------
 -- Program --
 -------------
-main = day12part1
+main = day12part2
 
 type CharGrid = Array (V2 Int) Char
 type RegionRepGrid = Array (V2 Int) (Maybe (V2 Int))
@@ -130,6 +131,43 @@ day12part1 = do
         score = sum [area * totalEdges | (area,totalEdges) <- areaAndTotalEdgesForAllRegions]
     
     -- mapM_ print $ keys
+    print score
+
+day12part2 = do
+    contents <- readFile "day12 (example 5).csv"
+    let initWorld :: WalkableWorld (Key Char) (Key Char)
+        initWorld = readWorld (Just . WKMask . Key Original) contents
+        parts = partitionAllMasksByReachableLRDU initWorld
+        
+        bgChar :: Char
+        bgChar = '.'
+        
+        maskToChar :: (Key Char) -> Char
+        maskToChar (Key Original c) = c
+        maskToChar (Key (Part n) c) = c
+        
+        pointsToChar :: (Key Char) -> Char
+        pointsToChar (Key Original c) = c
+        pointsToChar (Key (Part n) c) = c
+        
+        nameZOrder :: WorldKey (Key Char) (Key Char) -> WorldKey (Key Char) (Key Char) -> Ordering
+        nameZOrder = compare
+        
+        worldAfterPartition =
+            initWorld
+                & filterMaskKeysInWW (\maskKey -> case maskKey of {(Key Original c) -> False; _ -> True})
+                & (\w -> foldl' (\w' ((Key Original c), masks) -> foldl' (\w'' (n, mask) -> addMaskInWW (Key (Part n) c) mask w'') w' (zip [0..] masks)) w (M.toList parts))
+    
+    -- printWorld bgChar maskToChar pointsToChar nameZOrder worldAfterPartition
+    -- print parts
+    -- mapM_ print $ M.toList (M.map (map popCount) parts)
+    
+    let keys = maskKeys worldAfterPartition
+        areaAndTotalEdgesForAllRegions = map (\n -> (totalPoints n worldAfterPartition, totalConnectedEdges n worldAfterPartition)) keys
+        score = sum [area * totalEdges | (area,totalEdges) <- areaAndTotalEdgesForAllRegions]
+    
+    -- mapM_ print $ keys
+    mapM_ print areaAndTotalEdgesForAllRegions
     print score
 
 day12part1' = do
@@ -223,7 +261,7 @@ day12part1' = do
     print $ sum $ zipWith (*) repPerims repAreas
     -- mapM_ print $ zipWith (\x y -> (x,y)) repChars (zipWith (\x y -> (x,y)) repPerims repAreas)
 
-day12part2 = do
+day12part2' = do
     contents <- readFile "day12 (data).csv"
     let rows = lines contents
         height = length rows
