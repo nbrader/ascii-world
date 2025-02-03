@@ -48,6 +48,7 @@ import WalkableWorld (    WalkableWorld(..)
                         , partitionAllMasksByReachableLRDU
                         , totalEdgesOverPoints
                         , totalConnectedEdges
+                        , totalConnectedOneSidedEdges
                         , maskKeys
                         , totalPoints
                         -- , combineTwoWalkableWorlds
@@ -134,7 +135,7 @@ day12part1 = do
     print score
 
 day12part2 = do
-    contents <- readFile "day12 (example 5).csv"
+    contents <- readFile "day12 (data).csv"
     let initWorld :: WalkableWorld (Key Char) (Key Char)
         initWorld = readWorld (Just . WKMask . Key Original) contents
         parts = partitionAllMasksByReachableLRDU initWorld
@@ -163,11 +164,11 @@ day12part2 = do
     -- mapM_ print $ M.toList (M.map (map popCount) parts)
     
     let keys = maskKeys worldAfterPartition
-        areaAndTotalEdgesForAllRegions = map (\n -> (totalPoints n worldAfterPartition, totalConnectedEdges n worldAfterPartition)) keys
+        areaAndTotalEdgesForAllRegions = map (\n -> (totalPoints n worldAfterPartition, totalConnectedOneSidedEdges n worldAfterPartition)) keys
         score = sum [area * totalEdges | (area,totalEdges) <- areaAndTotalEdgesForAllRegions]
     
     -- mapM_ print $ keys
-    mapM_ print areaAndTotalEdgesForAllRegions
+    -- mapM_ print areaAndTotalEdgesForAllRegions
     print score
 
 day12part1' = do

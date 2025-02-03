@@ -19,6 +19,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         , printWorld
                         , totalEdgesOverPoints
                         , totalConnectedEdges
+                        , totalConnectedOneSidedEdges
                         , maskKeys
                         , totalPoints
                         , partitionMaskByReachableLRDU
@@ -126,7 +127,7 @@ eitherToExt_Int (Left x)  = External x
 eitherToExt_Int (Right y) = Internal y
 fromExternal (External x) = x
 
-data WWMaskKey = NoGo | TemporaryMask1 | TemporaryMask2 | VisitedThisSearch | Unvisited | LatestVisited | ToBePartitioned deriving (Show, Eq, Ord, Enum, Bounded)
+data WWMaskKey = NoGo | TemporaryMask1 | TemporaryMask2 | TemporaryMask3 | TemporaryMask4 | VisitedThisSearch | Unvisited | LatestVisited | ToBePartitioned deriving (Show, Eq, Ord, Enum, Bounded)
 data WWPointsKey = TemporaryPoints deriving (Show, Eq, Ord, Enum, Bounded)
 allWWMaskKeys :: [WWMaskKey]
 allWWMaskKeys = [minBound .. maxBound]
@@ -321,8 +322,8 @@ totalVerticalEdgesOverPoints maskName w =
 
 totalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalEdgesOverPoints maskName w =
-    totalHorizontalEdgesOverPoints maskName w +
-    totalVerticalEdgesOverPoints maskName w
+    (  totalHorizontalEdgesOverPoints maskName w
+     + totalVerticalEdgesOverPoints   maskName w)
 
 totalConnectedHorizontalEdges :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalConnectedHorizontalEdges maskName w =
@@ -358,8 +359,88 @@ totalConnectedVerticalEdges maskName w =
 
 totalConnectedEdges :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalConnectedEdges maskName w =
-    totalConnectedHorizontalEdges maskName w +
-    totalConnectedVerticalEdges maskName w
+    (  totalConnectedHorizontalEdges maskName w
+     + totalConnectedVerticalEdges   maskName w)
+
+totalConnectedOneSidedHorizontalEdges :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
+totalConnectedOneSidedHorizontalEdges maskName w =
+    (    (worldWithEdgeMask & keepDownEdges & countConnectedEdges)
+     +   (worldWithEdgeMask & keepUpEdges   & countConnectedEdges))
+  
+  where worldWithEdgeMask =
+            w
+                & wwRawAsciiWorld
+                & copyMask (External maskName) (Internal TemporaryMask1)
+                & copyMask (External maskName) (Internal TemporaryMask2)
+                & moveMaskOfNameBy (Internal TemporaryMask2) (0,1)
+        
+        keepDownEdges w' =
+            w'
+                & applyMask bitwiseXor (Internal TemporaryMask1) (Internal TemporaryMask2)
+                & copyMask (Internal TemporaryMask2) (Internal TemporaryMask3)
+                & applyMask bitwiseAnd (Internal TemporaryMask1) (Internal TemporaryMask3)
+        
+        keepUpEdges w' =
+            w'
+                & applyMask bitwiseXor (Internal TemporaryMask2) (Internal TemporaryMask1)
+                & copyMask (Internal TemporaryMask1) (Internal TemporaryMask3)
+                & applyMask bitwiseAnd (Internal TemporaryMask2) (Internal TemporaryMask3)
+        
+        countConnectedEdges w' =
+            w'
+                & copyMask (Internal TemporaryMask3) (Internal TemporaryMask4)
+                & moveMaskOfNameBy (Internal TemporaryMask4) (1,0)
+                & applyMask bitwiseXor (Internal TemporaryMask3) (Internal TemporaryMask4)
+                & getTemporaryMask4
+                & countMaskPoints
+                & (`div` 2)
+        
+        getTemporaryMask4 = fromJust . M.lookup (Internal TemporaryMask4) . asciiWorldMasks
+        
+        countMaskPoints = toInteger . popCount
+
+
+totalConnectedOneSidedVerticalEdges :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
+totalConnectedOneSidedVerticalEdges maskName w =
+    (    (worldWithEdgeMask & keepLeftEdges  & countConnectedEdges)
+     +   (worldWithEdgeMask & keepRightEdges & countConnectedEdges))
+  
+  where worldWithEdgeMask =
+            w
+                & wwRawAsciiWorld
+                & copyMask (External maskName) (Internal TemporaryMask1)
+                & copyMask (External maskName) (Internal TemporaryMask2)
+                & moveMaskOfNameBy (Internal TemporaryMask2) (1,0)
+        
+        keepLeftEdges w' =
+            w'
+                & applyMask bitwiseXor (Internal TemporaryMask1) (Internal TemporaryMask2)
+                & copyMask (Internal TemporaryMask2) (Internal TemporaryMask3)
+                & applyMask bitwiseAnd (Internal TemporaryMask1) (Internal TemporaryMask3)
+        
+        keepRightEdges w' =
+            w'
+                & applyMask bitwiseXor (Internal TemporaryMask2) (Internal TemporaryMask1)
+                & copyMask (Internal TemporaryMask1) (Internal TemporaryMask3)
+                & applyMask bitwiseAnd (Internal TemporaryMask2) (Internal TemporaryMask3)
+        
+        countConnectedEdges w' =
+            w'
+                & copyMask (Internal TemporaryMask3) (Internal TemporaryMask4)
+                & moveMaskOfNameBy (Internal TemporaryMask4) (0,1)
+                & applyMask bitwiseXor (Internal TemporaryMask3) (Internal TemporaryMask4)
+                & getTemporaryMask4
+                & countMaskPoints
+                & (`div` 2)
+        
+        getTemporaryMask4 = fromJust . M.lookup (Internal TemporaryMask4) . asciiWorldMasks
+        
+        countMaskPoints = toInteger . popCount
+
+totalConnectedOneSidedEdges :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
+totalConnectedOneSidedEdges maskName w =
+    (  totalConnectedOneSidedHorizontalEdges maskName w
+     + totalConnectedOneSidedVerticalEdges   maskName w)
 
 totalPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalPoints maskName w =
