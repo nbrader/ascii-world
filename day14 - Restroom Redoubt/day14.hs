@@ -89,7 +89,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
 -------------
 -- Program --
 -------------
-main = day14part1
+main = day14part2
 
 readBots inStr =
     inStr
@@ -218,3 +218,48 @@ day14part1 = do
     
     let safetyScore = product $ map length [q1Ps, q2Ps, q3Ps, q4Ps]
     print safetyScore
+
+-- 13
+-- 50+20 = 70
+-- 100+16 = 116
+
+normaliseStr = unlines . lines
+
+day14part2 = do
+    contents <- readFile "day14 (data).csv"
+    world3PatternStr <- readFile "world3.txt"
+    treePatternStr <- readFile "tree.txt"
+    let (width, height) = (101,103)
+    
+    let initBots = readBots contents
+    -- mapM_ print initBots
+    
+    let showWorld bots = do
+            showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld
+          where asciiWorld = AsciiWorld
+                    { asciiWorldMasks = M.empty
+                    , asciiWorldPoints = M.fromList [("Bots", map (toPoint . snd) bots)]
+                    , asciiWorldWidth = width }
+                
+                bgChar = '.'
+                maskToChar = id
+                pointsToChar = const 'B'
+                nameZOrder = compare
+    
+    let futureBots = iterate (map (modWalls width height . run)) initBots
+    
+    let Just step = findIndex (\w -> normaliseStr (showWorld w) == normaliseStr (treePatternStr)) (map head $ chunksOf 103 $ drop 12 $ futureBots)
+    
+    print (12 + step*103)
+    
+    -- print $ findIndex (\w -> normaliseStr (showWorld w) == normaliseStr world3PatternStr) futureBots
+    -- putStrLn $ showWorld (futureBots !! 3)
+    -- putStrLn $ showWorld (futureBots !! (12+79*103))
+    -- printWorld (futureBots !! 69)
+    -- printWorld (futureBots !! 115)
+    -- printWorld (futureBots !! 126)
+    -- printWorld (futureBots !! 172)
+    -- printWorld (futureBots !! 218)
+    -- printWorld (futureBots !! 321)
+    
+    -- mapM_ printWorld futureBots
