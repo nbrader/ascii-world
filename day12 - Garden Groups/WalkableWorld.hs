@@ -2,15 +2,7 @@
 -- stack --resolver lts-21.22 ghci --package containers-0.6.7 --package split-0.2.3.5 --package safe-0.3.19 --package QuickCheck-2.14.3
 
 -- To Do:
--- Make partitioner which gives every disconnected part of a layer it's own name by tacking on the next number not already existing in the bit mask map
---      Have the disconnected portions found by a flood fill algorithm using bit mask operations:
---          Loop until all points in world have been sufficiently checked to account for all part of all layers (need a nice way of checking this)
---              find an active point from the layer not so far a member of any partition part
---              Loop until latest found points are empty
---                  find new points by 'and'ing the latest found points in shifted up, down, left and right positions with the "visited" bit mask and 'or'ing them together
---                  xor these points (to subtract them) from the "visited" bit mask and make them the new "latest found points"
 -- Make "WalkableWorld" with max walk distance fed in at construction to then add that much margin and so be able to detect reachability effects up to that distance.
--- Make non-zero bit with highest vertical position component tracked by data structure.
 
 module WalkableWorld    ( WalkableWorld(..)
                         , WorldKey(..)
