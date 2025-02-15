@@ -9,6 +9,10 @@ module WalkableWorld    ( WalkableWorld(..)
                         , readWorld
                         , showWorld
                         , printWorld
+                        , Ext_Int(..)
+                        , WWMaskKey
+                        , WWPointsKey
+                        , printRawAsciiWorld
                         , totalEdgesOverPoints
                         , totalConnectedEdges
                         , totalConnectedOneSidedEdges
@@ -158,14 +162,14 @@ showWorld bgChar maskToChar pointsToChar nameZOrder w = (\(height, w') -> showAs
         conversion = toWorldKey . bimap fromExternal fromExternal . fromWorldKey
 
 -- Shows the raw underlying ascii world except for underscores which are stripped so that there aren't just underscores for all non-background point.
-showRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Ext_Int km WWMaskKey -> Char) -> (Ext_Int kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
-showRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder . wwRawAsciiWorld $ w
+showRawAsciiWorld :: (Ord km, Ord kp) => Char -> (Ext_Int km WWMaskKey -> Char) -> (Ext_Int kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> String
+showRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld (wwHeight w) bgChar maskToChar pointsToChar nameZOrder . wwRawAsciiWorld $ w
 
 printWorld :: (Ord km, Ord kp) => Char -> (km -> Char) -> (kp -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> WalkableWorld km kp -> IO ()
 printWorld bgChar maskToChar pointsToChar nameZOrder = putStrLn . showWorld bgChar maskToChar pointsToChar nameZOrder
 
-printRawAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (Ext_Int km WWMaskKey -> Char) -> (Ext_Int kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> IO ()
-printRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder = putStrLn . showRawAsciiWorld height bgChar maskToChar pointsToChar nameZOrder
+printRawAsciiWorld :: (Ord km, Ord kp) => Char -> (Ext_Int km WWMaskKey -> Char) -> (Ext_Int kp WWPointsKey -> Char) -> WWNameZComp km kp -> WalkableWorld km kp -> IO ()
+printRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = putStrLn . showRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder $ w
 
 
 
