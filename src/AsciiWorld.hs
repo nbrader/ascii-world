@@ -142,7 +142,7 @@ changeWidthBy delta w = w { asciiWorldMasks = M.map (changeMaskWidthBy oldWidth 
         
         oldPoints = asciiWorldPoints w
         newPoints
-            | delta < 0 = M.map (filter (\(x,_) -> x >= newWidth)) oldPoints
+            | delta < 0 = M.map (filter (\(x,_) -> x < newWidth)) oldPoints
             | otherwise = oldPoints
 
 setWidth :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
