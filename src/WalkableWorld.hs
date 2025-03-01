@@ -293,7 +293,6 @@ maskKeys w =
       & map eitherFromExt_Int
       & lefts
 
-
 totalHorizontalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
 totalHorizontalEdgesOverPoints maskName w =
     w & wwRawAsciiWorld
