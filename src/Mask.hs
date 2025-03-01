@@ -27,8 +27,8 @@ pointToMask width (x,y) = moveMask width (x,y) 1
 moveMask :: Int -> (Int,Int) -> Mask -> Mask
 moveMask width (dx,dy) pts = pts `shift` pointToIndex width (dx,dy)
 
-movePoint :: Int -> (Int,Int) -> (Int,Int) -> (Int,Int)
-movePoint width (dx,dy) (x,y) = (x+dx,y+dy)
+movePoint :: (Int,Int) -> (Int,Int) -> (Int,Int)
+movePoint (dx,dy) (x,y) = (x+dx,y+dy)
 
 
 -- isOverlapping n n

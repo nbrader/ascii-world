@@ -19,7 +19,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         -- , combineTwoWalkableWorlds
                         -- , combineWalkableWorlds
                         , inWWIsPointsKeyOverlappingMaskKey
-                        -- , inWWIsPointOverlappingPointsKey
+                        , inWWIsPointOverlappingPointsKey
                         -- , inWWIsPointOverlappingMaskKey
                         -- , inWWIsPointOverlappingPointsKeyOrMaskKey
                         -- , moveMaskOfNameByInWW
@@ -41,6 +41,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         -- , isOverlappingMasksInWW
                         , movePointsKeyByVecFreelyInWW
                         , movePointsKeyByVecInWWUnlessNewWorldSatisfiesPred
+                        , movePointsKeyByVecPushingPointsKeyBlockedByMaskKeysInWW
                         ) where
 
 -------------
@@ -63,6 +64,7 @@ import Mask ( Mask
             , bitwiseOr
             , bitwiseXor
             , bitwiseAnd
+            , movePoint
             , msbIndex
             , middleIndex
             , msbPoint
@@ -94,6 +96,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , filterMaskKeys
                         , filterMasks
                         , lookupMask
+                        , lookupPoints
                         , adjustMask
                         , updateMask
                         , alterMask
@@ -124,7 +127,7 @@ eitherToExt_Int (Right y) = Internal y
 fromExternal (External x) = x
 
 data WWMaskKey = NoGo | TemporaryMask1 | TemporaryMask2 | TemporaryMask3 | TemporaryMask4 | VisitedThisSearch | Unvisited | LatestVisited | ToBePartitioned deriving (Show, Eq, Ord, Enum, Bounded)
-data WWPointsKey = TemporaryPoints deriving (Show, Eq, Ord, Enum, Bounded)
+data WWPointsKey = TemporaryPoints | Tagged deriving (Show, Eq, Ord, Enum, Bounded)
 allWWMaskKeys :: [WWMaskKey]
 allWWMaskKeys = [minBound .. maxBound]
 allWWPointsKeys :: [WWPointsKey]
@@ -184,11 +187,11 @@ printRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = putStrLn . show
 inWWIsPointsKeyOverlappingMaskKey :: (Ord mk, Ord pk) => WalkableWorld mk pk -> pk -> mk -> Bool
 inWWIsPointsKeyOverlappingMaskKey (WalkableWorld _ asciiWorld) pointsKey maskKey = inWorldIsPointsKeyOverlappingMaskKey asciiWorld (External pointsKey) (External maskKey)
 
--- inWWIsPointOverlappingPointsKey :: (Ord mk, Ord pk) => WalkableWorld mk pk -> Point -> pk -> Bool
--- inWWIsPointOverlappingPointsKey (WalkableWorld _ asciiWorld) point pointsKey = inWorldIsPointOverlappingPointsKey asciiWorld point pointsKey
+inWWIsPointOverlappingPointsKey :: (Ord mk, Ord pk) => WalkableWorld mk pk -> Point -> pk -> Bool
+inWWIsPointOverlappingPointsKey (WalkableWorld _ asciiWorld) point pointsKey = inWorldIsPointOverlappingPointsKey asciiWorld point (External pointsKey)
 
--- inWWIsPointOverlappingMaskKey :: (Ord mk, Ord pk) => WalkableWorld mk pk -> Point -> mk -> Bool
--- inWWIsPointOverlappingMaskKey (WalkableWorld _ asciiWorld) point maskKey = inWorldIsPointOverlappingMaskKey asciiWorld point maskKey
+inWWIsPointOverlappingMaskKey :: (Ord mk, Ord pk) => WalkableWorld mk pk -> Point -> mk -> Bool
+inWWIsPointOverlappingMaskKey (WalkableWorld _ asciiWorld) point maskKey = inWorldIsPointOverlappingMaskKey asciiWorld point (External maskKey)
 
 -- inWWIsPointOverlappingPointsKeyOrMaskKey :: (Ord k) => WalkableWorld k k -> Point -> k -> Bool
 -- inWWIsPointOverlappingPointsKeyOrMaskKey (WalkableWorld _ asciiWorld) point key = inWorldIsPointOverlappingPointsKeyOrMaskKey asciiWorld point key
@@ -211,8 +214,11 @@ filterMaskKeysInWW p (WalkableWorld height asciiWorld) = WalkableWorld height (f
 -- filterMasksInWW :: (Ord mk, Ord pk) => (Mask -> Bool) -> WalkableWorld mk pk -> WalkableWorld mk pk
 -- filterMasksInWW p (WalkableWorld height w) = WalkableWorld height $ filterMasks p w
 
+-- lookupPointsInWW :: (Ord mk, Ord pk) => mk -> WalkableWorld mk pk -> Maybe [Point]
+lookupPointsInWW pointsKey (WalkableWorld height w) = lookupPoints (External pointsKey) w
+
 -- lookupMaskInWW :: (Ord mk, Ord pk) => mk -> WalkableWorld mk pk -> Maybe Mask
--- lookupMaskInWW maskName (WalkableWorld height w) = lookupMask maskName w
+lookupMaskInWW maskKey (WalkableWorld height w) = lookupMask (External maskKey) w
 
 -- adjustMaskInWW :: (Ord mk, Ord pk) => (Mask -> Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
 -- adjustMaskInWW f maskName (WalkableWorld height w) = WalkableWorld height $ adjustMask f maskName w
@@ -536,3 +542,43 @@ movePointsKeyByVecInWWUnlessNewWorldSatisfiesPred pointsKey v initWorld pred
     | otherwise
         = worldAfterFreeMove
   where worldAfterFreeMove = movePointsKeyByVecFreelyInWW pointsKey v initWorld
+
+movePointsKeyByVecPushingPointsKeyBlockedByMaskKeysInWW :: (Ord mk, Ord pk) => pk -> (Int, Int) -> pk -> [mk] -> WalkableWorld mk pk -> Maybe (WalkableWorld mk pk)
+movePointsKeyByVecPushingPointsKeyBlockedByMaskKeysInWW toMovePointsKey v pushablePointsKey blockingMaskKeys initWorld =
+    case (maybePushablePoints, maybeBlockingMaskKeys) of
+        (Just pushablePoints, Just blockingMasks) ->
+            if length pushablePoints /= length (nub pushablePoints)
+                then error "All pushable points must be unique!"
+                else case maybeToMovePointsKey of 
+                        Just [toMovePoint] ->
+                            let
+                                pushingPointDestination = toMovePoint `movePoint` v
+                                
+                                collidesWithMask point world =
+                                    any (inWWIsPointOverlappingMaskKey world point) blockingMaskKeys
+                                
+                                collidesWithPushable point world =
+                                    inWWIsPointOverlappingPointsKey world point pushablePointsKey
+                            
+                                movePointByVecPushingPointsKeyBlockedByMaskKeysInWW lastMovedPoint v pushablePointsKey blockingMaskKeys world
+                                    | nextPoint `collidesWithMask` world = Nothing  -- Collision detected, stop
+                                    | nextPoint `collidesWithPushable` world = movePointByVecPushingPointsKeyBlockedByMaskKeysInWW nextPoint v pushablePointsKey blockingMaskKeys initWorld
+                                    | otherwise = let oldAsciiWorld = wwRawAsciiWorld world
+                                                      oldWorldPoints = asciiWorldPoints oldAsciiWorld
+                                                      newAsciiWorld = oldAsciiWorld {asciiWorldPoints =
+                                                              M.adjust (delete pushingPointDestination) (External pushablePointsKey)
+                                                            $ M.adjust (nextPoint:) (External pushablePointsKey)
+                                                            $ M.insert (External toMovePointsKey) [pushingPointDestination]
+                                                            $ oldWorldPoints }
+                                                  in Just $ world {wwRawAsciiWorld = newAsciiWorld}
+                                  where nextPoint = lastMovedPoint `movePoint` v
+                            in if pushingPointDestination `collidesWithMask` initWorld
+                                then Just initWorld
+                                else movePointByVecPushingPointsKeyBlockedByMaskKeysInWW toMovePoint v pushablePointsKey blockingMaskKeys initWorld
+                        
+                        Just _  -> error "Points key must be associated with a single point!"
+                        Nothing -> error "No such points key!"
+  where
+    maybeToMovePointsKey = lookupPoints (External toMovePointsKey) $ wwRawAsciiWorld initWorld
+    maybePushablePoints = lookupPoints (External pushablePointsKey) $ wwRawAsciiWorld initWorld
+    maybeBlockingMaskKeys = sequence $ map (\blockingMaskKey -> lookupMask (External blockingMaskKey) $ wwRawAsciiWorld initWorld) blockingMaskKeys

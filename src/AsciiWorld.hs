@@ -30,6 +30,7 @@ module AsciiWorld   ( AsciiWorld(..)
                     , filterMaskKeys
                     , filterMasks
                     , lookupMask
+                    , lookupPoints
                     , adjustMask
                     , updateMask
                     , alterMask
@@ -252,7 +253,7 @@ moveMaskOfNameBy name (dx,dy) w = w {asciiWorldMasks = M.update (\pts -> Just $ 
   where width = asciiWorldWidth w
 
 movePointsOfNameBy :: (Ord mk, Ord pk) => pk -> (Int,Int) -> AsciiWorld mk pk -> AsciiWorld mk pk
-movePointsOfNameBy name (dx,dy) w = w {asciiWorldPoints = M.update (\pts -> Just $ map (movePoint width (dx,dy)) pts) name (asciiWorldPoints w)}
+movePointsOfNameBy name (dx,dy) w = w {asciiWorldPoints = M.update (\pts -> Just $ map (movePoint (dx,dy)) pts) name (asciiWorldPoints w)}
   where width = asciiWorldWidth w
 
 addMask :: (Ord mk, Ord pk) => mk -> Mask -> AsciiWorld mk pk -> AsciiWorld mk pk
@@ -269,6 +270,9 @@ filterMasks p w = w { asciiWorldMasks = M.filter p (asciiWorldMasks w) }
 
 lookupMask :: (Ord mk, Ord pk) => mk -> AsciiWorld mk pk -> Maybe Mask
 lookupMask maskName w = M.lookup maskName (asciiWorldMasks w)
+
+lookupPoints :: (Ord mk, Ord pk) => pk -> AsciiWorld mk pk -> Maybe [Point]
+lookupPoints pointsKey w = M.lookup pointsKey (asciiWorldPoints w)
 
 adjustMask :: (Ord mk, Ord pk) => (Mask -> Mask) -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 adjustMask f maskName w = w { asciiWorldMasks = M.adjust f maskName (asciiWorldMasks w) }
