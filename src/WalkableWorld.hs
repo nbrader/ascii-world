@@ -24,7 +24,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         -- , combineTwoWalkableWorlds
                         -- , combineWalkableWorlds
                         -- , inWalkableWorldIsPointOverlappingPointsKey
-                        -- , isPointOverlappingNamedMaskInWW
+                        -- , inWalkableWorldIsPointOverlappingMaskKey
                         -- , isNamedPointOrInNamedMaskInWW
                         -- , moveMaskOfNameByInWW
                         -- , movePointsOfNameByInWW
@@ -87,7 +87,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , combineAsciiWorlds
                         , inWorldIsPointOverlappingPointsKey
                         , inWorldIsPointsKeyOverlappingMaskKey
-                        , isPointOverlappingNamedMask
+                        , inWorldIsPointOverlappingMaskKey
                         , isNamedPointOrInNamedMask
                         , moveMaskOfNameBy
                         , movePointsOfNameBy
@@ -183,11 +183,11 @@ printRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = putStrLn . show
 -- combineWalkableWorlds :: (Ord km, Ord kp) => [WalkableWorld km kp] -> WalkableWorld km kp
 -- combineWalkableWorlds = combineAsciiWorlds
 
--- inWalkableWorldIsPointOverlappingPointsKey :: (Ord km, Ord kp) => kp -> Point -> WalkableWorld km kp -> Bool
--- inWalkableWorldIsPointOverlappingPointsKey name point (WalkableWorld _ asciiWorld) = isNamedPoint name point asciiWorld
+-- inWalkableWorldIsPointOverlappingPointsKey :: (Ord km, Ord kp) => WalkableWorld km kp -> Point -> kp -> Bool
+-- inWalkableWorldIsPointOverlappingPointsKey (WalkableWorld _ asciiWorld) point pointsKey = inWorldIsPointOverlappingPointsKey asciiWorld point pointsKey
 
--- isPointOverlappingNamedMaskInWW :: (Ord km, Ord kp) => km -> Point -> WalkableWorld km kp -> Bool
--- isPointOverlappingNamedMaskInWW name point (WalkableWorld _ asciiWorld) = isPointOverlappingNamedMask name point asciiWorld
+-- inWalkableWorldIsPointOverlappingMaskKey :: (Ord km, Ord kp) => WalkableWorld km kp -> Point -> km -> Bool
+-- inWalkableWorldIsPointOverlappingMaskKey (WalkableWorld _ asciiWorld) point maskKey = inWorldIsPointOverlappingMaskKey asciiWorld point maskKey
 
 -- isNamedPointOrInNamedMaskInWW :: (Ord k) => k -> Point -> WalkableWorld k k -> Bool
 -- isNamedPointOrInNamedMaskInWW name point (WalkableWorld _ asciiWorld) = isNamedPointOrInNamedMask name point asciiWorld
