@@ -76,25 +76,25 @@ import Mask ( Point
 
 -- Each obj has a shape encoded as bits of an Integer.
 
-data AsciiWorld km kp
-    = AsciiWorld { asciiWorldMasks :: M.Map km Mask
-                 , asciiWorldPoints :: M.Map kp [Point]
+data AsciiWorld mk pk
+    = AsciiWorld { asciiWorldMasks :: M.Map mk Mask
+                 , asciiWorldPoints :: M.Map pk [Point]
                  , asciiWorldWidth :: Int } deriving (Show)
 
-emptyAsciiWorld :: (Ord km, Ord kp) => Int -> AsciiWorld km kp
+emptyAsciiWorld :: (Ord mk, Ord pk) => Int -> AsciiWorld mk pk
 emptyAsciiWorld width = AsciiWorld mempty mempty width
 
--- Making "Maybe (Either km kp)" more readable.
-data WorldKey km kp = MaskKey km | PointsKey kp deriving (Show, Eq, Ord)
-fromWorldKey :: WorldKey km kp -> Either km kp
+-- Making "Maybe (Either mk pk)" more readable.
+data WorldKey mk pk = MaskKey mk | PointsKey pk deriving (Show, Eq, Ord)
+fromWorldKey :: WorldKey mk pk -> Either mk pk
 fromWorldKey (MaskKey   x) = Left x
 fromWorldKey (PointsKey y) = Right y
-toWorldKey :: Either km kp -> WorldKey km kp
+toWorldKey :: Either mk pk -> WorldKey mk pk
 toWorldKey (Left x)  = MaskKey   x
 toWorldKey (Right y) = PointsKey y
 
 -- Assumes all rows have equal length
-readAsciiWorld :: (Ord km, Ord kp) => (Char -> Maybe (WorldKey km kp)) -> String -> (Int, AsciiWorld km kp)
+readAsciiWorld :: (Ord mk, Ord pk) => (Char -> Maybe (WorldKey mk pk)) -> String -> (Int, AsciiWorld mk pk)
 readAsciiWorld charMap inStr
     = ( height
       , AsciiWorld { asciiWorldMasks = foldl' addToMask M.empty (lefts eithers),
@@ -134,7 +134,7 @@ readAsciiWorld charMap inStr
 
         setBitInMask (x, y) maybeMask = Just $ setBit (fromMaybe 0 maybeMask) (y * width + x)
 
-changeWidthBy :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
+changeWidthBy :: (Ord mk, Ord pk) => Int -> AsciiWorld mk pk -> AsciiWorld mk pk
 changeWidthBy delta w = w { asciiWorldMasks = M.map (changeMaskWidthBy oldWidth delta) (asciiWorldMasks w)
                           , asciiWorldPoints = newPoints
                         , asciiWorldWidth = newWidth }
@@ -146,7 +146,7 @@ changeWidthBy delta w = w { asciiWorldMasks = M.map (changeMaskWidthBy oldWidth 
             | delta < 0 = M.map (filter (\(x,_) -> x < newWidth)) oldPoints
             | otherwise = oldPoints
 
-setWidth :: (Ord km, Ord kp) => Int -> AsciiWorld km kp -> AsciiWorld km kp
+setWidth :: (Ord mk, Ord pk) => Int -> AsciiWorld mk pk -> AsciiWorld mk pk
 setWidth newWidth w = w { asciiWorldMasks = M.map (setMaskWidth oldWidth newWidth) (asciiWorldMasks w)
                         , asciiWorldPoints = newPoints
                         , asciiWorldWidth = newWidth }
@@ -157,31 +157,31 @@ setWidth newWidth w = w { asciiWorldMasks = M.map (setMaskWidth oldWidth newWidt
             | newWidth < oldWidth = M.map (filter (\(x,_) -> x >= newWidth)) oldPoints
             | otherwise = oldPoints
 
-mapKeyForMasks  :: (Ord km1, Ord km2, Ord kp)  => (km1 -> km2) -> AsciiWorld km1 kp -> AsciiWorld km2 kp
+mapKeyForMasks  :: (Ord mk1, Ord mk2, Ord pk)  => (mk1 -> mk2) -> AsciiWorld mk1 pk -> AsciiWorld mk2 pk
 mapKeyForMasks f w = w { asciiWorldMasks = M.mapKeys f (asciiWorldMasks w) }
 
-mapKeyForPoints :: (Ord km,  Ord kp1, Ord kp2) => (kp1 -> kp2) -> AsciiWorld km kp1 -> AsciiWorld km kp2
+mapKeyForPoints :: (Ord mk,  Ord pk1, Ord pk2) => (pk1 -> pk2) -> AsciiWorld mk pk1 -> AsciiWorld mk pk2
 mapKeyForPoints f w = w { asciiWorldPoints = M.mapKeys f (asciiWorldPoints w) }
 
-showAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (km -> Char) -> (kp -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> AsciiWorld km kp -> String
+showAsciiWorld :: (Ord mk, Ord pk) => Int -> Char -> (mk -> Char) -> (pk -> Char) -> (WorldKey mk pk -> WorldKey mk pk -> Ordering) -> AsciiWorld mk pk -> String
 showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromMasksAndPoints
   where (AsciiWorld masks points width) = world
         
         layerToMaybeMaskNames :: (a, Mask) -> [Maybe a]
         layerToMaybeMaskNames (mName, n) = map (\i -> if n `testBit` i then Just mName else Nothing) [0..]
         
-        -- listOfMaybeEithersFromMasks :: [Maybe (Either km kp)]
+        -- listOfMaybeEithersFromMasks :: [Maybe (Either mk pk)]
         listOfMaybeEithersFromMasks = if M.null masks
                                           then replicate (height * width) Nothing
                                           else map (maximumMaybeBy (nameZOrder `on` toWorldKey)) . map (map (fmap Left)) . transpose . map layerToMaybeMaskNames . M.toList $ masks
         
-        -- namesAndPoints :: [(kp, Point)]
+        -- namesAndPoints :: [(pk, Point)]
         namesAndPoints = map head . groupBy ((==) `on` snd) . sortBy (\(aName,aPos) (bName,bPos) -> compare aPos bPos <> compare aName bName) . concat . map (\(name,ps) -> map (name,) ps) . M.toList $ points
         
-        -- namesAndIndices :: [(kp, Int)]
+        -- namesAndIndices :: [(pk, Int)]
         namesAndIndices = map (fmap (pointToIndex width)) namesAndPoints
         
-        -- listOfMaybeEithersFromMasksAndPoints :: [Maybe (Either km kp)]
+        -- listOfMaybeEithersFromMasksAndPoints :: [Maybe (Either mk pk)]
         listOfMaybeEithersFromMasksAndPoints = foldr update listOfMaybeEithersFromMasks namesAndIndices
           where update (pName,i) acc = let maybeOld = join (acc `atMay` i)
                                            zOrderMax = case maybeOld of
@@ -192,20 +192,20 @@ showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world = unlines 
         -- listOfMaybeCharsFromMasksAndPoints :: [Maybe Char]
         listOfMaybeCharsFromMasksAndPoints = map (fmap (either maskToChar pointsToChar)) listOfMaybeEithersFromMasksAndPoints
 
-printAsciiWorld :: (Ord km, Ord kp) => Int -> Char -> (km -> Char) -> (kp -> Char) -> (WorldKey km kp -> WorldKey km kp -> Ordering) -> AsciiWorld km kp -> IO ()
+printAsciiWorld :: (Ord mk, Ord pk) => Int -> Char -> (mk -> Char) -> (pk -> Char) -> (WorldKey mk pk -> WorldKey mk pk -> Ordering) -> AsciiWorld mk pk -> IO ()
 printAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world = putStrLn $ showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world 
 
-msbPointOfMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Point
+msbPointOfMask :: (Ord mk, Ord pk) => mk -> AsciiWorld mk pk -> Maybe Point
 msbPointOfMask maskName w = fmap (msbPoint width) (lookupMask maskName w)
   where width = asciiWorldWidth w
 
-middlePointOfMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Point
+middlePointOfMask :: (Ord mk, Ord pk) => mk -> AsciiWorld mk pk -> Maybe Point
 middlePointOfMask maskName w = fmap (middlePoint width) (lookupMask maskName w)
   where width = asciiWorldWidth w
 
 -- Assumes asciiWorlds are same size
 -- Left-biased such that the background character and any singular points they share are taken from the left
-combineTwoAsciiWorlds :: (Ord km, Ord kp) => AsciiWorld km kp -> AsciiWorld km kp -> AsciiWorld km kp
+combineTwoAsciiWorlds :: (Ord mk, Ord pk) => AsciiWorld mk pk -> AsciiWorld mk pk -> AsciiWorld mk pk
 combineTwoAsciiWorlds w1 w2
     = w1 { asciiWorldMasks = M.unionWith combineMasks (asciiWorldMasks w1) (asciiWorldMasks w2),
            asciiWorldPoints = M.unionWith combinePoints (asciiWorldPoints w1) (asciiWorldPoints w2) }
@@ -215,17 +215,17 @@ combineTwoAsciiWorlds w1 w2
         combinePoints :: [Point] -> [Point] -> [Point]
         combinePoints = (++)
 
-combineAsciiWorlds :: (Ord km, Ord kp) => [AsciiWorld km kp] -> AsciiWorld km kp
+combineAsciiWorlds :: (Ord mk, Ord pk) => [AsciiWorld mk pk] -> AsciiWorld mk pk
 combineAsciiWorlds = foldr1 combineTwoAsciiWorlds
 
-inWorldIsPointOverlappingPointsKey :: (Ord km, Ord kp) => AsciiWorld km kp -> Point -> kp -> Bool
+inWorldIsPointOverlappingPointsKey :: (Ord mk, Ord pk) => AsciiWorld mk pk -> Point -> pk -> Bool
 inWorldIsPointOverlappingPointsKey world point pointsKey = inPoints
   where
     inPoints = case M.lookup pointsKey (asciiWorldPoints world) of
         Just ps -> point `elem` ps
         Nothing -> False
 
-inWorldIsPointsKeyOverlappingMaskKey :: (Ord km, Ord kp) => AsciiWorld km kp -> kp -> km -> Bool
+inWorldIsPointsKeyOverlappingMaskKey :: (Ord mk, Ord pk) => AsciiWorld mk pk -> pk -> mk -> Bool
 inWorldIsPointsKeyOverlappingMaskKey world pointsKey maskKey = inMask
   where
     maybePoints = M.lookup pointsKey (asciiWorldPoints world)
@@ -234,7 +234,7 @@ inWorldIsPointsKeyOverlappingMaskKey world pointsKey maskKey = inMask
         (Just ps, Just bits) -> any (\point -> testBit bits (pointToIndex (asciiWorldWidth world) point)) ps
         (_,_) -> False
 
-inWorldIsPointOverlappingMaskKey :: (Ord km, Ord kp) => AsciiWorld km kp -> Point -> km -> Bool
+inWorldIsPointOverlappingMaskKey :: (Ord mk, Ord pk) => AsciiWorld mk pk -> Point -> mk -> Bool
 inWorldIsPointOverlappingMaskKey world point maskKey = inMask
   where
     inMask = case M.lookup maskKey (asciiWorldMasks world) of
@@ -247,44 +247,44 @@ inWorldIsPointOverlappingPointsKeyOrMaskKey world point key = inPoints || inMask
     inPoints = inWorldIsPointOverlappingPointsKey world point key
     inMask = inWorldIsPointOverlappingMaskKey world point key
 
-moveMaskOfNameBy :: (Ord km, Ord kp) => km -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
+moveMaskOfNameBy :: (Ord mk, Ord pk) => mk -> (Int,Int) -> AsciiWorld mk pk -> AsciiWorld mk pk
 moveMaskOfNameBy name (dx,dy) w = w {asciiWorldMasks = M.update (\pts -> Just $ moveMask width (dx,dy) pts) name (asciiWorldMasks w)}
   where width = asciiWorldWidth w
 
-movePointsOfNameBy :: (Ord km, Ord kp) => kp -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
+movePointsOfNameBy :: (Ord mk, Ord pk) => pk -> (Int,Int) -> AsciiWorld mk pk -> AsciiWorld mk pk
 movePointsOfNameBy name (dx,dy) w = w {asciiWorldPoints = M.update (\pts -> Just $ map (movePoint width (dx,dy)) pts) name (asciiWorldPoints w)}
   where width = asciiWorldWidth w
 
-addMask :: (Ord km, Ord kp) => km -> Mask -> AsciiWorld km kp -> AsciiWorld km kp
+addMask :: (Ord mk, Ord pk) => mk -> Mask -> AsciiWorld mk pk -> AsciiWorld mk pk
 addMask name mask w = w {asciiWorldMasks = M.insert name mask (asciiWorldMasks w)}
 
-deleteMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> AsciiWorld km kp
+deleteMask :: (Ord mk, Ord pk) => mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 deleteMask maskName w = w { asciiWorldMasks = M.delete maskName (asciiWorldMasks w) }
 
-filterMaskKeys :: (Ord km, Ord kp) => (km -> Bool) -> AsciiWorld km kp -> AsciiWorld km kp
+filterMaskKeys :: (Ord mk, Ord pk) => (mk -> Bool) -> AsciiWorld mk pk -> AsciiWorld mk pk
 filterMaskKeys p w = w { asciiWorldMasks = filterKeys p (asciiWorldMasks w) }
 
-filterMasks :: (Ord km, Ord kp) => (Mask -> Bool) -> AsciiWorld km kp -> AsciiWorld km kp
+filterMasks :: (Ord mk, Ord pk) => (Mask -> Bool) -> AsciiWorld mk pk -> AsciiWorld mk pk
 filterMasks p w = w { asciiWorldMasks = M.filter p (asciiWorldMasks w) }
 
-lookupMask :: (Ord km, Ord kp) => km -> AsciiWorld km kp -> Maybe Mask
+lookupMask :: (Ord mk, Ord pk) => mk -> AsciiWorld mk pk -> Maybe Mask
 lookupMask maskName w = M.lookup maskName (asciiWorldMasks w)
 
-adjustMask :: (Ord km, Ord kp) => (Mask -> Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
+adjustMask :: (Ord mk, Ord pk) => (Mask -> Mask) -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 adjustMask f maskName w = w { asciiWorldMasks = M.adjust f maskName (asciiWorldMasks w) }
 
-updateMask :: (Ord km, Ord kp) => (Mask -> Maybe Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
+updateMask :: (Ord mk, Ord pk) => (Mask -> Maybe Mask) -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 updateMask f maskName w = w { asciiWorldMasks = M.update f maskName (asciiWorldMasks w) }
 
-alterMask :: (Ord km, Ord kp) => (Maybe Mask -> Maybe Mask) -> km -> AsciiWorld km kp -> AsciiWorld km kp
+alterMask :: (Ord mk, Ord pk) => (Maybe Mask -> Maybe Mask) -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 alterMask f maskName w = w { asciiWorldMasks = M.alter f maskName (asciiWorldMasks w) }
 
-copyMask :: (Ord km, Ord kp) => km -> km -> AsciiWorld km kp -> AsciiWorld km kp
+copyMask :: (Ord mk, Ord pk) => mk -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 copyMask srcName destName w = fromMaybe w $ do
     mask <- M.lookup srcName (asciiWorldMasks w)
     return $ w {asciiWorldMasks = M.insert destName mask (asciiWorldMasks w)}
 
-applyMask :: (Ord km, Ord kp) => (Mask -> Mask -> Mask) -> km -> km -> AsciiWorld km kp -> AsciiWorld km kp
+applyMask :: (Ord mk, Ord pk) => (Mask -> Mask -> Mask) -> mk -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 applyMask op modifier target w
     | not (modifier `M.member` asciiWorldMasks w) = error $ "applyMask: not (modifier `M.member` asciiWorldMasks w) == False"
     | not (target   `M.member` asciiWorldMasks w) = error $ "applyMask: not (target `M.member` asciiWorldMasks w) == False"
@@ -293,25 +293,25 @@ applyMask op modifier target w
         mask2 = fromJust $ M.lookup target   (asciiWorldMasks w)
         newMask = mask1 `op` mask2
 
-setPoint :: (Ord km, Ord kp) => kp -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
+setPoint :: (Ord mk, Ord pk) => pk -> (Int,Int) -> AsciiWorld mk pk -> AsciiWorld mk pk
 setPoint name (x,y) w = w {asciiWorldPoints = M.insert name [(x,y)] (asciiWorldPoints w)}
 
-deletePoints :: (Ord km, Ord kp) => kp -> AsciiWorld km kp -> AsciiWorld km kp
+deletePoints :: (Ord mk, Ord pk) => pk -> AsciiWorld mk pk -> AsciiWorld mk pk
 deletePoints name w = w {asciiWorldPoints = M.delete name (asciiWorldPoints w)}
 
-insertMaskFromPoints :: (Ord km, Ord kp) => km -> [Point] -> AsciiWorld km kp -> AsciiWorld km kp
+insertMaskFromPoints :: (Ord mk, Ord pk) => mk -> [Point] -> AsciiWorld mk pk -> AsciiWorld mk pk
 insertMaskFromPoints newMaskName points w = w {asciiWorldMasks = M.insert newMaskName newMask (asciiWorldMasks w)}
   where width = asciiWorldWidth w
         newMask = foldl' bitwiseOr 0 $ map (pointToMask width) points
 
-inWorldMaybeInsertMaskKeyFromPointsKey :: (Ord km, Ord kp) => AsciiWorld km kp -> km -> kp -> Maybe (AsciiWorld km kp)
+inWorldMaybeInsertMaskKeyFromPointsKey :: (Ord mk, Ord pk) => AsciiWorld mk pk -> mk -> pk -> Maybe (AsciiWorld mk pk)
 inWorldMaybeInsertMaskKeyFromPointsKey world newMaskName pointsName = do
     points <- M.lookup pointsName (asciiWorldPoints world)
     let newMask = foldl' bitwiseOr 0 $ map (pointToMask width) points
     return $ world {asciiWorldMasks = M.insert newMaskName newMask (asciiWorldMasks world)}
   where width = asciiWorldWidth world
 
-isOverlappingMasks :: (Ord km, Ord kp) => km -> km -> AsciiWorld km kp -> Bool
+isOverlappingMasks :: (Ord mk, Ord pk) => mk -> mk -> AsciiWorld mk pk -> Bool
 isOverlappingMasks name1 name2 w
     = fromMaybe False $ do
         points1 <- M.lookup name1 (asciiWorldMasks w)
