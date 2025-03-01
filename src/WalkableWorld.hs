@@ -139,8 +139,8 @@ readWorld charMap = addWalkableWorldParts . readAsciiWorld charMap'
             = do
                 c' <- charMap c
                 return $ case c' of
-                    WKMask   x1 -> WKMask   (External x1)
-                    WKPoints x2 -> WKPoints (External x2)
+                    MaskKey   x1 -> MaskKey   (External x1)
+                    PointsKey x2 -> PointsKey (External x2)
 
 -- This modify modifies the underlying asciiWorld directly, including all of the stuff that WalkableWorld did to it (such as NoGos and underscores in names)
 modifyRawAsciiWorld :: (Ord km, Ord kp) => (RawAsciiWorld km kp -> RawAsciiWorld km kp) -> WalkableWorld km kp -> WalkableWorld km kp
