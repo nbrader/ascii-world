@@ -151,8 +151,8 @@ modifyHeightAndRawAsciiWorld f = fromHeightAndRawAsciiWorld . f . toHeightAndRaw
 
 -- This modify allows you to modify the world in a way ignorant to the stuff that WalkableWorld added (such as NoGos and underscores in names)
 -- Warning: I think this function will perform badly. Also, it's not been properly tested.
--- 			Update: I tried to use this and got bad results so I expect this is broken. Further investigation required.
---					TO DO: See about either fixing this or better documenting how it should be used
+--          Update: I tried to use this and got bad results so I expect this is broken. Further investigation required.
+--                  TO DO: See about either fixing this or better documenting how it should be used
 modifyAsAsciiWorld :: (Ord km, Ord kp) => (AsciiWorld km kp -> AsciiWorld km kp) -> WalkableWorld km kp -> WalkableWorld km kp
 modifyAsAsciiWorld f = addWalkableWorldParts . fmap (mapKeyForMasks External) . fmap (mapKeyForPoints External) . fmap f . fmap (mapKeyForPoints fromExternal) . fmap (mapKeyForMasks fromExternal) . undoWalkableWorldParts
 
