@@ -235,17 +235,17 @@ inWorldIsPointsKeyOverlappingMaskKey world pointsKey maskKey = inMask
         (_,_) -> False
 
 inWorldIsPointOverlappingMaskKey :: (Ord km, Ord kp) => AsciiWorld km kp -> Point -> km -> Bool
-inWorldIsPointOverlappingMaskKey world point maskKey = inMasks
+inWorldIsPointOverlappingMaskKey world point maskKey = inMask
   where
-    inMasks = case M.lookup maskKey (asciiWorldMasks world) of
+    inMask = case M.lookup maskKey (asciiWorldMasks world) of
         Just bits -> testBit bits (pointToIndex (asciiWorldWidth world) point)
         Nothing -> False
 
 isNamedPointOrInNamedMask :: (Ord k) => k -> Point -> AsciiWorld k k -> Bool
-isNamedPointOrInNamedMask key point world = inPoints || inMasks
+isNamedPointOrInNamedMask key point world = inPoints || inMask
   where
     inPoints = inWorldIsPointOverlappingPointsKey world point key
-    inMasks = inWorldIsPointOverlappingMaskKey world point key
+    inMask = inWorldIsPointOverlappingMaskKey world point key
 
 moveMaskOfNameBy :: (Ord km, Ord kp) => km -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
 moveMaskOfNameBy name (dx,dy) w = w {asciiWorldMasks = M.update (\pts -> Just $ moveMask width (dx,dy) pts) name (asciiWorldMasks w)}
