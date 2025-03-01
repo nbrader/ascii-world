@@ -24,7 +24,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         -- , combineTwoWalkableWorlds
                         -- , combineWalkableWorlds
                         -- , isNamedPointInWW
-                        -- , isInNamedMaskInWW
+                        -- , isPointOverlappingNamedMaskInWW
                         -- , isNamedPointOrInNamedMaskInWW
                         -- , moveMaskOfNameByInWW
                         -- , movePointsOfNameByInWW
@@ -86,7 +86,8 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , combineTwoAsciiWorlds
                         , combineAsciiWorlds
                         , isNamedPoint
-                        , isInNamedMask
+                        , inWorldIsPointsKeyOverlappingMaskKey
+                        , isPointOverlappingNamedMask
                         , isNamedPointOrInNamedMask
                         , moveMaskOfNameBy
                         , movePointsOfNameBy
@@ -185,8 +186,8 @@ printRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = putStrLn . show
 -- isNamedPointInWW :: (Ord km, Ord kp) => kp -> Point -> WalkableWorld km kp -> Bool
 -- isNamedPointInWW name point (WalkableWorld _ asciiWorld) = isNamedPoint name point asciiWorld
 
--- isInNamedMaskInWW :: (Ord km, Ord kp) => km -> Point -> WalkableWorld km kp -> Bool
--- isInNamedMaskInWW name point (WalkableWorld _ asciiWorld) = isInNamedMask name point asciiWorld
+-- isPointOverlappingNamedMaskInWW :: (Ord km, Ord kp) => km -> Point -> WalkableWorld km kp -> Bool
+-- isPointOverlappingNamedMaskInWW name point (WalkableWorld _ asciiWorld) = isPointOverlappingNamedMask name point asciiWorld
 
 -- isNamedPointOrInNamedMaskInWW :: (Ord k) => k -> Point -> WalkableWorld k k -> Bool
 -- isNamedPointOrInNamedMaskInWW name point (WalkableWorld _ asciiWorld) = isNamedPointOrInNamedMask name point asciiWorld

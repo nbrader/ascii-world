@@ -38,6 +38,9 @@ movePoint width (dx,dy) (x,y) = (x+dx,y+dy)
 isOverlapping :: Mask -> Mask -> Bool
 isOverlapping ps1 ps2 = (ps1 .&. ps2) /= zeroBits
 
+isPointOverlappingMask :: Int -> (Int,Int) -> Mask -> Bool
+isPointOverlappingMask width p m = pointToMask width p `isOverlapping` m
+
 bitwiseSubtract :: Mask -> Mask -> Mask
 bitwiseSubtract ps1 ps2 = (ps1 .&. complement ps2)
 

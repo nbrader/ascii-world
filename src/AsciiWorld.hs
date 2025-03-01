@@ -20,7 +20,8 @@ module AsciiWorld   ( AsciiWorld(..)
                     , combineTwoAsciiWorlds
                     , combineAsciiWorlds
                     , isNamedPoint
-                    , isInNamedMask
+                    , inWorldIsPointsKeyOverlappingMaskKey
+                    , isPointOverlappingNamedMask
                     , isNamedPointOrInNamedMask
                     , moveMaskOfNameBy
                     , movePointsOfNameBy
@@ -224,8 +225,17 @@ isNamedPoint name point asciiWorld = inPoints
         Just ps -> point `elem` ps
         Nothing -> False
 
-isInNamedMask :: (Ord km, Ord kp) => km -> Point -> AsciiWorld km kp -> Bool
-isInNamedMask name point asciiWorld = inMasks
+inWorldIsPointsKeyOverlappingMaskKey :: (Ord km, Ord kp) => AsciiWorld km kp -> kp -> km -> Bool
+inWorldIsPointsKeyOverlappingMaskKey asciiWorld pointsKey maskKey = inMask
+  where
+    maybePoints = M.lookup pointsKey (asciiWorldPoints asciiWorld)
+    maybeMask = M.lookup maskKey (asciiWorldMasks asciiWorld)
+    inMask = case (maybePoints, maybeMask) of
+        (Just ps, Just bits) -> any (\point -> testBit bits (pointToIndex (asciiWorldWidth asciiWorld) point)) ps
+        (_,_) -> False
+
+isPointOverlappingNamedMask :: (Ord km, Ord kp) => km -> Point -> AsciiWorld km kp -> Bool
+isPointOverlappingNamedMask name point asciiWorld = inMasks
   where
     inMasks = case M.lookup name (asciiWorldMasks asciiWorld) of
         Just bits -> testBit bits (pointToIndex (asciiWorldWidth asciiWorld) point)
@@ -235,7 +245,7 @@ isNamedPointOrInNamedMask :: (Ord k) => k -> Point -> AsciiWorld k k -> Bool
 isNamedPointOrInNamedMask name point asciiWorld = inPoints || inMasks
   where
     inPoints = isNamedPoint name point asciiWorld
-    inMasks = isInNamedMask name point asciiWorld
+    inMasks = isPointOverlappingNamedMask name point asciiWorld
 
 moveMaskOfNameBy :: (Ord km, Ord kp) => km -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
 moveMaskOfNameBy name (dx,dy) w = w {asciiWorldMasks = M.update (\pts -> Just $ moveMask width (dx,dy) pts) name (asciiWorldMasks w)}
