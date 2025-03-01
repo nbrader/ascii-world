@@ -23,9 +23,9 @@ module WalkableWorld    ( WalkableWorld(..)
                         , modifyRawAsciiWorld
                         -- , combineTwoWalkableWorlds
                         -- , combineWalkableWorlds
-                        -- , inWalkableWorldIsPointOverlappingPointsKey
-                        -- , inWalkableWorldIsPointOverlappingMaskKey
-                        -- , inWalkableWorldIsPointOverlappingPointsKeyOrMaskKey
+                        -- , inWWIsPointOverlappingPointsKey
+                        -- , inWWIsPointOverlappingMaskKey
+                        -- , inWWIsPointOverlappingPointsKeyOrMaskKey
                         -- , moveMaskOfNameByInWW
                         -- , movePointsOfNameByInWW
                         , addMaskInWW
@@ -41,7 +41,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         -- , setPointInWW
                         -- , deletePointsInWW
                         -- , insertMaskFromPointsInWW
-                        -- , inWalkableWorldMaybeInsertMaskKeyFromPointsKey
+                        -- , inWWMaybeInsertMaskKeyFromPointsKey
                         -- , isOverlappingMasksInWW
                         ) where
 
@@ -183,14 +183,14 @@ printRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = putStrLn . show
 -- combineWalkableWorlds :: (Ord km, Ord kp) => [WalkableWorld km kp] -> WalkableWorld km kp
 -- combineWalkableWorlds = combineAsciiWorlds
 
--- inWalkableWorldIsPointOverlappingPointsKey :: (Ord km, Ord kp) => WalkableWorld km kp -> Point -> kp -> Bool
--- inWalkableWorldIsPointOverlappingPointsKey (WalkableWorld _ asciiWorld) point pointsKey = inWorldIsPointOverlappingPointsKey asciiWorld point pointsKey
+-- inWWIsPointOverlappingPointsKey :: (Ord km, Ord kp) => WalkableWorld km kp -> Point -> kp -> Bool
+-- inWWIsPointOverlappingPointsKey (WalkableWorld _ asciiWorld) point pointsKey = inWorldIsPointOverlappingPointsKey asciiWorld point pointsKey
 
--- inWalkableWorldIsPointOverlappingMaskKey :: (Ord km, Ord kp) => WalkableWorld km kp -> Point -> km -> Bool
--- inWalkableWorldIsPointOverlappingMaskKey (WalkableWorld _ asciiWorld) point maskKey = inWorldIsPointOverlappingMaskKey asciiWorld point maskKey
+-- inWWIsPointOverlappingMaskKey :: (Ord km, Ord kp) => WalkableWorld km kp -> Point -> km -> Bool
+-- inWWIsPointOverlappingMaskKey (WalkableWorld _ asciiWorld) point maskKey = inWorldIsPointOverlappingMaskKey asciiWorld point maskKey
 
--- inWalkableWorldIsPointOverlappingPointsKeyOrMaskKey :: (Ord k) => WalkableWorld k k -> Point -> k -> Bool
--- inWalkableWorldIsPointOverlappingPointsKeyOrMaskKey (WalkableWorld _ asciiWorld) point key = inWorldIsPointOverlappingPointsKeyOrMaskKey asciiWorld point key
+-- inWWIsPointOverlappingPointsKeyOrMaskKey :: (Ord k) => WalkableWorld k k -> Point -> k -> Bool
+-- inWWIsPointOverlappingPointsKeyOrMaskKey (WalkableWorld _ asciiWorld) point key = inWorldIsPointOverlappingPointsKeyOrMaskKey asciiWorld point key
 
 -- moveMaskOfNameByInWW :: (Ord km, Ord kp) => km -> (Int,Int) -> WalkableWorld km kp -> WalkableWorld km kp
 -- moveMaskOfNameByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ moveMaskOfNameBy name (dx,dy) w
@@ -237,8 +237,8 @@ filterMaskKeysInWW p (WalkableWorld height asciiWorld) = WalkableWorld height (f
 -- insertMaskFromPointsInWW :: (Ord km, Ord kp) => km -> [Point] -> WalkableWorld km kp -> WalkableWorld km kp
 -- insertMaskFromPointsInWW newMaskName points (WalkableWorld height w) = WalkableWorld height $ insertMaskFromPoints newMaskName points w
 
--- inWalkableWorldMaybeInsertMaskKeyFromPointsKey :: (Ord km, Ord kp) => WalkableWorld km kp -> km -> kp -> Maybe (WalkableWorld km kp)
--- inWalkableWorldMaybeInsertMaskKeyFromPointsKey (WalkableWorld height asciiWorld) newMaskKey pointsKey = fmap (WalkableWorld height) $ inWorldMaybeInsertMaskKeyFromPointsKey asciiWorld newMaskName pointsName
+-- inWWMaybeInsertMaskKeyFromPointsKey :: (Ord km, Ord kp) => WalkableWorld km kp -> km -> kp -> Maybe (WalkableWorld km kp)
+-- inWWMaybeInsertMaskKeyFromPointsKey (WalkableWorld height asciiWorld) newMaskKey pointsKey = fmap (WalkableWorld height) $ inWorldMaybeInsertMaskKeyFromPointsKey asciiWorld newMaskName pointsName
 
 -- isOverlappingMasksInWW :: (Ord km, Ord kp) => km -> km -> WalkableWorld km kp -> Bool
 -- isOverlappingMasksInWW name1 name2 w = isOverlappingMasks name1 name2 w
