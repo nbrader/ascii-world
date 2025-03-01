@@ -5,6 +5,7 @@
 -- Make "WalkableWorld" with max walk distance fed in at construction to then add that much margin and so be able to detect reachability effects up to that distance.
 
 module WalkableWorld    ( WalkableWorld(..)
+                        , wwWidth
                         , WorldKey(..)
                         , readWorld
                         -- , showWorld
@@ -29,6 +30,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         , filterMaskKeysInWW
                         -- , filterMasksInWW
                         -- , lookupMaskInWW
+                        , lookupPointsInWW
                         -- , adjustMaskInWW
                         -- , updateMaskInWW
                         -- , alterMaskInWW
@@ -109,6 +111,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , isOverlappingMasks )
 
 data WalkableWorld mk pk = WalkableWorld {wwHeight :: Int, wwRawAsciiWorld :: RawAsciiWorld mk pk} deriving (Show)
+wwWidth = asciiWorldWidth . wwRawAsciiWorld
 
 type RawAsciiWorld mk pk = AsciiWorld (Ext_Int mk WWMaskKey) (Ext_Int pk WWPointsKey)
 toHeightAndRawAsciiWorld :: WalkableWorld mk pk -> (Int, RawAsciiWorld mk pk)
@@ -214,7 +217,7 @@ filterMaskKeysInWW p (WalkableWorld height asciiWorld) = WalkableWorld height (f
 -- filterMasksInWW :: (Ord mk, Ord pk) => (Mask -> Bool) -> WalkableWorld mk pk -> WalkableWorld mk pk
 -- filterMasksInWW p (WalkableWorld height w) = WalkableWorld height $ filterMasks p w
 
--- lookupPointsInWW :: (Ord mk, Ord pk) => mk -> WalkableWorld mk pk -> Maybe [Point]
+lookupPointsInWW :: (Ord mk, Ord pk) => pk -> WalkableWorld mk pk -> Maybe [Point]
 lookupPointsInWW pointsKey (WalkableWorld height w) = lookupPoints (External pointsKey) w
 
 -- lookupMaskInWW :: (Ord mk, Ord pk) => mk -> WalkableWorld mk pk -> Maybe Mask
