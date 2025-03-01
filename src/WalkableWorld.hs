@@ -7,12 +7,12 @@
 module WalkableWorld    ( WalkableWorld(..)
                         , WorldKey(..)
                         , readWorld
-                        , showWorld
+                        -- , showWorld
                         , printWorld
-                        , Ext_Int(..)
-                        , WWMaskKey
-                        , WWPointsKey
-                        , printRawAsciiWorld
+                        , Ext_Int(..) -- Used but shouldn't be
+                        , WWMaskKey -- Used but shouldn't be
+                        , WWPointsKey -- Used but shouldn't be
+                        , printRawAsciiWorld -- Used but shouldn't be
                         , totalEdgesOverPoints
                         , totalConnectedEdges
                         , totalConnectedOneSidedEdges
@@ -20,7 +20,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         , totalPoints
                         , partitionMaskByReachableLRDU
                         , partitionAllMasksByReachableLRDU
-                        , modifyRawAsciiWorld
+                        , modifyRawAsciiWorld -- Used but shouldn't be
                         -- , combineTwoWalkableWorlds
                         -- , combineWalkableWorlds
                         -- , inWWIsPointOverlappingPointsKey
