@@ -41,7 +41,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         -- , setPointInWW
                         -- , deletePointsInWW
                         -- , insertMaskFromPointsInWW
-                        -- , insertMaskFromNamedPointsInWW
+                        -- , inWalkableWorldMaybeInsertMaskKeyFromPointsKey
                         -- , isOverlappingMasksInWW
                         ) where
 
@@ -104,7 +104,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , setPoint
                         , deletePoints
                         , insertMaskFromPoints
-                        , insertMaskFromNamedPoints
+                        , inWorldMaybeInsertMaskKeyFromPointsKey
                         , isOverlappingMasks )
 
 data WalkableWorld km kp = WalkableWorld {wwHeight :: Int, wwRawAsciiWorld :: RawAsciiWorld km kp} deriving (Show)
@@ -237,8 +237,8 @@ filterMaskKeysInWW p (WalkableWorld height asciiWorld) = WalkableWorld height (f
 -- insertMaskFromPointsInWW :: (Ord km, Ord kp) => km -> [Point] -> WalkableWorld km kp -> WalkableWorld km kp
 -- insertMaskFromPointsInWW newMaskName points (WalkableWorld height w) = WalkableWorld height $ insertMaskFromPoints newMaskName points w
 
--- insertMaskFromNamedPointsInWW :: (Ord km, Ord kp) => km -> kp -> WalkableWorld km kp -> Maybe (WalkableWorld km kp)
--- insertMaskFromNamedPointsInWW newMaskName pointsName (WalkableWorld height w) = fmap (WalkableWorld height) insertMaskFromNamedPoints newMaskName pointsName w
+-- inWalkableWorldMaybeInsertMaskKeyFromPointsKey :: (Ord km, Ord kp) => WalkableWorld km kp -> km -> kp -> Maybe (WalkableWorld km kp)
+-- inWalkableWorldMaybeInsertMaskKeyFromPointsKey (WalkableWorld height asciiWorld) newMaskKey pointsKey = fmap (WalkableWorld height) $ inWorldMaybeInsertMaskKeyFromPointsKey asciiWorld newMaskName pointsName
 
 -- isOverlappingMasksInWW :: (Ord km, Ord kp) => km -> km -> WalkableWorld km kp -> Bool
 -- isOverlappingMasksInWW name1 name2 w = isOverlappingMasks name1 name2 w

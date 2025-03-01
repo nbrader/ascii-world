@@ -38,7 +38,7 @@ module AsciiWorld   ( AsciiWorld(..)
                     , setPoint
                     , deletePoints
                     , insertMaskFromPoints
-                    , insertMaskFromNamedPoints
+                    , inWorldMaybeInsertMaskKeyFromPointsKey
                     , isOverlappingMasks ) where
 
 -------------
@@ -304,12 +304,12 @@ insertMaskFromPoints newMaskName points w = w {asciiWorldMasks = M.insert newMas
   where width = asciiWorldWidth w
         newMask = foldl' bitwiseOr 0 $ map (pointToMask width) points
 
-insertMaskFromNamedPoints :: (Ord km, Ord kp) => km -> kp -> AsciiWorld km kp -> Maybe (AsciiWorld km kp)
-insertMaskFromNamedPoints newMaskName pointsName w = do
-    points <- M.lookup pointsName (asciiWorldPoints w)
+inWorldMaybeInsertMaskKeyFromPointsKey :: (Ord km, Ord kp) => AsciiWorld km kp -> km -> kp -> Maybe (AsciiWorld km kp)
+inWorldMaybeInsertMaskKeyFromPointsKey world newMaskName pointsName = do
+    points <- M.lookup pointsName (asciiWorldPoints world)
     let newMask = foldl' bitwiseOr 0 $ map (pointToMask width) points
-    return $ w {asciiWorldMasks = M.insert newMaskName newMask (asciiWorldMasks w)}
-  where width = asciiWorldWidth w
+    return $ world {asciiWorldMasks = M.insert newMaskName newMask (asciiWorldMasks world)}
+  where width = asciiWorldWidth world
 
 isOverlappingMasks :: (Ord km, Ord kp) => km -> km -> AsciiWorld km kp -> Bool
 isOverlappingMasks name1 name2 w
