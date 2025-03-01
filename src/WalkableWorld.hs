@@ -20,6 +20,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         , totalPoints
                         , partitionMaskByReachableLRDU
                         , partitionAllMasksByReachableLRDU
+                        , modifyRawAsciiWorld
                         -- , combineTwoWalkableWorlds
                         -- , combineWalkableWorlds
                         -- , isNamedPointInWW
