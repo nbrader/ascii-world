@@ -22,7 +22,7 @@ module AsciiWorld   ( AsciiWorld(..)
                     , inWorldIsPointOverlappingPointsKey
                     , inWorldIsPointsKeyOverlappingMaskKey
                     , inWorldIsPointOverlappingMaskKey
-                    , isNamedPointOrInNamedMask
+                    , inWorldIsPointOverlappingPointsKeyOrMaskKey
                     , moveMaskOfNameBy
                     , movePointsOfNameBy
                     , addMask
@@ -241,8 +241,8 @@ inWorldIsPointOverlappingMaskKey world point maskKey = inMask
         Just bits -> testBit bits (pointToIndex (asciiWorldWidth world) point)
         Nothing -> False
 
-isNamedPointOrInNamedMask :: (Ord k) => k -> Point -> AsciiWorld k k -> Bool
-isNamedPointOrInNamedMask key point world = inPoints || inMask
+inWorldIsPointOverlappingPointsKeyOrMaskKey :: (Ord k) => AsciiWorld k k -> Point -> k -> Bool
+inWorldIsPointOverlappingPointsKeyOrMaskKey world point key = inPoints || inMask
   where
     inPoints = inWorldIsPointOverlappingPointsKey world point key
     inMask = inWorldIsPointOverlappingMaskKey world point key

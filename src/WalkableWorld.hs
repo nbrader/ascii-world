@@ -25,7 +25,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         -- , combineWalkableWorlds
                         -- , inWalkableWorldIsPointOverlappingPointsKey
                         -- , inWalkableWorldIsPointOverlappingMaskKey
-                        -- , isNamedPointOrInNamedMaskInWW
+                        -- , inWalkableWorldIsPointOverlappingPointsKeyOrMaskKey
                         -- , moveMaskOfNameByInWW
                         -- , movePointsOfNameByInWW
                         , addMaskInWW
@@ -88,7 +88,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , inWorldIsPointOverlappingPointsKey
                         , inWorldIsPointsKeyOverlappingMaskKey
                         , inWorldIsPointOverlappingMaskKey
-                        , isNamedPointOrInNamedMask
+                        , inWorldIsPointOverlappingPointsKeyOrMaskKey
                         , moveMaskOfNameBy
                         , movePointsOfNameBy
                         , addMask
@@ -189,8 +189,8 @@ printRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = putStrLn . show
 -- inWalkableWorldIsPointOverlappingMaskKey :: (Ord km, Ord kp) => WalkableWorld km kp -> Point -> km -> Bool
 -- inWalkableWorldIsPointOverlappingMaskKey (WalkableWorld _ asciiWorld) point maskKey = inWorldIsPointOverlappingMaskKey asciiWorld point maskKey
 
--- isNamedPointOrInNamedMaskInWW :: (Ord k) => k -> Point -> WalkableWorld k k -> Bool
--- isNamedPointOrInNamedMaskInWW name point (WalkableWorld _ asciiWorld) = isNamedPointOrInNamedMask name point asciiWorld
+-- inWalkableWorldIsPointOverlappingPointsKeyOrMaskKey :: (Ord k) => WalkableWorld k k -> Point -> k -> Bool
+-- inWalkableWorldIsPointOverlappingPointsKeyOrMaskKey (WalkableWorld _ asciiWorld) point key = inWorldIsPointOverlappingPointsKeyOrMaskKey asciiWorld point key
 
 -- moveMaskOfNameByInWW :: (Ord km, Ord kp) => km -> (Int,Int) -> WalkableWorld km kp -> WalkableWorld km kp
 -- moveMaskOfNameByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ moveMaskOfNameBy name (dx,dy) w
