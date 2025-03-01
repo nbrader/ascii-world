@@ -19,7 +19,7 @@ module AsciiWorld   ( AsciiWorld(..)
                     , middlePointOfMask
                     , combineTwoAsciiWorlds
                     , combineAsciiWorlds
-                    , isNamedPoint
+                    , inWorldIsPointOverlappingPointsKey
                     , inWorldIsPointsKeyOverlappingMaskKey
                     , isPointOverlappingNamedMask
                     , isNamedPointOrInNamedMask
@@ -218,10 +218,10 @@ combineTwoAsciiWorlds w1 w2
 combineAsciiWorlds :: (Ord km, Ord kp) => [AsciiWorld km kp] -> AsciiWorld km kp
 combineAsciiWorlds = foldr1 combineTwoAsciiWorlds
 
-isNamedPoint :: (Ord km, Ord kp) => kp -> Point -> AsciiWorld km kp -> Bool
-isNamedPoint name point asciiWorld = inPoints
+inWorldIsPointOverlappingPointsKey :: (Ord km, Ord kp) => AsciiWorld km kp -> Point -> kp -> Bool
+inWorldIsPointOverlappingPointsKey asciiWorld point pointsKey = inPoints
   where
-    inPoints = case M.lookup name (asciiWorldPoints asciiWorld) of
+    inPoints = case M.lookup pointsKey (asciiWorldPoints asciiWorld) of
         Just ps -> point `elem` ps
         Nothing -> False
 
@@ -242,10 +242,10 @@ isPointOverlappingNamedMask name point asciiWorld = inMasks
         Nothing -> False
 
 isNamedPointOrInNamedMask :: (Ord k) => k -> Point -> AsciiWorld k k -> Bool
-isNamedPointOrInNamedMask name point asciiWorld = inPoints || inMasks
+isNamedPointOrInNamedMask pointsKey point asciiWorld = inPoints || inMasks
   where
-    inPoints = isNamedPoint name point asciiWorld
-    inMasks = isPointOverlappingNamedMask name point asciiWorld
+    inPoints = inWorldIsPointOverlappingPointsKey asciiWorld point pointsKey
+    inMasks = isPointOverlappingNamedMask pointsKey point asciiWorld
 
 moveMaskOfNameBy :: (Ord km, Ord kp) => km -> (Int,Int) -> AsciiWorld km kp -> AsciiWorld km kp
 moveMaskOfNameBy name (dx,dy) w = w {asciiWorldMasks = M.update (\pts -> Just $ moveMask width (dx,dy) pts) name (asciiWorldMasks w)}
