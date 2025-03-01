@@ -9,10 +9,6 @@ module WalkableWorld    ( WalkableWorld(..)
                         , readWorld
                         -- , showWorld
                         , printWorld
-                        , Ext_Int(..) -- Used but shouldn't be
-                        , WWMaskKey -- Used but shouldn't be
-                        , WWPointsKey -- Used but shouldn't be
-                        , printRawAsciiWorld -- Used but shouldn't be
                         , totalEdgesOverPoints
                         , totalConnectedEdges
                         , totalConnectedOneSidedEdges
@@ -22,6 +18,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         , partitionAllMasksByReachableLRDU
                         -- , combineTwoWalkableWorlds
                         -- , combineWalkableWorlds
+                        , inWWIsPointsKeyOverlappingMaskKey
                         -- , inWWIsPointOverlappingPointsKey
                         -- , inWWIsPointOverlappingMaskKey
                         -- , inWWIsPointOverlappingPointsKeyOrMaskKey
@@ -183,6 +180,9 @@ printRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = putStrLn . show
 
 -- combineWalkableWorlds :: (Ord mk, Ord pk) => [WalkableWorld mk pk] -> WalkableWorld mk pk
 -- combineWalkableWorlds = combineAsciiWorlds
+
+inWWIsPointsKeyOverlappingMaskKey :: (Ord mk, Ord pk) => WalkableWorld mk pk -> pk -> mk -> Bool
+inWWIsPointsKeyOverlappingMaskKey (WalkableWorld _ asciiWorld) pointsKey maskKey = inWorldIsPointsKeyOverlappingMaskKey asciiWorld (External pointsKey) (External maskKey)
 
 -- inWWIsPointOverlappingPointsKey :: (Ord mk, Ord pk) => WalkableWorld mk pk -> Point -> pk -> Bool
 -- inWWIsPointOverlappingPointsKey (WalkableWorld _ asciiWorld) point pointsKey = inWorldIsPointOverlappingPointsKey asciiWorld point pointsKey
