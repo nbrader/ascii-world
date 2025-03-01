@@ -23,8 +23,8 @@ module WalkableWorld    ( WalkableWorld(..)
                         , inWWIsPointOverlappingPointsKey
                         -- , inWWIsPointOverlappingMaskKey
                         -- , inWWIsPointOverlappingPointsKeyOrMaskKey
-                        -- , moveMaskOfNameByInWW
-                        -- , movePointsOfNameByInWW
+                        -- , moveMaskOfKeyByInWW
+                        -- , movePointsOfKeyByInWW
                         , addMaskInWW
                         -- , deleteMaskInWW
                         , filterMaskKeysInWW
@@ -91,8 +91,8 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , inWorldIsPointsKeyOverlappingMaskKey
                         , inWorldIsPointOverlappingMaskKey
                         , inWorldIsPointOverlappingPointsKeyOrMaskKey
-                        , moveMaskOfNameBy
-                        , movePointsOfNameBy
+                        , moveMaskOfKeyBy
+                        , movePointsOfKeyBy
                         , addMask
                         , deleteMask
                         , filterMaskKeys
@@ -118,7 +118,7 @@ toHeightAndRawAsciiWorld :: WalkableWorld mk pk -> (Int, RawAsciiWorld mk pk)
 toHeightAndRawAsciiWorld w = (wwHeight w, wwRawAsciiWorld w)
 fromHeightAndRawAsciiWorld :: (Int, RawAsciiWorld mk pk) -> WalkableWorld mk pk
 fromHeightAndRawAsciiWorld (h, w) = WalkableWorld h w
-type WWNameZComp mk pk = WorldKey (Ext_Int mk WWMaskKey) (Ext_Int pk WWPointsKey) -> WorldKey (Ext_Int mk WWMaskKey) (Ext_Int pk WWPointsKey) -> Ordering
+type WWKeyZComp mk pk = WorldKey (Ext_Int mk WWMaskKey) (Ext_Int pk WWPointsKey) -> WorldKey (Ext_Int mk WWMaskKey) (Ext_Int pk WWPointsKey) -> Ordering
 
 data Ext_Int kExt kInt = External kExt | Internal kInt deriving (Show, Eq, Ord)
 eitherFromExt_Int :: Ext_Int kExt kInt -> Either kExt kInt
@@ -168,13 +168,13 @@ showWorld bgChar maskToChar pointsToChar nameZOrder w = (\(height, w') -> showAs
         conversion = toWorldKey . bimap fromExternal fromExternal . fromWorldKey
 
 -- Shows the raw underlying ascii world except for underscores which are stripped so that there aren't just underscores for all non-background point.
-showRawAsciiWorld :: (Ord mk, Ord pk) => Char -> (Ext_Int mk WWMaskKey -> Char) -> (Ext_Int pk WWPointsKey -> Char) -> WWNameZComp mk pk -> WalkableWorld mk pk -> String
+showRawAsciiWorld :: (Ord mk, Ord pk) => Char -> (Ext_Int mk WWMaskKey -> Char) -> (Ext_Int pk WWPointsKey -> Char) -> WWKeyZComp mk pk -> WalkableWorld mk pk -> String
 showRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld (wwHeight w) bgChar maskToChar pointsToChar nameZOrder . wwRawAsciiWorld $ w
 
 printWorld :: (Ord mk, Ord pk) => Char -> (mk -> Char) -> (pk -> Char) -> (WorldKey mk pk -> WorldKey mk pk -> Ordering) -> WalkableWorld mk pk -> IO ()
 printWorld bgChar maskToChar pointsToChar nameZOrder = putStrLn . showWorld bgChar maskToChar pointsToChar nameZOrder
 
-printRawAsciiWorld :: (Ord mk, Ord pk) => Char -> (Ext_Int mk WWMaskKey -> Char) -> (Ext_Int pk WWPointsKey -> Char) -> WWNameZComp mk pk -> WalkableWorld mk pk -> IO ()
+printRawAsciiWorld :: (Ord mk, Ord pk) => Char -> (Ext_Int mk WWMaskKey -> Char) -> (Ext_Int pk WWPointsKey -> Char) -> WWKeyZComp mk pk -> WalkableWorld mk pk -> IO ()
 printRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = putStrLn . showRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder $ w
 
 
@@ -199,17 +199,17 @@ inWWIsPointOverlappingMaskKey (WalkableWorld _ asciiWorld) point maskKey = inWor
 -- inWWIsPointOverlappingPointsKeyOrMaskKey :: (Ord k) => WalkableWorld k k -> Point -> k -> Bool
 -- inWWIsPointOverlappingPointsKeyOrMaskKey (WalkableWorld _ asciiWorld) point key = inWorldIsPointOverlappingPointsKeyOrMaskKey asciiWorld point key
 
--- moveMaskOfNameByInWW :: (Ord mk, Ord pk) => mk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
--- moveMaskOfNameByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ moveMaskOfNameBy name (dx,dy) w
+-- moveMaskOfKeyByInWW :: (Ord mk, Ord pk) => mk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
+-- moveMaskOfKeyByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ moveMaskOfKeyBy name (dx,dy) w
 
--- movePointsOfNameByInWW :: (Ord mk, Ord pk) => pk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
--- movePointsOfNameByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ movePointsOfNameBy name (dx,dy) w
+-- movePointsOfKeyByInWW :: (Ord mk, Ord pk) => pk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
+-- movePointsOfKeyByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ movePointsOfKeyBy name (dx,dy) w
 
 addMaskInWW :: (Ord mk, Ord pk) => mk -> Mask -> WalkableWorld mk pk -> WalkableWorld mk pk
 addMaskInWW maskKey mask (WalkableWorld height asciiWorld) = WalkableWorld height (addMask (External maskKey) mask asciiWorld)
 
 -- deleteMaskInWW :: (Ord mk, Ord pk) => mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- deleteMaskInWW maskName (WalkableWorld height w) = WalkableWorld height $ deleteMask maskName w
+-- deleteMaskInWW maskKey (WalkableWorld height w) = WalkableWorld height $ deleteMask maskKey w
 
 filterMaskKeysInWW :: (Ord mk, Ord pk) => (mk -> Bool) -> WalkableWorld mk pk -> WalkableWorld mk pk
 filterMaskKeysInWW p (WalkableWorld height asciiWorld) = WalkableWorld height (filterMaskKeys (\maskKey -> case maskKey of {External x -> p x; _ -> True}) asciiWorld)
@@ -224,16 +224,16 @@ lookupPointsInWW pointsKey (WalkableWorld height w) = lookupPoints (External poi
 lookupMaskInWW maskKey (WalkableWorld height w) = lookupMask (External maskKey) w
 
 -- adjustMaskInWW :: (Ord mk, Ord pk) => (Mask -> Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- adjustMaskInWW f maskName (WalkableWorld height w) = WalkableWorld height $ adjustMask f maskName w
+-- adjustMaskInWW f maskKey (WalkableWorld height w) = WalkableWorld height $ adjustMask f maskKey w
 
 -- updateMaskInWW :: (Ord mk, Ord pk) => (Mask -> Maybe Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- updateMaskInWW f maskName (WalkableWorld height w) = WalkableWorld height $ updateMask f maskName w
+-- updateMaskInWW f maskKey (WalkableWorld height w) = WalkableWorld height $ updateMask f maskKey w
 
 -- alterMaskInWW :: (Ord mk, Ord pk) => (Maybe Mask -> Maybe Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- alterMaskInWW f maskName (WalkableWorld height w) = WalkableWorld height $ alterMask f maskName w
+-- alterMaskInWW f maskKey (WalkableWorld height w) = WalkableWorld height $ alterMask f maskKey w
 
 -- copyMaskInWW :: (Ord mk, Ord pk) => mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- copyMaskInWW srcName destName = modifyAsAsciiWorld (copyMask srcName destName)
+-- copyMaskInWW srcKey destKey = modifyAsAsciiWorld (copyMask srcKey destKey)
 
 -- applyMaskInWW :: (Ord mk, Ord pk) => (Mask -> Mask -> Mask) -> mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
 -- applyMaskInWW op modifier target (WalkableWorld height w) = WalkableWorld height $ applyMask op modifier target w
@@ -245,10 +245,10 @@ lookupMaskInWW maskKey (WalkableWorld height w) = lookupMask (External maskKey) 
 -- deletePointsInWW name (WalkableWorld height w) = WalkableWorld height $ deletePoints name w
 
 -- insertMaskFromPointsInWW :: (Ord mk, Ord pk) => mk -> [Point] -> WalkableWorld mk pk -> WalkableWorld mk pk
--- insertMaskFromPointsInWW newMaskName points (WalkableWorld height w) = WalkableWorld height $ insertMaskFromPoints newMaskName points w
+-- insertMaskFromPointsInWW newMaskKey points (WalkableWorld height w) = WalkableWorld height $ insertMaskFromPoints newMaskKey points w
 
 -- inWWMaybeInsertMaskKeyFromPointsKey :: (Ord mk, Ord pk) => WalkableWorld mk pk -> mk -> pk -> Maybe (WalkableWorld mk pk)
--- inWWMaybeInsertMaskKeyFromPointsKey (WalkableWorld height asciiWorld) newMaskKey pointsKey = fmap (WalkableWorld height) $ inWorldMaybeInsertMaskKeyFromPointsKey asciiWorld newMaskName pointsName
+-- inWWMaybeInsertMaskKeyFromPointsKey (WalkableWorld height asciiWorld) newMaskKey pointsKey = fmap (WalkableWorld height) $ inWorldMaybeInsertMaskKeyFromPointsKey asciiWorld newMaskKey pointsKey
 
 -- isOverlappingMasksInWW :: (Ord mk, Ord pk) => mk -> mk -> WalkableWorld mk pk -> Bool
 -- isOverlappingMasksInWW name1 name2 w = isOverlappingMasks name1 name2 w
@@ -259,7 +259,7 @@ lookupMaskInWW maskKey (WalkableWorld height w) = lookupMask (External maskKey) 
 -- removeForbidden w = WalkableWorld $ applyMask bitwiseSubtract "#" "O" (wwRawAsciiWorld w)
 
 -- progressByAStep :: (Ord mk, Ord pk) => WalkableWorld mk pk -> WalkableWorld mk pk
--- progressByAStep w = removeForbidden . WalkableWorld $ combineAsciiWorlds $ map (\dir -> moveMaskOfNameBy "O" dir (wwRawAsciiWorld w)) lrduDirs
+-- progressByAStep w = removeForbidden . WalkableWorld $ combineAsciiWorlds $ map (\dir -> moveMaskOfKeyBy "O" dir (wwRawAsciiWorld w)) lrduDirs
 
 -- setOAtS :: (Ord mk, Ord pk) => WalkableWorld mk pk -> WalkableWorld mk pk
 -- setOAtS = WalkableWorld . fromJust . insertMaskAtPoint "O" "S" . wwRawAsciiWorld
@@ -304,11 +304,11 @@ maskKeys w =
       & lefts
 
 totalHorizontalEdgesOverPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalHorizontalEdgesOverPoints maskName w =
+totalHorizontalEdgesOverPoints maskKey w =
     w & wwRawAsciiWorld
-      & copyMask (External maskName) (Internal TemporaryMask1)
-      & moveMaskOfNameBy (Internal TemporaryMask1) (0,1)
-      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask1)
+      & copyMask (External maskKey) (Internal TemporaryMask1)
+      & moveMaskOfKeyBy (Internal TemporaryMask1) (0,1)
+      & applyMask bitwiseXor (External maskKey) (Internal TemporaryMask1)
       & getTemporaryMask1
       & countMaskPoints
   
@@ -316,11 +316,11 @@ totalHorizontalEdgesOverPoints maskName w =
         countMaskPoints = toInteger . popCount
 
 totalVerticalEdgesOverPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalVerticalEdgesOverPoints maskName w =
+totalVerticalEdgesOverPoints maskKey w =
     w & wwRawAsciiWorld
-      & copyMask (External maskName) (Internal TemporaryMask1)
-      & moveMaskOfNameBy (Internal TemporaryMask1) (1,0)
-      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask1)
+      & copyMask (External maskKey) (Internal TemporaryMask1)
+      & moveMaskOfKeyBy (Internal TemporaryMask1) (1,0)
+      & applyMask bitwiseXor (External maskKey) (Internal TemporaryMask1)
       & getTemporaryMask1
       & countMaskPoints
   where
@@ -328,18 +328,18 @@ totalVerticalEdgesOverPoints maskName w =
     countMaskPoints = toInteger . popCount
 
 totalEdgesOverPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalEdgesOverPoints maskName w =
-    (  totalHorizontalEdgesOverPoints maskName w
-     + totalVerticalEdgesOverPoints   maskName w)
+totalEdgesOverPoints maskKey w =
+    (  totalHorizontalEdgesOverPoints maskKey w
+     + totalVerticalEdgesOverPoints   maskKey w)
 
 totalConnectedHorizontalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalConnectedHorizontalEdges maskName w =
+totalConnectedHorizontalEdges maskKey w =
     w & wwRawAsciiWorld
-      & copyMask (External maskName) (Internal TemporaryMask1)
-      & moveMaskOfNameBy (Internal TemporaryMask1) (0,1)
-      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask1)
+      & copyMask (External maskKey) (Internal TemporaryMask1)
+      & moveMaskOfKeyBy (Internal TemporaryMask1) (0,1)
+      & applyMask bitwiseXor (External maskKey) (Internal TemporaryMask1)
       & copyMask (Internal TemporaryMask1) (Internal TemporaryMask2)
-      & moveMaskOfNameBy (Internal TemporaryMask2) (1,0)
+      & moveMaskOfKeyBy (Internal TemporaryMask2) (1,0)
       & applyMask bitwiseXor (Internal TemporaryMask1) (Internal TemporaryMask2)
       & getTemporaryMask2
       & countMaskPoints
@@ -349,13 +349,13 @@ totalConnectedHorizontalEdges maskName w =
         countMaskPoints = toInteger . popCount
 
 totalConnectedVerticalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalConnectedVerticalEdges maskName w =
+totalConnectedVerticalEdges maskKey w =
     w & wwRawAsciiWorld
-      & copyMask (External maskName) (Internal TemporaryMask1)
-      & moveMaskOfNameBy (Internal TemporaryMask1) (1,0)
-      & applyMask bitwiseXor (External maskName) (Internal TemporaryMask1)
+      & copyMask (External maskKey) (Internal TemporaryMask1)
+      & moveMaskOfKeyBy (Internal TemporaryMask1) (1,0)
+      & applyMask bitwiseXor (External maskKey) (Internal TemporaryMask1)
       & copyMask (Internal TemporaryMask1) (Internal TemporaryMask2)
-      & moveMaskOfNameBy (Internal TemporaryMask2) (0,1)
+      & moveMaskOfKeyBy (Internal TemporaryMask2) (0,1)
       & applyMask bitwiseXor (Internal TemporaryMask1) (Internal TemporaryMask2)
       & getTemporaryMask2
       & countMaskPoints
@@ -365,21 +365,21 @@ totalConnectedVerticalEdges maskName w =
     countMaskPoints = toInteger . popCount
 
 totalConnectedEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalConnectedEdges maskName w =
-    (  totalConnectedHorizontalEdges maskName w
-     + totalConnectedVerticalEdges   maskName w)
+totalConnectedEdges maskKey w =
+    (  totalConnectedHorizontalEdges maskKey w
+     + totalConnectedVerticalEdges   maskKey w)
 
 totalConnectedOneSidedHorizontalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalConnectedOneSidedHorizontalEdges maskName w =
+totalConnectedOneSidedHorizontalEdges maskKey w =
     (    (worldWithEdgeMask & keepDownEdges & countConnectedEdges)
      +   (worldWithEdgeMask & keepUpEdges   & countConnectedEdges))
   
   where worldWithEdgeMask =
             w
                 & wwRawAsciiWorld
-                & copyMask (External maskName) (Internal TemporaryMask1)
-                & copyMask (External maskName) (Internal TemporaryMask2)
-                & moveMaskOfNameBy (Internal TemporaryMask2) (0,1)
+                & copyMask (External maskKey) (Internal TemporaryMask1)
+                & copyMask (External maskKey) (Internal TemporaryMask2)
+                & moveMaskOfKeyBy (Internal TemporaryMask2) (0,1)
         
         keepDownEdges w' =
             w'
@@ -396,7 +396,7 @@ totalConnectedOneSidedHorizontalEdges maskName w =
         countConnectedEdges w' =
             w'
                 & copyMask (Internal TemporaryMask3) (Internal TemporaryMask4)
-                & moveMaskOfNameBy (Internal TemporaryMask4) (1,0)
+                & moveMaskOfKeyBy (Internal TemporaryMask4) (1,0)
                 & applyMask bitwiseXor (Internal TemporaryMask3) (Internal TemporaryMask4)
                 & getTemporaryMask4
                 & countMaskPoints
@@ -408,16 +408,16 @@ totalConnectedOneSidedHorizontalEdges maskName w =
 
 
 totalConnectedOneSidedVerticalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalConnectedOneSidedVerticalEdges maskName w =
+totalConnectedOneSidedVerticalEdges maskKey w =
     (    (worldWithEdgeMask & keepLeftEdges  & countConnectedEdges)
      +   (worldWithEdgeMask & keepRightEdges & countConnectedEdges))
   
   where worldWithEdgeMask =
             w
                 & wwRawAsciiWorld
-                & copyMask (External maskName) (Internal TemporaryMask1)
-                & copyMask (External maskName) (Internal TemporaryMask2)
-                & moveMaskOfNameBy (Internal TemporaryMask2) (1,0)
+                & copyMask (External maskKey) (Internal TemporaryMask1)
+                & copyMask (External maskKey) (Internal TemporaryMask2)
+                & moveMaskOfKeyBy (Internal TemporaryMask2) (1,0)
         
         keepLeftEdges w' =
             w'
@@ -434,7 +434,7 @@ totalConnectedOneSidedVerticalEdges maskName w =
         countConnectedEdges w' =
             w'
                 & copyMask (Internal TemporaryMask3) (Internal TemporaryMask4)
-                & moveMaskOfNameBy (Internal TemporaryMask4) (0,1)
+                & moveMaskOfKeyBy (Internal TemporaryMask4) (0,1)
                 & applyMask bitwiseXor (Internal TemporaryMask3) (Internal TemporaryMask4)
                 & getTemporaryMask4
                 & countMaskPoints
@@ -445,17 +445,17 @@ totalConnectedOneSidedVerticalEdges maskName w =
         countMaskPoints = toInteger . popCount
 
 totalConnectedOneSidedEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalConnectedOneSidedEdges maskName w =
-    (  totalConnectedOneSidedHorizontalEdges maskName w
-     + totalConnectedOneSidedVerticalEdges   maskName w)
+totalConnectedOneSidedEdges maskKey w =
+    (  totalConnectedOneSidedHorizontalEdges maskKey w
+     + totalConnectedOneSidedVerticalEdges   maskKey w)
 
 totalPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
-totalPoints maskName w =
+totalPoints maskKey w =
     w & wwRawAsciiWorld
       & getMask
       & countMaskPoints
   where
-    getMask = fromJust . M.lookup (External maskName) . asciiWorldMasks
+    getMask = fromJust . M.lookup (External maskKey) . asciiWorldMasks
     countMaskPoints = toInteger . popCount
 
 -- Make partitioner which gives every disconnected part of a layer its own name by tacking on the next number not already existing in the bit mask map
@@ -499,7 +499,7 @@ partitionMaskByReachableLRDU maskKey (WalkableWorld height worldBeforePartition)
                         
                         combinedMaskFromAllShiftedCopiesOfVisitedThisSearch =
                             lrduDirs
-                                & combineAsciiWorlds . map (\dir -> moveMaskOfNameBy (Internal LatestVisited) dir worldWithUnvisitedXoredByVisitedThisSearch)
+                                & combineAsciiWorlds . map (\dir -> moveMaskOfKeyBy (Internal LatestVisited) dir worldWithUnvisitedXoredByVisitedThisSearch)
                                 & fromJust . lookupMask (Internal LatestVisited)
                         
                         wAfterOneIteration =
@@ -536,7 +536,7 @@ partitionAllMasksByReachableLRDU :: (Show mk, Ord mk, Show pk, Ord pk) => Walkab
 partitionAllMasksByReachableLRDU w = M.fromList $ map (\maskKey -> (maskKey, partitionMaskByReachableLRDU maskKey w)) (maskKeys w)
 
 movePointsKeyByVecFreelyInWW :: (Ord mk, Ord pk) => pk -> (Int, Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
-movePointsKeyByVecFreelyInWW pointsKey v world = modifyRawAsciiWorld (movePointsOfNameBy (External pointsKey) v) world
+movePointsKeyByVecFreelyInWW pointsKey v world = modifyRawAsciiWorld (movePointsOfKeyBy (External pointsKey) v) world
 
 movePointsKeyByVecInWWUnlessNewWorldSatisfiesPred :: (Ord mk, Ord pk) => pk -> (Int, Int) -> WalkableWorld mk pk -> (WalkableWorld mk pk -> Bool) -> WalkableWorld mk pk
 movePointsKeyByVecInWWUnlessNewWorldSatisfiesPred pointsKey v initWorld pred 
