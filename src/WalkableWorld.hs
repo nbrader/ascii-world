@@ -161,21 +161,21 @@ modifyAsAsciiWorld :: (Ord mk, Ord pk) => (AsciiWorld mk pk -> AsciiWorld mk pk)
 modifyAsAsciiWorld f = addWalkableWorldParts . fmap (mapIndexForMasks External) . fmap (mapIndexForPoints External) . fmap f . fmap (mapIndexForPoints fromExternal) . fmap (mapIndexForMasks fromExternal) . undoWalkableWorldParts
 
 showWorld :: (Ord mk, Ord pk) => Char -> (mk -> Char) -> (pk -> Char) -> (MaskOrPointsIndex mk pk -> MaskOrPointsIndex mk pk -> Ordering) -> WalkableWorld mk pk -> String
-showWorld bgChar maskToChar pointsToChar nameZOrder w = (\(height, w') -> showAsciiWorld height bgChar maskToChar' pointsToChar' nameZOrder' w') . undoWalkableWorldParts $ w
+showWorld bgChar maskToChar pointsToChar indexZOrder w = (\(height, w') -> showAsciiWorld height bgChar maskToChar' pointsToChar' indexZOrder' w') . undoWalkableWorldParts $ w
   where maskToChar'   = maskToChar . fromExternal
         pointsToChar' = pointsToChar . fromExternal
-        nameZOrder'   = nameZOrder `on` conversion
+        indexZOrder'   = indexZOrder `on` conversion
         conversion = toMaskOrPointsIndex . bimap fromExternal fromExternal . fromMaskOrPointsIndex
 
 -- Shows the raw underlying ascii world except for underscores which are stripped so that there aren't just underscores for all non-background point.
 showRawAsciiWorld :: (Ord mk, Ord pk) => Char -> (Ext_Int mk WWMaskIndex -> Char) -> (Ext_Int pk WWPointsIndex -> Char) -> WWIndexZComp mk pk -> WalkableWorld mk pk -> String
-showRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = showAsciiWorld (wwHeight w) bgChar maskToChar pointsToChar nameZOrder . wwRawAsciiWorld $ w
+showRawAsciiWorld bgChar maskToChar pointsToChar indexZOrder w = showAsciiWorld (wwHeight w) bgChar maskToChar pointsToChar indexZOrder . wwRawAsciiWorld $ w
 
 printWorld :: (Ord mk, Ord pk) => Char -> (mk -> Char) -> (pk -> Char) -> (MaskOrPointsIndex mk pk -> MaskOrPointsIndex mk pk -> Ordering) -> WalkableWorld mk pk -> IO ()
-printWorld bgChar maskToChar pointsToChar nameZOrder = putStrLn . showWorld bgChar maskToChar pointsToChar nameZOrder
+printWorld bgChar maskToChar pointsToChar indexZOrder = putStrLn . showWorld bgChar maskToChar pointsToChar indexZOrder
 
 printRawAsciiWorld :: (Ord mk, Ord pk) => Char -> (Ext_Int mk WWMaskIndex -> Char) -> (Ext_Int pk WWPointsIndex -> Char) -> WWIndexZComp mk pk -> WalkableWorld mk pk -> IO ()
-printRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder w = putStrLn . showRawAsciiWorld bgChar maskToChar pointsToChar nameZOrder $ w
+printRawAsciiWorld bgChar maskToChar pointsToChar indexZOrder w = putStrLn . showRawAsciiWorld bgChar maskToChar pointsToChar indexZOrder $ w
 
 
 

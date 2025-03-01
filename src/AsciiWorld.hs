@@ -165,7 +165,7 @@ mapIndexForPoints :: (Ord mk,  Ord pk1, Ord pk2) => (pk1 -> pk2) -> AsciiWorld m
 mapIndexForPoints f w = w { asciiWorldPoints = M.mapKeys f (asciiWorldPoints w) }
 
 showAsciiWorld :: (Ord mk, Ord pk) => Int -> Char -> (mk -> Char) -> (pk -> Char) -> (MaskOrPointsIndex mk pk -> MaskOrPointsIndex mk pk -> Ordering) -> AsciiWorld mk pk -> String
-showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromMasksAndPoints
+showAsciiWorld height bgChar maskToChar pointsToChar indexZOrder world = unlines . reverse . take height . chunksOf width . map (fromMaybe bgChar) $ listOfMaybeCharsFromMasksAndPoints
   where (AsciiWorld masks points width) = world
         
         layerToMaybeMaskIndices :: (a, Mask) -> [Maybe a]
@@ -174,27 +174,27 @@ showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world = unlines 
         -- listOfMaybeEithersFromMasks :: [Maybe (Either mk pk)]
         listOfMaybeEithersFromMasks = if M.null masks
                                           then replicate (height * width) Nothing
-                                          else map (maximumMaybeBy (nameZOrder `on` toMaskOrPointsIndex)) . map (map (fmap Left)) . transpose . map layerToMaybeMaskIndices . M.toList $ masks
+                                          else map (maximumMaybeBy (indexZOrder `on` toMaskOrPointsIndex)) . map (map (fmap Left)) . transpose . map layerToMaybeMaskIndices . M.toList $ masks
         
-        -- namesAndPoints :: [(pk, Point)]
-        namesAndPoints = map head . groupBy ((==) `on` snd) . sortBy (\(aIndex,aPos) (bIndex,bPos) -> compare aPos bPos <> compare aIndex bIndex) . concat . map (\(name,ps) -> map (name,) ps) . M.toList $ points
+        -- indicesAndPoints :: [(pk, Point)]
+        indicesAndPoints = map head . groupBy ((==) `on` snd) . sortBy (\(aIndex,aPos) (bIndex,bPos) -> compare aPos bPos <> compare aIndex bIndex) . concat . map (\(name,ps) -> map (name,) ps) . M.toList $ points
         
-        -- namesAndIndices :: [(pk, Int)]
-        namesAndIndices = map (fmap (pointToIndex width)) namesAndPoints
+        -- indicesAndListPositions :: [(pk, Int)]
+        indicesAndListPositions = map (fmap (pointToIndex width)) indicesAndPoints
         
         -- listOfMaybeEithersFromMasksAndPoints :: [Maybe (Either mk pk)]
-        listOfMaybeEithersFromMasksAndPoints = foldr update listOfMaybeEithersFromMasks namesAndIndices
+        listOfMaybeEithersFromMasksAndPoints = foldr update listOfMaybeEithersFromMasks indicesAndListPositions
           where update (pIndex,i) acc = let maybeOld = join (acc `atMay` i)
                                             zOrderMax = case maybeOld of
                                                           Nothing -> Right pIndex
-                                                          Just old -> maximumBy (nameZOrder `on` toMaskOrPointsIndex) [old, (Right pIndex)]
+                                                          Just old -> maximumBy (indexZOrder `on` toMaskOrPointsIndex) [old, (Right pIndex)]
                                         in replace acc (i, Just zOrderMax)
         
         -- listOfMaybeCharsFromMasksAndPoints :: [Maybe Char]
         listOfMaybeCharsFromMasksAndPoints = map (fmap (either maskToChar pointsToChar)) listOfMaybeEithersFromMasksAndPoints
 
 printAsciiWorld :: (Ord mk, Ord pk) => Int -> Char -> (mk -> Char) -> (pk -> Char) -> (MaskOrPointsIndex mk pk -> MaskOrPointsIndex mk pk -> Ordering) -> AsciiWorld mk pk -> IO ()
-printAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world = putStrLn $ showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world 
+printAsciiWorld height bgChar maskToChar pointsToChar indexZOrder world = putStrLn $ showAsciiWorld height bgChar maskToChar pointsToChar indexZOrder world 
 
 msbPointOfMask :: (Ord mk, Ord pk) => mk -> AsciiWorld mk pk -> Maybe Point
 msbPointOfMask maskIndex w = fmap (msbPoint width) (lookupMask maskIndex w)
@@ -365,12 +365,12 @@ printExampleWorld5  = let bgChar = '.'
                           pointsToChar  ""   = '-'
                           pointsToChar (x:_) = x
                           
-                          nameZOrder (PointsIndex _) (MaskIndex   _) = LT
-                          nameZOrder (MaskIndex   _) (PointsIndex _) = GT
-                          nameZOrder _ _ = EQ
+                          indexZOrder (PointsIndex _) (MaskIndex   _) = LT
+                          indexZOrder (MaskIndex   _) (PointsIndex _) = GT
+                          indexZOrder _ _ = EQ
                           
                           (height, world) = readAsciiWorld charMap inStr
-                      in printAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world
+                      in printAsciiWorld height bgChar maskToChar pointsToChar indexZOrder world
 
 printExampleWorld5' = let bgChar = '.'
                           
@@ -386,13 +386,13 @@ printExampleWorld5' = let bgChar = '.'
                           pointsToChar  ""   = '-'
                           pointsToChar (x:_) = x
                           
-                          nameZOrder (PointsIndex _) (MaskIndex   _) = GT
-                          nameZOrder (MaskIndex   _) (PointsIndex _) = LT
-                          nameZOrder _ _ = EQ
+                          indexZOrder (PointsIndex _) (MaskIndex   _) = GT
+                          indexZOrder (MaskIndex   _) (PointsIndex _) = LT
+                          indexZOrder _ _ = EQ
                           
                           (height, world) = readAsciiWorld charMap inStr
                           asciiWorld' = setWidth 53 $ movePointsOfIndexBy "X" (1,1) world
-                      in printAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld'
+                      in printAsciiWorld height bgChar maskToChar pointsToChar indexZOrder asciiWorld'
 
 exampleOfMaskOperation3 = let bgChar = '.'
                           
@@ -409,12 +409,12 @@ exampleOfMaskOperation3 = let bgChar = '.'
                               pointsToChar  ""   = '-'
                               pointsToChar (x:_) = x
                               
-                              nameZOrder (PointsIndex _) (MaskIndex   _) = LT
-                              nameZOrder (MaskIndex   _) (PointsIndex _) = GT
-                              nameZOrder _ _ = EQ
+                              indexZOrder (PointsIndex _) (MaskIndex   _) = LT
+                              indexZOrder (MaskIndex   _) (PointsIndex _) = GT
+                              indexZOrder _ _ = EQ
                               
                               (height, world) = readAsciiWorld charMap inStr :: (Int, AsciiWorld String String)
-                          in (\(height,world) -> printAsciiWorld height bgChar maskToChar pointsToChar nameZOrder world) $ fmap (applyMask bitwiseXor " " "X" . moveMaskOfIndexBy " " (0,1) . copyMask "X" " ") $ (height, world)
+                          in (\(height,world) -> printAsciiWorld height bgChar maskToChar pointsToChar indexZOrder world) $ fmap (applyMask bitwiseXor " " "X" . moveMaskOfIndexBy " " (0,1) . copyMask "X" " ") $ (height, world)
 
 exampleOfMaskOperation4 = let bgChar = '.'
                           
