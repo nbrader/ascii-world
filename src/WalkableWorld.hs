@@ -44,6 +44,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         , movePointsIndexByVecFreelyInWW
                         , movePointsIndexByVecInWWUnlessNewWorldSatisfiesPred
                         , movePointsIndexByVecPushingPointsIndexBlockedByMaskIndicesInWW
+                        , movePointsIndexByVecPushingPointsIndicesBlockedByMaskIndicesInWW
                         ) where
 
 -------------
@@ -581,7 +582,51 @@ movePointsIndexByVecPushingPointsIndexBlockedByMaskIndicesInWW toMovePointsIndex
                         
                         Just _  -> error "Points key must be associated with a single point!"
                         Nothing -> error "No such points key!"
+        _ -> error $ show (maybePushablePoints, maybeBlockingMaskIndices)
   where
+    maybeToMovePointsIndex = lookupPoints (External toMovePointsIndex) $ wwRawAsciiWorld initWorld
+    maybePushablePoints = lookupPoints (External pushablePointsIndex) $ wwRawAsciiWorld initWorld
+    maybeBlockingMaskIndices = sequence $ map (\blockingMaskIndex -> lookupMask (External blockingMaskIndex) $ wwRawAsciiWorld initWorld) blockingMaskIndices
+
+
+movePointsIndexByVecPushingPointsIndicesBlockedByMaskIndicesInWW :: (Ord mk, Ord pk) => pk -> (Int, Int) -> pk -> pk -> [mk] -> WalkableWorld mk pk -> Maybe (WalkableWorld mk pk)
+movePointsIndexByVecPushingPointsIndicesBlockedByMaskIndicesInWW toMovePointsIndex v pushablePointsIndexLeft pushablePointsIndexRight blockingMaskIndices initWorld =
+    case (maybePushablePoints, maybeBlockingMaskIndices) of
+        (Just pushablePoints, Just blockingMasks) ->
+            if length pushablePoints /= length (nub pushablePoints)
+                then error "All pushable points must be unique!"
+                else case maybeToMovePointsIndex of 
+                        Just [toMovePoint] ->
+                            let
+                                pushingPointDestination = toMovePoint `movePoint` v
+                                
+                                collidesWithMask point world =
+                                    any (inWWIsPointOverlappingMaskIndex world point) blockingMaskIndices
+                                
+                                collidesWithPushable point world =
+                                    inWWIsPointOverlappingPointsIndex world point pushablePointsIndex
+                            
+                                movePointByVecPushingPointsIndexBlockedByMaskIndicesInWW lastMovedPoint v pushablePointsIndex blockingMaskIndices world
+                                    | nextPoint `collidesWithMask` world = Nothing  -- Collision detected, stop
+                                    | nextPoint `collidesWithPushable` world = movePointByVecPushingPointsIndexBlockedByMaskIndicesInWW nextPoint v pushablePointsIndex blockingMaskIndices initWorld
+                                    | otherwise = let oldAsciiWorld = wwRawAsciiWorld world
+                                                      oldWorldPoints = asciiWorldPoints oldAsciiWorld
+                                                      newAsciiWorld = oldAsciiWorld {asciiWorldPoints =
+                                                              M.adjust (delete pushingPointDestination) (External pushablePointsIndex)
+                                                            $ M.adjust (nextPoint:) (External pushablePointsIndex)
+                                                            $ M.insert (External toMovePointsIndex) [pushingPointDestination]
+                                                            $ oldWorldPoints }
+                                                  in Just $ world {wwRawAsciiWorld = newAsciiWorld}
+                                  where nextPoint = lastMovedPoint `movePoint` v
+                            in if pushingPointDestination `collidesWithMask` initWorld
+                                then Just initWorld
+                                else movePointByVecPushingPointsIndexBlockedByMaskIndicesInWW toMovePoint v pushablePointsIndex blockingMaskIndices initWorld
+                        
+                        Just _  -> error "Points key must be associated with a single point!"
+                        Nothing -> error "No such points key!"
+        _ -> error $ show (maybePushablePoints, maybeBlockingMaskIndices)
+  where
+    pushablePointsIndex = pushablePointsIndexLeft -- Temporary bodge
     maybeToMovePointsIndex = lookupPoints (External toMovePointsIndex) $ wwRawAsciiWorld initWorld
     maybePushablePoints = lookupPoints (External pushablePointsIndex) $ wwRawAsciiWorld initWorld
     maybeBlockingMaskIndices = sequence $ map (\blockingMaskIndex -> lookupMask (External blockingMaskIndex) $ wwRawAsciiWorld initWorld) blockingMaskIndices
