@@ -24,7 +24,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         , inWWIsPointOverlappingMaskIndex
                         -- , inWWIsPointOverlappingPointsIndexOrMaskIndex
                         -- , moveMaskOfIndexByInWW
-                        -- , movePointsOfIndexByInWW
+                        , movePointsOfIndexByInWW
                         , addMaskInWW
                         -- , deleteMaskInWW
                         , filterMaskIndicesInWW
@@ -35,7 +35,8 @@ module WalkableWorld    ( WalkableWorld(..)
                         , adjustPointsInWW
                         , updateMaskInWW
                         , alterMaskInWW
-                        -- , copyMaskInWW
+                        , copyMaskInWW
+                        , copyPointsInWW
                         , applyMaskInWW
                         , setPointInWW
                         , deletePointsInWW
@@ -104,6 +105,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , updateMask
                         , alterMask
                         , copyMask
+                        , copyPoints
                         , applyMask
                         , setPoint
                         , deletePoints
@@ -203,8 +205,8 @@ inWWIsPointOverlappingMaskIndex (WalkableWorld _ asciiWorld) point maskIndex = i
 -- moveMaskOfIndexByInWW :: (Ord mk, Ord pk) => mk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
 -- moveMaskOfIndexByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ moveMaskOfIndexBy name (dx,dy) w
 
--- movePointsOfIndexByInWW :: (Ord mk, Ord pk) => pk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
--- movePointsOfIndexByInWW name (dx,dy) (WalkableWorld height w) = WalkableWorld height $ movePointsOfIndexBy name (dx,dy) w
+movePointsOfIndexByInWW :: (Ord mk, Ord pk) => pk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
+movePointsOfIndexByInWW index (dx,dy) (WalkableWorld height w) = WalkableWorld height $ movePointsOfIndexBy (External index) (dx,dy) w
 
 addMaskInWW :: (Ord mk, Ord pk) => mk -> Mask -> WalkableWorld mk pk -> WalkableWorld mk pk
 addMaskInWW maskIndex mask (WalkableWorld height asciiWorld) = WalkableWorld height (addMask (External maskIndex) mask asciiWorld)
@@ -236,8 +238,11 @@ updateMaskInWW f maskIndex (WalkableWorld height w) = WalkableWorld height $ upd
 alterMaskInWW :: (Ord mk, Ord pk) => (Maybe Mask -> Maybe Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
 alterMaskInWW f maskIndex (WalkableWorld height w) = WalkableWorld height $ alterMask f (External maskIndex) w
 
--- copyMaskInWW :: (Ord mk, Ord pk) => mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- copyMaskInWW srcIndex destIndex = modifyAsAsciiWorld (copyMask (External srcIndex) (External destIndex))
+copyMaskInWW :: (Ord mk, Ord pk) => mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
+copyMaskInWW srcIndex destIndex (WalkableWorld height w) = WalkableWorld height $ copyMask (External srcIndex) (External destIndex) w
+
+copyPointsInWW :: (Ord mk, Ord pk) => pk -> pk -> WalkableWorld mk pk -> WalkableWorld mk pk
+copyPointsInWW srcIndex destIndex (WalkableWorld height w) = WalkableWorld height $ copyPoints (External srcIndex) (External destIndex) w
 
 applyMaskInWW :: (Ord mk, Ord pk) => (Mask -> Mask -> Mask) -> mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
 applyMaskInWW op modifierIndex targetIndex (WalkableWorld height w) = WalkableWorld height $ applyMask op (External modifierIndex) (External targetIndex) w

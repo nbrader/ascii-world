@@ -36,6 +36,7 @@ module AsciiWorld   ( AsciiWorld(..)
                     , updateMask
                     , alterMask
                     , copyMask
+                    , copyPoints
                     , applyMask
                     , setPoint
                     , deletePoints
@@ -291,6 +292,11 @@ copyMask :: (Ord mk, Ord pk) => mk -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 copyMask srcIndex destIndex w = fromMaybe w $ do
     mask <- M.lookup srcIndex (asciiWorldMasks w)
     return $ w {asciiWorldMasks = M.insert destIndex mask (asciiWorldMasks w)}
+
+copyPoints :: (Ord mk, Ord pk) => pk -> pk -> AsciiWorld mk pk -> AsciiWorld mk pk
+copyPoints srcIndex destIndex w = fromMaybe w $ do
+    points <- M.lookup srcIndex (asciiWorldPoints w)
+    return $ w {asciiWorldPoints = M.insert destIndex points (asciiWorldPoints w)}
 
 applyMask :: (Ord mk, Ord pk) => (Mask -> Mask -> Mask) -> mk -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 applyMask op modifier target w
