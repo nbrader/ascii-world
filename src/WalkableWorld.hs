@@ -8,7 +8,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         , wwWidth
                         , MaskOrPointsIndex(..)
                         , readWorld
-                        -- , showWorld
+                        , showWorld
                         , printWorld
                         , totalEdgesOverPoints
                         , totalConnectedEdges
