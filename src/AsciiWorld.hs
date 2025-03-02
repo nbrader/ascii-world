@@ -32,6 +32,7 @@ module AsciiWorld   ( AsciiWorld(..)
                     , lookupMask
                     , lookupPoints
                     , adjustMask
+                    , adjustPoints
                     , updateMask
                     , alterMask
                     , copyMask
@@ -276,6 +277,9 @@ lookupPoints pointsIndex w = M.lookup pointsIndex (asciiWorldPoints w)
 
 adjustMask :: (Ord mk, Ord pk) => (Mask -> Mask) -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 adjustMask f maskIndex w = w { asciiWorldMasks = M.adjust f maskIndex (asciiWorldMasks w) }
+
+adjustPoints :: (Ord mk, Ord pk) => ([Point] -> [Point]) -> pk -> AsciiWorld mk pk -> AsciiWorld mk pk
+adjustPoints f pointsIndex w = w { asciiWorldPoints = M.adjust f pointsIndex (asciiWorldPoints w) }
 
 updateMask :: (Ord mk, Ord pk) => (Mask -> Maybe Mask) -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 updateMask f maskIndex w = w { asciiWorldMasks = M.update f maskIndex (asciiWorldMasks w) }

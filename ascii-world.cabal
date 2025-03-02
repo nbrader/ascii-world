@@ -13,8 +13,8 @@ build-type:          Simple
 
 library
   hs-source-dirs:    src
-  exposed-modules:   AsciiWorld, WalkableWorld
-  other-modules:     Mask, Util
+  exposed-modules:   AsciiWorld, WalkableWorld, Mask, Util
+  other-modules:     
   build-depends:
       base >=4.12 && <5,
       containers >=0.6.7,

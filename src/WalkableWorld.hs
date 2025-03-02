@@ -21,7 +21,7 @@ module WalkableWorld    ( WalkableWorld(..)
                         -- , combineWalkableWorlds
                         , inWWIsPointsIndexOverlappingMaskIndex
                         , inWWIsPointOverlappingPointsIndex
-                        -- , inWWIsPointOverlappingMaskIndex
+                        , inWWIsPointOverlappingMaskIndex
                         -- , inWWIsPointOverlappingPointsIndexOrMaskIndex
                         -- , moveMaskOfIndexByInWW
                         -- , movePointsOfIndexByInWW
@@ -29,22 +29,21 @@ module WalkableWorld    ( WalkableWorld(..)
                         -- , deleteMaskInWW
                         , filterMaskIndicesInWW
                         -- , filterMasksInWW
-                        -- , lookupMaskInWW
+                        , lookupMaskInWW
                         , lookupPointsInWW
-                        -- , adjustMaskInWW
-                        -- , updateMaskInWW
-                        -- , alterMaskInWW
+                        , adjustMaskInWW
+                        , adjustPointsInWW
+                        , updateMaskInWW
+                        , alterMaskInWW
                         -- , copyMaskInWW
-                        -- , applyMaskInWW
-                        -- , setPointInWW
-                        -- , deletePointsInWW
+                        , applyMaskInWW
+                        , setPointInWW
+                        , deletePointsInWW
                         -- , insertMaskFromPointsInWW
                         -- , inWWMaybeInsertMaskIndexFromPointsIndex
                         -- , isOverlappingMasksInWW
                         , movePointsIndexByVecFreelyInWW
                         , movePointsIndexByVecInWWUnlessNewWorldSatisfiesPred
-                        , movePointsIndexByVecPushingPointsIndexBlockedByMaskIndicesInWW
-                        , movePointsIndexByVecPushingPointsIndicesBlockedByMaskIndicesInWW
                         ) where
 
 -------------
@@ -101,6 +100,7 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , lookupMask
                         , lookupPoints
                         , adjustMask
+                        , adjustPoints
                         , updateMask
                         , alterMask
                         , copyMask
@@ -221,29 +221,32 @@ filterMaskIndicesInWW p (WalkableWorld height asciiWorld) = WalkableWorld height
 lookupPointsInWW :: (Ord mk, Ord pk) => pk -> WalkableWorld mk pk -> Maybe [Point]
 lookupPointsInWW pointsIndex (WalkableWorld height w) = lookupPoints (External pointsIndex) w
 
--- lookupMaskInWW :: (Ord mk, Ord pk) => mk -> WalkableWorld mk pk -> Maybe Mask
+lookupMaskInWW :: (Ord mk, Ord pk) => mk -> WalkableWorld mk pk -> Maybe Mask
 lookupMaskInWW maskIndex (WalkableWorld height w) = lookupMask (External maskIndex) w
 
--- adjustMaskInWW :: (Ord mk, Ord pk) => (Mask -> Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- adjustMaskInWW f maskIndex (WalkableWorld height w) = WalkableWorld height $ adjustMask f maskIndex w
+adjustMaskInWW :: (Ord mk, Ord pk) => (Mask -> Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
+adjustMaskInWW f maskIndex (WalkableWorld height w) = WalkableWorld height $ adjustMask f (External maskIndex) w
 
--- updateMaskInWW :: (Ord mk, Ord pk) => (Mask -> Maybe Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- updateMaskInWW f maskIndex (WalkableWorld height w) = WalkableWorld height $ updateMask f maskIndex w
+adjustPointsInWW :: (Ord mk, Ord pk) => ([Point] -> [Point]) -> pk -> WalkableWorld mk pk -> WalkableWorld mk pk
+adjustPointsInWW f pointsIndex (WalkableWorld height w) = WalkableWorld height $ adjustPoints f (External pointsIndex) w
 
--- alterMaskInWW :: (Ord mk, Ord pk) => (Maybe Mask -> Maybe Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- alterMaskInWW f maskIndex (WalkableWorld height w) = WalkableWorld height $ alterMask f maskIndex w
+updateMaskInWW :: (Ord mk, Ord pk) => (Mask -> Maybe Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
+updateMaskInWW f maskIndex (WalkableWorld height w) = WalkableWorld height $ updateMask f (External maskIndex) w
+
+alterMaskInWW :: (Ord mk, Ord pk) => (Maybe Mask -> Maybe Mask) -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
+alterMaskInWW f maskIndex (WalkableWorld height w) = WalkableWorld height $ alterMask f (External maskIndex) w
 
 -- copyMaskInWW :: (Ord mk, Ord pk) => mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- copyMaskInWW srcIndex destIndex = modifyAsAsciiWorld (copyMask srcIndex destIndex)
+-- copyMaskInWW srcIndex destIndex = modifyAsAsciiWorld (copyMask (External srcIndex) (External destIndex))
 
--- applyMaskInWW :: (Ord mk, Ord pk) => (Mask -> Mask -> Mask) -> mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- applyMaskInWW op modifier target (WalkableWorld height w) = WalkableWorld height $ applyMask op modifier target w
+applyMaskInWW :: (Ord mk, Ord pk) => (Mask -> Mask -> Mask) -> mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
+applyMaskInWW op modifierIndex targetIndex (WalkableWorld height w) = WalkableWorld height $ applyMask op (External modifierIndex) (External targetIndex) w
 
--- setPointInWW :: (Ord mk, Ord pk) => pk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
--- setPointInWW name (x,y) (WalkableWorld height w) = WalkableWorld height $ setPoint name (x,y) w
+setPointInWW :: (Ord mk, Ord pk) => pk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
+setPointInWW pointsIndex (x,y) (WalkableWorld height w) = WalkableWorld height $ setPoint (External pointsIndex) (x,y) w
 
--- deletePointsInWW :: (Ord mk, Ord pk) => pk -> WalkableWorld mk pk -> WalkableWorld mk pk
--- deletePointsInWW name (WalkableWorld height w) = WalkableWorld height $ deletePoints name w
+deletePointsInWW :: (Ord mk, Ord pk) => pk -> WalkableWorld mk pk -> WalkableWorld mk pk
+deletePointsInWW pointsIndex (WalkableWorld height w) = WalkableWorld height $ deletePoints (External pointsIndex) w
 
 -- insertMaskFromPointsInWW :: (Ord mk, Ord pk) => mk -> [Point] -> WalkableWorld mk pk -> WalkableWorld mk pk
 -- insertMaskFromPointsInWW newMaskIndex points (WalkableWorld height w) = WalkableWorld height $ insertMaskFromPoints newMaskIndex points w
@@ -546,87 +549,3 @@ movePointsIndexByVecInWWUnlessNewWorldSatisfiesPred pointsIndex v initWorld pred
     | otherwise
         = worldAfterFreeMove
   where worldAfterFreeMove = movePointsIndexByVecFreelyInWW pointsIndex v initWorld
-
-movePointsIndexByVecPushingPointsIndexBlockedByMaskIndicesInWW :: (Ord mk, Ord pk) => pk -> (Int, Int) -> pk -> [mk] -> WalkableWorld mk pk -> Maybe (WalkableWorld mk pk)
-movePointsIndexByVecPushingPointsIndexBlockedByMaskIndicesInWW toMovePointsIndex v pushablePointsIndex blockingMaskIndices initWorld =
-    case (maybePushablePoints, maybeBlockingMaskIndices) of
-        (Just pushablePoints, Just blockingMasks) ->
-            if length pushablePoints /= length (nub pushablePoints)
-                then error "All pushable points must be unique!"
-                else case maybeToMovePointsIndex of 
-                        Just [toMovePoint] ->
-                            let
-                                pushingPointDestination = toMovePoint `movePoint` v
-                                
-                                collidesWithMask point world =
-                                    any (inWWIsPointOverlappingMaskIndex world point) blockingMaskIndices
-                                
-                                collidesWithPushable point world =
-                                    inWWIsPointOverlappingPointsIndex world point pushablePointsIndex
-                            
-                                movePointByVecPushingPointsIndexBlockedByMaskIndicesInWW lastMovedPoint v pushablePointsIndex blockingMaskIndices world
-                                    | nextPoint `collidesWithMask` world = Nothing  -- Collision detected, stop
-                                    | nextPoint `collidesWithPushable` world = movePointByVecPushingPointsIndexBlockedByMaskIndicesInWW nextPoint v pushablePointsIndex blockingMaskIndices initWorld
-                                    | otherwise = let oldAsciiWorld = wwRawAsciiWorld world
-                                                      oldWorldPoints = asciiWorldPoints oldAsciiWorld
-                                                      newAsciiWorld = oldAsciiWorld {asciiWorldPoints =
-                                                              M.adjust (delete pushingPointDestination) (External pushablePointsIndex)
-                                                            $ M.adjust (nextPoint:) (External pushablePointsIndex)
-                                                            $ M.insert (External toMovePointsIndex) [pushingPointDestination]
-                                                            $ oldWorldPoints }
-                                                  in Just $ world {wwRawAsciiWorld = newAsciiWorld}
-                                  where nextPoint = lastMovedPoint `movePoint` v
-                            in if pushingPointDestination `collidesWithMask` initWorld
-                                then Just initWorld
-                                else movePointByVecPushingPointsIndexBlockedByMaskIndicesInWW toMovePoint v pushablePointsIndex blockingMaskIndices initWorld
-                        
-                        Just _  -> error "Points key must be associated with a single point!"
-                        Nothing -> error "No such points key!"
-        _ -> error $ show (maybePushablePoints, maybeBlockingMaskIndices)
-  where
-    maybeToMovePointsIndex = lookupPoints (External toMovePointsIndex) $ wwRawAsciiWorld initWorld
-    maybePushablePoints = lookupPoints (External pushablePointsIndex) $ wwRawAsciiWorld initWorld
-    maybeBlockingMaskIndices = sequence $ map (\blockingMaskIndex -> lookupMask (External blockingMaskIndex) $ wwRawAsciiWorld initWorld) blockingMaskIndices
-
-
-movePointsIndexByVecPushingPointsIndicesBlockedByMaskIndicesInWW :: (Ord mk, Ord pk) => pk -> (Int, Int) -> pk -> pk -> [mk] -> WalkableWorld mk pk -> Maybe (WalkableWorld mk pk)
-movePointsIndexByVecPushingPointsIndicesBlockedByMaskIndicesInWW toMovePointsIndex v pushablePointsIndexLeft pushablePointsIndexRight blockingMaskIndices initWorld =
-    case (maybePushablePoints, maybeBlockingMaskIndices) of
-        (Just pushablePoints, Just blockingMasks) ->
-            if length pushablePoints /= length (nub pushablePoints)
-                then error "All pushable points must be unique!"
-                else case maybeToMovePointsIndex of 
-                        Just [toMovePoint] ->
-                            let
-                                pushingPointDestination = toMovePoint `movePoint` v
-                                
-                                collidesWithMask point world =
-                                    any (inWWIsPointOverlappingMaskIndex world point) blockingMaskIndices
-                                
-                                collidesWithPushable point world =
-                                    inWWIsPointOverlappingPointsIndex world point pushablePointsIndex
-                            
-                                movePointByVecPushingPointsIndexBlockedByMaskIndicesInWW lastMovedPoint v pushablePointsIndex blockingMaskIndices world
-                                    | nextPoint `collidesWithMask` world = Nothing  -- Collision detected, stop
-                                    | nextPoint `collidesWithPushable` world = movePointByVecPushingPointsIndexBlockedByMaskIndicesInWW nextPoint v pushablePointsIndex blockingMaskIndices initWorld
-                                    | otherwise = let oldAsciiWorld = wwRawAsciiWorld world
-                                                      oldWorldPoints = asciiWorldPoints oldAsciiWorld
-                                                      newAsciiWorld = oldAsciiWorld {asciiWorldPoints =
-                                                              M.adjust (delete pushingPointDestination) (External pushablePointsIndex)
-                                                            $ M.adjust (nextPoint:) (External pushablePointsIndex)
-                                                            $ M.insert (External toMovePointsIndex) [pushingPointDestination]
-                                                            $ oldWorldPoints }
-                                                  in Just $ world {wwRawAsciiWorld = newAsciiWorld}
-                                  where nextPoint = lastMovedPoint `movePoint` v
-                            in if pushingPointDestination `collidesWithMask` initWorld
-                                then Just initWorld
-                                else movePointByVecPushingPointsIndexBlockedByMaskIndicesInWW toMovePoint v pushablePointsIndex blockingMaskIndices initWorld
-                        
-                        Just _  -> error "Points key must be associated with a single point!"
-                        Nothing -> error "No such points key!"
-        _ -> error $ show (maybePushablePoints, maybeBlockingMaskIndices)
-  where
-    pushablePointsIndex = pushablePointsIndexLeft -- Temporary bodge
-    maybeToMovePointsIndex = lookupPoints (External toMovePointsIndex) $ wwRawAsciiWorld initWorld
-    maybePushablePoints = lookupPoints (External pushablePointsIndex) $ wwRawAsciiWorld initWorld
-    maybeBlockingMaskIndices = sequence $ map (\blockingMaskIndex -> lookupMask (External blockingMaskIndex) $ wwRawAsciiWorld initWorld) blockingMaskIndices
