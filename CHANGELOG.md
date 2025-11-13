@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CHANGELOG.md for tracking version history
 - Example programs and tutorials:
   - Day 6 solution (guard patrol with movement simulation and cycle detection)
+  - Day 8 solution (resonant collinearity with antinode calculations)
   - Day 10 solution (topographic pathfinding)
   - Day 12 solution (region detection and perimeter counting)
   - Step-by-step tutorial examples in examples/ directory:
