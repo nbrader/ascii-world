@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Professional README.md with badges and examples
 - CHANGELOG.md for tracking version history
 - Example programs and tutorials:
+  - Day 4 solution (word search with multi-directional pattern matching)
   - Day 6 solution (guard patrol with movement simulation and cycle detection)
   - Day 8 solution (resonant collinearity with antinode calculations)
   - Day 10 solution (topographic pathfinding)
