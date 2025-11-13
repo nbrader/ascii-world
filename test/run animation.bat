@@ -29,7 +29,7 @@ if not exist "%EXECUTABLE%" (
 
 set /p dummy="Make sure to zoom out using Ctrl + Scroll Wheel for better visibility. Press Enter when you are ready to start playing..."
 echo Running %EXECUTABLE%...
-.\%EXECUTABLE%
+".\%EXECUTABLE%"
 
 set /p dummy="Press Enter to restart (this will also rebuild the executable)..."
 goto main_loop
