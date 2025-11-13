@@ -3,7 +3,7 @@
 module PropertyTests (spec) where
 
 import Test.Hspec
-import Test.QuickCheck
+import Test.QuickCheck hiding ((.&.))
 import Data.Bits
 import Mask
 

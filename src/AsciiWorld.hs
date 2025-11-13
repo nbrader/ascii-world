@@ -158,7 +158,7 @@ setWidth newWidth w = w { asciiWorldMasks = M.map (setMaskWidth oldWidth newWidt
         
         oldPoints = asciiWorldPoints w
         newPoints
-            | newWidth < oldWidth = M.map (filter (\(x,_) -> x >= newWidth)) oldPoints
+            | newWidth < oldWidth = M.map (filter (\(x,_) -> x < newWidth)) oldPoints
             | otherwise = oldPoints
 
 mapIndexForMasks  :: (Ord mk1, Ord mk2, Ord pk)  => (mk1 -> mk2) -> AsciiWorld mk1 pk -> AsciiWorld mk2 pk

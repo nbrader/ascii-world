@@ -53,3 +53,11 @@ main = hspec $ do
       let newWorld = setPoint "A" (1, 1) world
       let pts = asciiWorldPoints newWorld
       M.lookup "A" pts `shouldBe` Just [(1,1)]
+
+  describe "setWidth" $ do
+    it "removes points that fall outside the new width" $ do
+      let world = emptyAsciiWorld 5 :: AsciiWorld String String
+          withPoints = setPoint "A" (4,0) (setPoint "A" (0,0) world)
+          resized = setWidth 3 withPoints
+          pts = asciiWorldPoints resized
+      M.lookup "A" pts `shouldBe` Just [(0,0)]

@@ -60,16 +60,6 @@ import Data.Ord
 import Data.Bits
 -- import Debug.Trace (trace)
 
--------------
--- Helpers --
--------------
--- Safe lookup with informative error messages
-lookupMaskOrError :: (Ord k, Show k) => String -> k -> M.Map k Mask -> Mask
-lookupMaskOrError context key maskMap =
-    case M.lookup key maskMap of
-        Just mask -> mask
-        Nothing -> error $ context ++ ": mask key not found: " ++ show key
-
 import Util ( lrduDirs )
 import Mask ( Mask
             , Point
@@ -122,6 +112,16 @@ import AsciiWorld as AW ( AsciiWorld(..)
                         , insertMaskFromPoints
                         , inWorldMaybeInsertMaskIndexFromPointsIndex
                         , isOverlappingMasks )
+
+-------------
+-- Helpers --
+-------------
+-- Safe lookup with informative error messages
+lookupMaskOrError :: (Ord k, Show k) => String -> k -> M.Map k Mask -> Mask
+lookupMaskOrError context key maskMap =
+    case M.lookup key maskMap of
+        Just mask -> mask
+        Nothing -> error $ context ++ ": mask key not found: " ++ show key
 
 data WalkableWorld mk pk = WalkableWorld {wwHeight :: Int, wwRawAsciiWorld :: RawAsciiWorld mk pk} deriving (Show)
 wwWidth = asciiWorldWidth . wwRawAsciiWorld
@@ -265,7 +265,7 @@ copyMaskInWW srcIndex destIndex (WalkableWorld height w) = WalkableWorld height 
 copyPointsInWW :: (Ord mk, Ord pk) => pk -> pk -> WalkableWorld mk pk -> WalkableWorld mk pk
 copyPointsInWW srcIndex destIndex (WalkableWorld height w) = WalkableWorld height $ copyPoints (External srcIndex) (External destIndex) w
 
-applyMaskInWW :: (Ord mk, Ord pk) => (Mask -> Mask -> Mask) -> mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
+applyMaskInWW :: (Show mk, Ord mk, Ord pk) => (Mask -> Mask -> Mask) -> mk -> mk -> WalkableWorld mk pk -> WalkableWorld mk pk
 applyMaskInWW op modifierIndex targetIndex (WalkableWorld height w) = WalkableWorld height $ applyMask op (External modifierIndex) (External targetIndex) w
 
 setPointInWW :: (Ord mk, Ord pk) => pk -> (Int,Int) -> WalkableWorld mk pk -> WalkableWorld mk pk
@@ -333,7 +333,7 @@ maskIndices w =
       & map eitherFromExt_Int
       & lefts
 
-totalHorizontalEdgesOverPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalHorizontalEdgesOverPoints :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalHorizontalEdgesOverPoints maskIndex w =
     w & wwRawAsciiWorld
       & copyMask (External maskIndex) (Internal TemporaryMask1)
@@ -345,7 +345,7 @@ totalHorizontalEdgesOverPoints maskIndex w =
   where getTemporaryMask1 = lookupMaskOrError "totalHorizontalEdgesOverPoints" (Internal TemporaryMask1) . asciiWorldMasks
         countMaskPoints = toInteger . popCount
 
-totalVerticalEdgesOverPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalVerticalEdgesOverPoints :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalVerticalEdgesOverPoints maskIndex w =
     w & wwRawAsciiWorld
       & copyMask (External maskIndex) (Internal TemporaryMask1)
@@ -357,12 +357,12 @@ totalVerticalEdgesOverPoints maskIndex w =
     getTemporaryMask1 = lookupMaskOrError "totalVerticalEdgesOverPoints" (Internal TemporaryMask1) . asciiWorldMasks
     countMaskPoints = toInteger . popCount
 
-totalEdgesOverPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalEdgesOverPoints :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalEdgesOverPoints maskIndex w =
     (  totalHorizontalEdgesOverPoints maskIndex w
      + totalVerticalEdgesOverPoints   maskIndex w)
 
-totalConnectedHorizontalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalConnectedHorizontalEdges :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalConnectedHorizontalEdges maskIndex w =
     w & wwRawAsciiWorld
       & copyMask (External maskIndex) (Internal TemporaryMask1)
@@ -378,7 +378,7 @@ totalConnectedHorizontalEdges maskIndex w =
   where getTemporaryMask2 = lookupMaskOrError "totalConnectedHorizontalEdges" (Internal TemporaryMask2) . asciiWorldMasks
         countMaskPoints = toInteger . popCount
 
-totalConnectedVerticalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalConnectedVerticalEdges :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalConnectedVerticalEdges maskIndex w =
     w & wwRawAsciiWorld
       & copyMask (External maskIndex) (Internal TemporaryMask1)
@@ -394,12 +394,12 @@ totalConnectedVerticalEdges maskIndex w =
     getTemporaryMask2 = lookupMaskOrError "totalConnectedVerticalEdges" (Internal TemporaryMask2) . asciiWorldMasks
     countMaskPoints = toInteger . popCount
 
-totalConnectedEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalConnectedEdges :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalConnectedEdges maskIndex w =
     (  totalConnectedHorizontalEdges maskIndex w
      + totalConnectedVerticalEdges   maskIndex w)
 
-totalConnectedOneSidedHorizontalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalConnectedOneSidedHorizontalEdges :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalConnectedOneSidedHorizontalEdges maskIndex w =
     (    (worldWithEdgeMask & keepDownEdges & countConnectedEdges)
      +   (worldWithEdgeMask & keepUpEdges   & countConnectedEdges))
@@ -437,7 +437,7 @@ totalConnectedOneSidedHorizontalEdges maskIndex w =
         countMaskPoints = toInteger . popCount
 
 
-totalConnectedOneSidedVerticalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalConnectedOneSidedVerticalEdges :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalConnectedOneSidedVerticalEdges maskIndex w =
     (    (worldWithEdgeMask & keepLeftEdges  & countConnectedEdges)
      +   (worldWithEdgeMask & keepRightEdges & countConnectedEdges))
@@ -474,12 +474,12 @@ totalConnectedOneSidedVerticalEdges maskIndex w =
 
         countMaskPoints = toInteger . popCount
 
-totalConnectedOneSidedEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalConnectedOneSidedEdges :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalConnectedOneSidedEdges maskIndex w =
     (  totalConnectedOneSidedHorizontalEdges maskIndex w
      + totalConnectedOneSidedVerticalEdges   maskIndex w)
 
-totalPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
+totalPoints :: (Show a, Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
 totalPoints maskIndex w =
     w & wwRawAsciiWorld
       & getMask
