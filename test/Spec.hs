@@ -6,6 +6,10 @@ import Test.Hspec
 import qualified Data.Map as M
 import AsciiWorld
 
+-- Import test modules
+import qualified MaskSpec
+import qualified PropertyTests
+
 -- Reuse a similar charMap as in Main.hs for consistency.
 charMap :: Char -> Maybe (MaskOrPointsIndex String String)
 charMap 'M' = Just (MaskIndex "M")
@@ -14,6 +18,13 @@ charMap _   = Nothing
 
 main :: IO ()
 main = hspec $ do
+  -- Unit tests for Mask module
+  describe "Mask" MaskSpec.spec
+
+  -- Property-based tests
+  describe "Properties" PropertyTests.spec
+
+  -- AsciiWorld tests
   describe "readAsciiWorld" $ do
     it "reads an ASCII world with a mask and a point" $ do
       let input = unlines [ "M.."

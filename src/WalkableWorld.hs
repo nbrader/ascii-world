@@ -166,10 +166,21 @@ modifyRawAsciiWorld f = fromHeightAndRawAsciiWorld . fmap f . toHeightAndRawAsci
 modifyHeightAndRawAsciiWorld :: (Ord mk, Ord pk) => ((Int, RawAsciiWorld mk pk) -> (Int, RawAsciiWorld mk pk)) -> WalkableWorld mk pk -> WalkableWorld mk pk
 modifyHeightAndRawAsciiWorld f = fromHeightAndRawAsciiWorld . f . toHeightAndRawAsciiWorld
 
--- This modify allows you to modify the world in a way ignorant to the stuff that WalkableWorld added (such as NoGos and underscores in names)
--- Warning: I think this function will perform badly. Also, it's not been properly tested.
---          Update: I tried to use this and got bad results so I expect this is broken. Further investigation required.
---                  TO DO: See about either fixing this or better documenting how it should be used
+-- DEPRECATED: This function is broken and should not be used.
+-- Problem: The function attempts to convert between External/Internal key wrappers
+-- while modifying the world, but the key mapping logic is incorrect. Specifically:
+--   1. It unwraps External keys to apply user function
+--   2. But the user function might create new keys that conflict with Internal keys
+--   3. Re-wrapping can corrupt the key space
+--
+-- Recommended alternatives:
+--   - Use modifyRawAsciiWorld if you need to modify the internal representation
+--   - Use showWorld/readWorld to convert to/from AsciiWorld if needed
+--   - Build transformation functions that work with WalkableWorld directly
+--
+-- This function is kept for backward compatibility but will be removed in a future version.
+-- DO NOT USE THIS FUNCTION.
+{-# DEPRECATED modifyAsAsciiWorld "This function is broken and will be removed. Use modifyRawAsciiWorld instead." #-}
 modifyAsAsciiWorld :: (Ord mk, Ord pk) => (AsciiWorld mk pk -> AsciiWorld mk pk) -> WalkableWorld mk pk -> WalkableWorld mk pk
 modifyAsAsciiWorld f = addWalkableWorldParts . fmap (mapIndexForMasks External) . fmap (mapIndexForPoints External) . fmap f . fmap (mapIndexForPoints fromExternal) . fmap (mapIndexForMasks fromExternal) . undoWalkableWorldParts
 
