@@ -42,7 +42,8 @@ module AsciiWorld   ( AsciiWorld(..)
                     , deletePoints
                     , insertMaskFromPoints
                     , inWorldMaybeInsertMaskIndexFromPointsIndex
-                    , isOverlappingMasks ) where
+                    , isOverlappingMasks
+                    , Mask ) where
 
 -------------
 -- Imports --
@@ -157,7 +158,7 @@ setWidth newWidth w = w { asciiWorldMasks = M.map (setMaskWidth oldWidth newWidt
         
         oldPoints = asciiWorldPoints w
         newPoints
-            | newWidth < oldWidth = M.map (filter (\(x,_) -> x >= newWidth)) oldPoints
+            | newWidth < oldWidth = M.map (filter (\(x,_) -> x < newWidth)) oldPoints
             | otherwise = oldPoints
 
 mapIndexForMasks  :: (Ord mk1, Ord mk2, Ord pk)  => (mk1 -> mk2) -> AsciiWorld mk1 pk -> AsciiWorld mk2 pk
@@ -298,13 +299,17 @@ copyPoints srcIndex destIndex w = fromMaybe w $ do
     points <- M.lookup srcIndex (asciiWorldPoints w)
     return $ w {asciiWorldPoints = M.insert destIndex points (asciiWorldPoints w)}
 
-applyMask :: (Ord mk, Ord pk) => (Mask -> Mask -> Mask) -> mk -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
+applyMask :: (Ord mk, Ord pk, Show mk) => (Mask -> Mask -> Mask) -> mk -> mk -> AsciiWorld mk pk -> AsciiWorld mk pk
 applyMask op modifier target w
-    | not (modifier `M.member` asciiWorldMasks w) = error $ "applyMask: not (modifier `M.member` asciiWorldMasks w) == False"
-    | not (target   `M.member` asciiWorldMasks w) = error $ "applyMask: not (target `M.member` asciiWorldMasks w) == False"
+    | not (modifier `M.member` asciiWorldMasks w) = error $ "applyMask: modifier mask \"" ++ show modifier ++ "\" not found in world"
+    | not (target   `M.member` asciiWorldMasks w) = error $ "applyMask: target mask \"" ++ show target ++ "\" not found in world"
     | otherwise = w {asciiWorldMasks = M.insert target newMask (asciiWorldMasks w)}
-  where mask1 = fromJust $ M.lookup modifier (asciiWorldMasks w)
-        mask2 = fromJust $ M.lookup target   (asciiWorldMasks w)
+  where mask1 = case M.lookup modifier (asciiWorldMasks w) of
+                    Just m -> m
+                    Nothing -> error $ "applyMask: modifier mask \"" ++ show modifier ++ "\" not found (should not happen)"
+        mask2 = case M.lookup target (asciiWorldMasks w) of
+                    Just m -> m
+                    Nothing -> error $ "applyMask: target mask \"" ++ show target ++ "\" not found (should not happen)"
         newMask = mask1 `op` mask2
 
 setPoint :: (Ord mk, Ord pk) => pk -> (Int,Int) -> AsciiWorld mk pk -> AsciiWorld mk pk
