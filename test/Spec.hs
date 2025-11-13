@@ -9,6 +9,7 @@ import AsciiWorld
 -- Import test modules
 import qualified MaskSpec
 import qualified PropertyTests
+import qualified WalkableWorldSpec
 
 -- Reuse a similar charMap as in Main.hs for consistency.
 charMap :: Char -> Maybe (MaskOrPointsIndex String String)
@@ -23,6 +24,9 @@ main = hspec $ do
 
   -- Property-based tests
   describe "Properties" PropertyTests.spec
+
+  -- Integration tests for WalkableWorld
+  describe "WalkableWorld" WalkableWorldSpec.spec
 
   -- AsciiWorld tests
   describe "readAsciiWorld" $ do
