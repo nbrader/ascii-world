@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Day 10 solution (topographic pathfinding)
   - Day 12 solution (region detection and perimeter counting)
   - Day 14 solution (robot simulation with wrapping coordinates and pattern detection)
+  - Day 15 solution (warehouse box pushing with cascade effects and object interaction)
   - Step-by-step tutorial examples in examples/ directory:
     - 01-basic-grid.hs: Grid creation and coordinate system
     - 02-region-detection.hs: Connected component analysis
