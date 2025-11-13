@@ -186,7 +186,7 @@ maskKeys w =
       & lefts
 
 
-totalHorizontalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
+totalHorizontalEdgesOverPoints :: (Ord a, Ord kp, Show a) => a -> WalkableWorld a kp -> Integer
 totalHorizontalEdgesOverPoints maskName w =
     w & wwRawAsciiWorld
       & copyMask (External maskName) (Internal TemporaryMask)
@@ -198,7 +198,7 @@ totalHorizontalEdgesOverPoints maskName w =
   where getTemporaryMask = fromJust . M.lookup (Internal TemporaryMask) . asciiWorldMasks
         countMaskPoints = toInteger . popCount
 
-totalVerticalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
+totalVerticalEdgesOverPoints :: (Ord a, Ord kp, Show a) => a -> WalkableWorld a kp -> Integer
 totalVerticalEdgesOverPoints maskName w =
     w & wwRawAsciiWorld
       & copyMask (External maskName) (Internal TemporaryMask)
@@ -210,7 +210,7 @@ totalVerticalEdgesOverPoints maskName w =
     getTemporaryMask = fromJust . M.lookup (Internal TemporaryMask) . asciiWorldMasks
     countMaskPoints = toInteger . popCount
 
-totalEdgesOverPoints :: (Ord a, Ord kp) => a -> WalkableWorld a kp -> Integer
+totalEdgesOverPoints :: (Ord a, Ord kp, Show a) => a -> WalkableWorld a kp -> Integer
 totalEdgesOverPoints maskName w =
     totalHorizontalEdgesOverPoints maskName w +
     totalVerticalEdgesOverPoints maskName w
