@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Professional README.md with badges and examples
 - CHANGELOG.md for tracking version history
 - Example programs and tutorials:
+  - Day 6 solution (guard patrol with movement simulation and cycle detection)
   - Day 10 solution (topographic pathfinding)
   - Day 12 solution (region detection and perimeter counting)
   - Step-by-step tutorial examples in examples/ directory:
@@ -34,6 +35,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - 03-bitwise-operations.hs: Mask manipulation and collision detection
     - 04-complete-solution.hs: Full AoC problem workflow
   - Comprehensive examples/README.md with learning paths and expected outputs
+- Comprehensive Haddock documentation
+  - Module-level documentation with usage examples
+  - Function-level documentation with examples and complexity notes
+  - All exported functions documented with clear examples
+  - Doctest-compatible examples throughout
+  - Added maskToPoints utility function with documentation
+- Performance benchmark suite (bench/)
+  - Criterion-based benchmarks comparing bitwise vs naive implementations
+  - Tests for union, intersection, overlap check, difference, and movement operations
+  - Three data sizes: small (10×10), medium (50×50), large (200×200)
+  - Validates "10-100x speedup" claim from README
+  - Comprehensive benchmark documentation and usage guide
+- Developer documentation
+  - CONTRIBUTING.md with setup, coding standards, and PR process
+  - GitHub issue templates (bug report, feature request, question)
+  - Pull request template with comprehensive checklist
+  - Clear contribution guidelines and code of conduct
 - Better error handling throughout library
   - Replaced unsafe `fromJust` calls with safe alternatives
   - Added `lookupMaskOrError` helper with informative error messages
