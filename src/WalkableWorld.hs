@@ -52,13 +52,23 @@ module WalkableWorld    ( WalkableWorld(..)
 -------------
 import Data.List ( findIndex, foldl', nub, delete )
 import qualified Data.Map as M
-import Data.Maybe ( fromJust )
+import Data.Maybe ( fromJust, fromMaybe )
 import Data.Either ( lefts )
 import Data.Function
 import Data.Bifunctor
 import Data.Ord
 import Data.Bits
 -- import Debug.Trace (trace)
+
+-------------
+-- Helpers --
+-------------
+-- Safe lookup with informative error messages
+lookupMaskOrError :: (Ord k, Show k) => String -> k -> M.Map k Mask -> Mask
+lookupMaskOrError context key maskMap =
+    case M.lookup key maskMap of
+        Just mask -> mask
+        Nothing -> error $ context ++ ": mask key not found: " ++ show key
 
 import Util ( lrduDirs )
 import Mask ( Mask
@@ -320,8 +330,8 @@ totalHorizontalEdgesOverPoints maskIndex w =
       & applyMask bitwiseXor (External maskIndex) (Internal TemporaryMask1)
       & getTemporaryMask1
       & countMaskPoints
-  
-  where getTemporaryMask1 = fromJust . M.lookup (Internal TemporaryMask1) . asciiWorldMasks
+
+  where getTemporaryMask1 = lookupMaskOrError "totalHorizontalEdgesOverPoints" (Internal TemporaryMask1) . asciiWorldMasks
         countMaskPoints = toInteger . popCount
 
 totalVerticalEdgesOverPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
@@ -333,7 +343,7 @@ totalVerticalEdgesOverPoints maskIndex w =
       & getTemporaryMask1
       & countMaskPoints
   where
-    getTemporaryMask1 = fromJust . M.lookup (Internal TemporaryMask1) . asciiWorldMasks
+    getTemporaryMask1 = lookupMaskOrError "totalVerticalEdgesOverPoints" (Internal TemporaryMask1) . asciiWorldMasks
     countMaskPoints = toInteger . popCount
 
 totalEdgesOverPoints :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
@@ -353,8 +363,8 @@ totalConnectedHorizontalEdges maskIndex w =
       & getTemporaryMask2
       & countMaskPoints
       & (`div` 2)
-  
-  where getTemporaryMask2 = fromJust . M.lookup (Internal TemporaryMask2) . asciiWorldMasks
+
+  where getTemporaryMask2 = lookupMaskOrError "totalConnectedHorizontalEdges" (Internal TemporaryMask2) . asciiWorldMasks
         countMaskPoints = toInteger . popCount
 
 totalConnectedVerticalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
@@ -370,7 +380,7 @@ totalConnectedVerticalEdges maskIndex w =
       & countMaskPoints
       & (`div` 2)
   where
-    getTemporaryMask2 = fromJust . M.lookup (Internal TemporaryMask2) . asciiWorldMasks
+    getTemporaryMask2 = lookupMaskOrError "totalConnectedVerticalEdges" (Internal TemporaryMask2) . asciiWorldMasks
     countMaskPoints = toInteger . popCount
 
 totalConnectedEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
@@ -410,9 +420,9 @@ totalConnectedOneSidedHorizontalEdges maskIndex w =
                 & getTemporaryMask4
                 & countMaskPoints
                 & (`div` 2)
-        
-        getTemporaryMask4 = fromJust . M.lookup (Internal TemporaryMask4) . asciiWorldMasks
-        
+
+        getTemporaryMask4 = lookupMaskOrError "totalConnectedOneSidedHorizontalEdges" (Internal TemporaryMask4) . asciiWorldMasks
+
         countMaskPoints = toInteger . popCount
 
 
@@ -420,26 +430,26 @@ totalConnectedOneSidedVerticalEdges :: (Ord a, Ord pk) => a -> WalkableWorld a p
 totalConnectedOneSidedVerticalEdges maskIndex w =
     (    (worldWithEdgeMask & keepLeftEdges  & countConnectedEdges)
      +   (worldWithEdgeMask & keepRightEdges & countConnectedEdges))
-  
+
   where worldWithEdgeMask =
             w
                 & wwRawAsciiWorld
                 & copyMask (External maskIndex) (Internal TemporaryMask1)
                 & copyMask (External maskIndex) (Internal TemporaryMask2)
                 & moveMaskOfIndexBy (Internal TemporaryMask2) (1,0)
-        
+
         keepLeftEdges w' =
             w'
                 & applyMask bitwiseXor (Internal TemporaryMask1) (Internal TemporaryMask2)
                 & copyMask (Internal TemporaryMask2) (Internal TemporaryMask3)
                 & applyMask bitwiseAnd (Internal TemporaryMask1) (Internal TemporaryMask3)
-        
+
         keepRightEdges w' =
             w'
                 & applyMask bitwiseXor (Internal TemporaryMask2) (Internal TemporaryMask1)
                 & copyMask (Internal TemporaryMask1) (Internal TemporaryMask3)
                 & applyMask bitwiseAnd (Internal TemporaryMask2) (Internal TemporaryMask3)
-        
+
         countConnectedEdges w' =
             w'
                 & copyMask (Internal TemporaryMask3) (Internal TemporaryMask4)
@@ -448,9 +458,9 @@ totalConnectedOneSidedVerticalEdges maskIndex w =
                 & getTemporaryMask4
                 & countMaskPoints
                 & (`div` 2)
-        
-        getTemporaryMask4 = fromJust . M.lookup (Internal TemporaryMask4) . asciiWorldMasks
-        
+
+        getTemporaryMask4 = lookupMaskOrError "totalConnectedOneSidedVerticalEdges" (Internal TemporaryMask4) . asciiWorldMasks
+
         countMaskPoints = toInteger . popCount
 
 totalConnectedOneSidedEdges :: (Ord a, Ord pk) => a -> WalkableWorld a pk -> Integer
@@ -464,7 +474,7 @@ totalPoints maskIndex w =
       & getMask
       & countMaskPoints
   where
-    getMask = fromJust . M.lookup (External maskIndex) . asciiWorldMasks
+    getMask = lookupMaskOrError "totalPoints" (External maskIndex) . asciiWorldMasks
     countMaskPoints = toInteger . popCount
 
 -- Make partitioner which gives every disconnected part of a layer its own name by tacking on the next number not already existing in the bit mask map
@@ -482,13 +492,13 @@ partitionMaskByReachableLRDU maskIndex (WalkableWorld height worldBeforePartitio
   where worldAfterCopyingTargetMaskToToBePartitioned =
             worldBeforePartition
                 & copyMask (External maskIndex) (Internal ToBePartitioned)
-        
+
         -- Start Loop until all connected parts of target mask found
         outerLoop (oldParts, outerInputWorld) = (newPart:oldParts, innerFinalWorld)
           where middlePoint = let maybeMiddlePoint = middlePointOfMask (Internal ToBePartitioned) outerInputWorld
                                in case maybeMiddlePoint of
                                     Just point -> point
-                                    Nothing -> error $ "middlePoint failed: \"" ++ show maskIndex ++ "\" not found in " ++ show outerInputWorld
+                                    Nothing -> error $ "partitionMaskByReachableLRDU: mask index \"" ++ show maskIndex ++ "\" not found or is empty"
                 
                 -- Init Loop until LatestVisited is empty
                 initLatestVisitedMask = [middlePoint]
@@ -505,11 +515,11 @@ partitionMaskByReachableLRDU maskIndex (WalkableWorld height worldBeforePartitio
                   where worldWithUnvisitedXoredByVisitedThisSearch =
                             innerInputWorld
                                 & applyMask bitwiseXor (Internal LatestVisited) (Internal Unvisited)
-                        
+
                         combinedMaskFromAllShiftedCopiesOfVisitedThisSearch =
                             lrduDirs
                                 & combineAsciiWorlds . map (\dir -> moveMaskOfIndexBy (Internal LatestVisited) dir worldWithUnvisitedXoredByVisitedThisSearch)
-                                & fromJust . lookupMask (Internal LatestVisited)
+                                & lookupMaskOrError "partitionMaskByReachableLRDU.innerLoop" (Internal LatestVisited) . asciiWorldMasks
                         
                         wAfterOneIteration =
                             worldWithUnvisitedXoredByVisitedThisSearch
@@ -520,10 +530,10 @@ partitionMaskByReachableLRDU maskIndex (WalkableWorld height worldBeforePartitio
                 
                 innerFinalWorld =
                     worldWithInitLatestVisitedAndUnvisited
-                        & until ((== 0) . fromJust . lookupMask (Internal LatestVisited)) innerLoop
+                        & until ((== 0) . lookupMaskOrError "partitionMaskByReachableLRDU.innerFinalWorld" (Internal LatestVisited) . asciiWorldMasks) innerLoop
                         & applyMask bitwiseXor (Internal VisitedThisSearch) (Internal ToBePartitioned)
-                
-                newPart = fromJust . lookupMask (Internal VisitedThisSearch) $ innerFinalWorld
+
+                newPart = lookupMaskOrError "partitionMaskByReachableLRDU.newPart" (Internal VisitedThisSearch) (asciiWorldMasks innerFinalWorld)
                 
                 -- VisitedThisSearch should now contain one of the connected components for the target mask.
                 
@@ -531,7 +541,7 @@ partitionMaskByReachableLRDU maskIndex (WalkableWorld height worldBeforePartitio
         
         (finalParts, outerFinalWorld) =
             ([],worldAfterCopyingTargetMaskToToBePartitioned)
-                & until ((== 0) . fromJust . lookupMask (Internal ToBePartitioned) . snd) outerLoop
+                & until ((== 0) . lookupMaskOrError "partitionMaskByReachableLRDU.finalParts" (Internal ToBePartitioned) . asciiWorldMasks . snd) outerLoop
         
         -- End Loop until all connected parts of target mask found
         

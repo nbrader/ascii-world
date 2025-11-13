@@ -7,9 +7,9 @@ import qualified Data.Map as M
 import AsciiWorld
 
 -- Reuse a similar charMap as in Main.hs for consistency.
-charMap :: Char -> Maybe (WorldKey String String)
-charMap 'M' = Just (WKMask "M")
-charMap 'P' = Just (WKPoints "P")
+charMap :: Char -> Maybe (MaskOrPointsIndex String String)
+charMap 'M' = Just (MaskIndex "M")
+charMap 'P' = Just (PointsIndex "P")
 charMap _   = Nothing
 
 main :: IO ()

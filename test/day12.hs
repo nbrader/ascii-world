@@ -40,7 +40,7 @@ import Control.Concurrent ( threadDelay )
 import System.Console.ANSI ( clearScreen, setCursorPosition )
 
 import WalkableWorld (    WalkableWorld(..)
-                        , WorldKey(..)
+                        , MaskOrPointsIndex(..)
                         , readWorld
                         , showWorld
                         , printWorld
@@ -49,7 +49,7 @@ import WalkableWorld (    WalkableWorld(..)
                         , totalEdgesOverPoints
                         , totalConnectedEdges
                         , totalConnectedOneSidedEdges
-                        , maskKeys
+                        , maskIndices
                         , totalPoints
                         -- , combineTwoWalkableWorlds
                         -- , combineWalkableWorlds
@@ -60,7 +60,7 @@ import WalkableWorld (    WalkableWorld(..)
                         -- , movePointsOfNameByInWW
                         , addMaskInWW
                         -- , deleteMaskInWW
-                        , filterMaskKeysInWW
+                        , filterMaskIndicesInWW
                         -- , filterMasksInWW
                         -- , lookupMaskInWW
                         -- , adjustMaskInWW
@@ -101,72 +101,72 @@ data Key k = Key {keyType :: KeyType, keyValue :: k} deriving (Show, Eq, Ord)
 day12part1 = do
     contents <- readFile "day12 (data).csv"
     let initWorld :: WalkableWorld (Key Char) (Key Char)
-        initWorld = readWorld (Just . WKMask . Key Original) contents
+        initWorld = readWorld (Just . MaskIndex . Key Original) contents
         parts = partitionAllMasksByReachableLRDU initWorld
-        
+
         bgChar :: Char
         bgChar = '.'
-        
+
         maskToChar :: (Key Char) -> Char
         maskToChar (Key Original c) = c
         maskToChar (Key (Part n) c) = c
-        
+
         pointsToChar :: (Key Char) -> Char
         pointsToChar (Key Original c) = c
         pointsToChar (Key (Part n) c) = c
-        
-        nameZOrder :: WorldKey (Key Char) (Key Char) -> WorldKey (Key Char) (Key Char) -> Ordering
-        nameZOrder = compare
-        
+
+        indexZOrder :: MaskOrPointsIndex (Key Char) (Key Char) -> MaskOrPointsIndex (Key Char) (Key Char) -> Ordering
+        indexZOrder = compare
+
         worldAfterPartition =
             initWorld
-                & filterMaskKeysInWW (\maskKey -> case maskKey of {(Key Original c) -> False; _ -> True})
+                & filterMaskIndicesInWW (\maskIndex -> case maskIndex of {(Key Original c) -> False; _ -> True})
                 & (\w -> foldl' (\w' ((Key Original c), masks) -> foldl' (\w'' (n, mask) -> addMaskInWW (Key (Part n) c) mask w'') w' (zip [0..] masks)) w (M.toList parts))
-    
-    -- printWorld bgChar maskToChar pointsToChar nameZOrder worldAfterPartition
+
+    -- printWorld bgChar maskToChar pointsToChar indexZOrder worldAfterPartition
     -- print parts
     -- mapM_ print $ M.toList (M.map (map popCount) parts)
-    
-    let keys = maskKeys worldAfterPartition
+
+    let keys = maskIndices worldAfterPartition
         areaAndTotalEdgesForAllRegions = map (\n -> (totalPoints n worldAfterPartition, totalEdgesOverPoints n worldAfterPartition)) keys
         score = sum [area * totalEdges | (area,totalEdges) <- areaAndTotalEdgesForAllRegions]
-    
+
     -- mapM_ print $ keys
     print score
 
 day12part2 = do
     contents <- readFile "day12 (data).csv"
     let initWorld :: WalkableWorld (Key Char) (Key Char)
-        initWorld = readWorld (Just . WKMask . Key Original) contents
+        initWorld = readWorld (Just . MaskIndex . Key Original) contents
         parts = partitionAllMasksByReachableLRDU initWorld
-        
+
         bgChar :: Char
         bgChar = '.'
-        
+
         maskToChar :: (Key Char) -> Char
         maskToChar (Key Original c) = c
         maskToChar (Key (Part n) c) = c
-        
+
         pointsToChar :: (Key Char) -> Char
         pointsToChar (Key Original c) = c
         pointsToChar (Key (Part n) c) = c
-        
-        nameZOrder :: WorldKey (Key Char) (Key Char) -> WorldKey (Key Char) (Key Char) -> Ordering
-        nameZOrder = compare
-        
+
+        indexZOrder :: MaskOrPointsIndex (Key Char) (Key Char) -> MaskOrPointsIndex (Key Char) (Key Char) -> Ordering
+        indexZOrder = compare
+
         worldAfterPartition =
             initWorld
-                & filterMaskKeysInWW (\maskKey -> case maskKey of {(Key Original c) -> False; _ -> True})
+                & filterMaskIndicesInWW (\maskIndex -> case maskIndex of {(Key Original c) -> False; _ -> True})
                 & (\w -> foldl' (\w' ((Key Original c), masks) -> foldl' (\w'' (n, mask) -> addMaskInWW (Key (Part n) c) mask w'') w' (zip [0..] masks)) w (M.toList parts))
-    
-    -- printWorld bgChar maskToChar pointsToChar nameZOrder worldAfterPartition
+
+    -- printWorld bgChar maskToChar pointsToChar indexZOrder worldAfterPartition
     -- print parts
     -- mapM_ print $ M.toList (M.map (map popCount) parts)
-    
-    let keys = maskKeys worldAfterPartition
+
+    let keys = maskIndices worldAfterPartition
         areaAndTotalEdgesForAllRegions = map (\n -> (totalPoints n worldAfterPartition, totalConnectedOneSidedEdges n worldAfterPartition)) keys
         score = sum [area * totalEdges | (area,totalEdges) <- areaAndTotalEdgesForAllRegions]
-    
+
     -- mapM_ print $ keys
     -- mapM_ print areaAndTotalEdgesForAllRegions
     print score
