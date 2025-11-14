@@ -183,12 +183,12 @@ spec = do
           in reduced == mask
 
   describe "Set theory properties" $ do
-    it "OR is union: A ∪ B contains all bits from A and B" $
+    it "OR is union: A union B contains all bits from A and B" $
       property $ \(ValidMask m1) (ValidMask m2) ->
         let union = bitwiseOr m1 m2
         in (bitwiseAnd m1 union == m1) && (bitwiseAnd m2 union == m2)
 
-    it "AND is intersection: A ∩ B is subset of both A and B" $
+    it "AND is intersection: A intersect B is subset of both A and B" $
       property $ \(ValidMask m1) (ValidMask m2) ->
         let intersection = bitwiseAnd m1 m2
         in (bitwiseAnd intersection m1 == intersection) &&

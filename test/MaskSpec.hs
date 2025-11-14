@@ -167,7 +167,7 @@ spec = do
     it "expands two-row mask width from 3 to 5" $
       let oldWidth = 3
           delta = 2
-          mask = 0b100001  -- Bits at (0,0) and (0,2)
+          mask = 0b1000001  -- Bits at (0,0) and (0,2)
           -- In 3-wide: bit 0 is (0,0), bit 6 is (0,2)
           -- In 5-wide: bit 0 is (0,0), bit 10 is (0,2)
           expected = 1 + (1 `shift` 10)

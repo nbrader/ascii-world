@@ -163,6 +163,8 @@ stack test
 stack test --coverage
 ```
 
+> **Windows note:** If your console isn't already in UTF-8 mode, run `run_tests_utf8.bat` or `run_bench_utf8.bat` to switch the code page automatically before invoking `stack test` / `stack bench`, then restore it afterwards.
+
 Test suite includes:
 - **40+ unit tests** (Mask operations, grid management)
 - **20+ property tests** (QuickCheck verification)
