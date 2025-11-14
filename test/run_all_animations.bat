@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0.."
 echo ========================================
 echo   Advent of Code 2024 - Animations
 echo ========================================
@@ -43,7 +44,6 @@ goto menu
 :day16
 echo.
 echo Running Day 16: Reindeer Maze...
-echo (Make sure you've pulled latest changes: git pull)
 echo.
 stack --resolver lts-21.22 runghc --package containers-0.6.7 --package ansi-terminal-0.11.5 test/day16_animated.hs
 pause
@@ -67,6 +67,7 @@ goto menu
 
 :menu
 cls
+cd /d "%~dp0.."
 echo ========================================
 echo   Advent of Code 2024 - Animations
 echo ========================================
