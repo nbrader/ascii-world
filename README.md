@@ -93,15 +93,17 @@ let advancedScore = area * sides
 
 ### Advent of Code Solutions
 
-- **[Day 12: Garden Groups](test/day12.hs)** - Region detection, perimeter counting
+All Advent of Code walkthroughs live under `test/<year>/` directories (currently `test/2024/`). Each entry below calls out exactly which puzzle part(s) it demonstrates:
+
+- **[Day 12: Garden Groups](test/2024/day12.hs)** – Part 1 (area × perimeter) and Part 2 (area × sides)
   - Uses connected component analysis
   - Demonstrates edge vs side counting
   - Expected output: Part 1 = 1363682, Part 2 = 787680
 
-- **[Day 10: Hoof It](test/day10.hs)** - Topographic pathfinding
+- **[Day 10: Hoof It](test/2024/day10.hs)** – Part 1 (trailhead scores) and Part 2 (trailhead ratings)
   - Custom pathfinding with constraints
   - Demonstrates using library utilities
-  - Expected output: Part 2 = 81
+  - Expected output: Part 1 = 36, Part 2 = 81
 
 ### Step-by-Step Tutorials
 

@@ -139,7 +139,7 @@ Total discounted cost (Part 2): 80
 ### Advanced Users
 1. Tutorial 3 for bitwise operation mastery
 2. Review Tutorial 4 for optimization techniques
-3. Check [test/day12.hs](../test/day12.hs) for real AoC solutions
+3. Check [test/2024/day12.hs](../test/2024/day12.hs) for real AoC solutions
 
 ## Key Concepts
 
@@ -184,8 +184,8 @@ From the tutorials:
 
 After completing the tutorials, check out these full solutions:
 
-- **[Day 12: Garden Groups](../test/day12.hs)** - Region detection and fence counting
-- **[Day 10: Hoof It](../test/day10.hs)** - Topographic pathfinding
+- **[Day 12: Garden Groups](../test/2024/day12.hs)** - Region detection and fence counting
+- **[Day 10: Hoof It](../test/2024/day10.hs)** - Topographic pathfinding
 
 ## Need Help?
 

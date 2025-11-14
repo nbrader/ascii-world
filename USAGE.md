@@ -311,8 +311,8 @@ score = totalPoints a world + totalEdgesOverPoints a world
 
 See the `test/` directory for complete working examples:
 
-- **`test/day12.hs`** - Region detection, perimeter counting, side counting
-- **`test/day10.hs`** - Pathfinding with height constraints
+- **`test/2024/day12.hs`** - Region detection, perimeter counting, side counting
+- **`test/2024/day10.hs`** - Pathfinding with height constraints
 - **`test/Spec.hs`** - Unit tests showing basic usage
 - **`test/MaskSpec.hs`** - Comprehensive Mask module tests
 - **`test/PropertyTests.hs`** - QuickCheck property-based tests
@@ -385,4 +385,3 @@ A: Yes! Use different key types: `AsciiWorld Char String` has Char mask keys and
 ## Contributing
 
 Found a bug or have a feature request? Please open an issue on the repository!
-

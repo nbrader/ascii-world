@@ -52,7 +52,7 @@ This project follows a simple code of conduct:
 4. **Run Examples**:
    ```bash
    # Run Day 12 solution
-   stack --resolver lts-21.22 runghc --package containers --package split -- test/day12.hs
+   stack --resolver lts-21.22 runghc --package containers --package split -- test/2024/day12.hs
 
    # Run tutorial examples
    stack --resolver lts-21.22 runghc --package containers --package split -- examples/01-basic-grid.hs

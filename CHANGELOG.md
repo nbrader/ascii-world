@@ -82,7 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed API compatibility issues in test files
-  - test/day12.hs now compiles with current API
+  - test/2024/day12.hs now compiles with current API
   - test/Spec.hs uses correct MaskOrPointsIndex types
 - Replaced 13 unsafe `fromJust` calls in WalkableWorld.hs
   - `totalHorizontalEdgesOverPoints`

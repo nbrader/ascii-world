@@ -32,6 +32,7 @@ import Data.Bits
 -- import Debug.Trace (trace)
 import Control.Concurrent (threadDelay)
 import System.Console.ANSI (clearScreen, setCursorPosition)
+import System.Directory (doesFileExist)
 
 import Util ( lrduDirs )
 import Mask ( Mask
@@ -303,8 +304,24 @@ testLogic maskKey (WalkableWorld height worldBeforePartition) = outerFinalWorlds
           -- where showW = showAsciiWorld (height+1) '.' (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (either (head . dropWhile (== '\'') . show) (head . show) . eitherFromExt_Int) (comparing id)
                         -- . filterMaskIndices (\x -> case x of {External _ -> False; (Internal ToBePartitioned) -> False; _ -> True})
 
+day12DataPaths :: [FilePath]
+day12DataPaths =
+    [ "2024/day12 (data).csv"  -- new location under year folders
+    , "day12 (data).csv"       -- legacy fallback (pre-2024 layout)
+    ]
+
+loadDay12Data :: IO String
+loadDay12Data = tryPaths day12DataPaths
+  where
+    tryPaths [] = ioError (userError "Unable to find day12 (data).csv (looked in test/2024/ and test/)")
+    tryPaths (p:ps) = do
+        exists <- doesFileExist p
+        if exists
+            then readFile p
+            else tryPaths ps
+
 test = do
-    contents <- readFile "day12 (data).csv"
+    contents <- loadDay12Data
     
     let 
         maskNameToKeep = 'C'
@@ -326,7 +343,7 @@ test = do
 main = test2
 
 test2 = do
-    contents <- readFile "day12 (data).csv"
+    contents <- loadDay12Data
     let
         maskNameToKeep = 'C'
         charMap c = Just (MaskIndex c)
