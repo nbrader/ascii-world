@@ -105,6 +105,8 @@ All Advent of Code walkthroughs live under `test/<year>/` directories (currently
   - Demonstrates using library utilities
   - Expected output: Part 1 = 36, Part 2 = 81
 
+- **[Advent of Code 2022 Archive](test/2022/README.md)** – Problems + standard solutions + animation stubs for all 25 days imported from [nbrader/advent-of-code-2022](https://github.com/nbrader/advent-of-code-2022)
+
 ### Step-by-Step Tutorials
 
 See the [examples/](examples/) directory for detailed tutorials:

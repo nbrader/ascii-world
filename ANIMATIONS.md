@@ -86,6 +86,11 @@ stack --resolver lts-21.22 runghc \
 - **Part 1 focus**: Short cheats (≤2 picoseconds) animate first, matching Part 1’s requirement.
 - **Part 2 focus**: Longer `[Part 2]` cheats (≤20 picoseconds) then appear to illustrate the second puzzle.
 
+## Advent of Code 2022 Stubs
+
+Every Advent of Code 2022 puzzle has been imported under [`test/2022`](test/2022/README.md) with its original prompt and Haskell solution.  
+Each day includes an `animated/` folder containing a README and a placeholder `dayXX_animated.hs`. Use these as starting points when you are ready to build full visualizations for the 2022 archive.
+
 ## 💡 Tips for Best Experience
 
 1. **Maximize your terminal/console** - Animations need space!
