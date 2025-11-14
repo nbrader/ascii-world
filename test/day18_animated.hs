@@ -144,5 +144,5 @@ renderFrame gridSize total (idx, frame) = do
       | point == (0, 0) = " S "
       | point == (gridSize - 1, gridSize - 1) = " E "
       | point `S.member` afObstacles frame = "###"
-      | maybe False (point `elem`) (afPath frame) = " · "
+      | maybe False (point `elem`) (afPath frame) = " . "
       | otherwise = " . "
