@@ -19,6 +19,7 @@ import Data.Char (digitToInt, intToDigit)
 import qualified Data.Set as S
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.IO (hSetEncoding, stdout, utf8)
 
 type Point = (Int, Int)
 type HeightMap = Array Point Int
@@ -30,6 +31,7 @@ data FrontFrame = FrontFrame
 
 main :: IO ()
 main = do
+    hSetEncoding stdout utf8  -- Windows compatibility
     contents <- loadMap
     let grid = parseGrid contents
         frames = buildFrames grid

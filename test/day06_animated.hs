@@ -15,6 +15,7 @@ import Control.Concurrent (threadDelay)
 import Control.Exception (bracket_)
 import qualified Data.Set as S
 import System.Console.ANSI
+import System.IO (hSetEncoding, stdout, utf8)
 
 type Point = (Int, Int)
 type Direction = (Int, Int)
@@ -30,6 +31,7 @@ data Frame = Frame
 
 main :: IO ()
 main = do
+    hSetEncoding stdout utf8  -- Windows compatibility
     let gridLines =
             [ "....#....."
             , ".........#"

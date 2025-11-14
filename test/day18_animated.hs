@@ -18,6 +18,7 @@ import Data.Maybe (isJust, fromMaybe)
 import Data.List.Split (splitOn)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.IO (hSetEncoding, stdout, utf8)
 
 type Point = (Int, Int)
 type Grid = S.Set Point
@@ -31,6 +32,7 @@ data AnimFrame = AnimFrame
 
 main :: IO ()
 main = do
+    hSetEncoding stdout utf8  -- Windows compatibility
     contents <- loadMap
     let bytes = parseBytes contents
         gridSize = 7  -- Example grid size

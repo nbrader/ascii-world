@@ -18,6 +18,7 @@ import qualified Data.Sequence as Seq
 import Data.Maybe (fromMaybe)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.IO (hSetEncoding, stdout, utf8)
 
 type Point = (Int, Int)
 type Path = [Point]
@@ -29,6 +30,7 @@ data AnimFrame
 
 main :: IO ()
 main = do
+    hSetEncoding stdout utf8  -- Windows compatibility
     contents <- loadMap
     let (walls, start, end, width, height) = parseTrack contents
     case bfsWithDistances width height walls start end of
