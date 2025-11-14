@@ -173,6 +173,6 @@ renderRows width height walls pathPoints cheatStart cheatEnd =
     renderCell point
       | Just point == cheatStart = "[S]"
       | Just point == cheatEnd = "[E]"
-      | point `S.member` walls = "███"
-      | point `S.member` pathPoints = " · "
+      | point `S.member` walls = "###"
+      | point `S.member` pathPoints = " . "
       | otherwise = "   "
