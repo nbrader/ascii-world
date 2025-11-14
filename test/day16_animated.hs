@@ -18,6 +18,7 @@ import qualified Data.Set as S
 import Data.Maybe (fromMaybe)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.IO (hSetEncoding, stdout, utf8)
 
 type Point = (Int, Int)
 type Direction = Point
@@ -41,6 +42,8 @@ data MazeData = MazeData
 
 main :: IO ()
 main = do
+    -- Set UTF-8 encoding for Windows compatibility
+    hSetEncoding stdout utf8
     contents <- loadMap
     let maze = parseMaze contents
         frames = buildFrames maze
@@ -188,10 +191,10 @@ renderFrame maze total (idx, frame) = do
     putStrLn $ "Frontier: " ++ show (S.size $ sfFrontier frame) ++ " positions"
     threadDelay 50000  -- 50ms per frame
   where
-    showDir (1, 0)  = "East  →"
-    showDir (-1, 0) = "West  ←"
-    showDir (0, 1)  = "North ↑"
-    showDir (0, -1) = "South ↓"
+    showDir (1, 0)  = "East  >"
+    showDir (-1, 0) = "West  <"
+    showDir (0, 1)  = "North ^"
+    showDir (0, -1) = "South v"
     showDir _       = "?"
 
 renderRows :: MazeData -> SearchFrame -> [String]
