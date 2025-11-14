@@ -106,6 +106,8 @@ All Advent of Code walkthroughs live under `test/<year>/` directories (currently
   - Expected output: Part 1 = 36, Part 2 = 81
 
 - **[Advent of Code 2022 Archive](test/2022/README.md)** – Problems + standard solutions + animation stubs for all 25 days imported from [nbrader/advent-of-code-2022](https://github.com/nbrader/advent-of-code-2022)
+- **[Advent of Code 2023 Archive](test/2023/README.md)** – Same structure for the 2023 puzzles imported from [nbrader/advent-of-code-2023](https://github.com/nbrader/advent-of-code-2023)
+- **[Advent of Code 2024 Archive](test/2024/archive/README.md)** – Full 2024 problem set (in addition to the curated `test/2024` examples) imported from [nbrader/advent-of-code-2024](https://github.com/nbrader/advent-of-code-2024)
 
 ### Step-by-Step Tutorials
 
