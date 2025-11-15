@@ -28,6 +28,7 @@ import AsciiWorld
     )
 import Control.Concurrent (threadDelay)
 import Control.Exception (bracket_)
+import Control.Applicative ((<|>))
 import Data.Char (digitToInt, intToDigit, isDigit)
 import Data.List (foldl')
 import Data.Maybe (fromMaybe, isJust)
@@ -293,7 +294,7 @@ framesForLine allLines processedBefore totalsBefore lineIdx lineText =
             newLast = maybeDigit
             newPart2 = matchesAt idx lineText
             part2Digits = lssPart2 st ++ newPart2
-            first' = lssFirst st <> newFirst
+            first' = lssFirst st <|> newFirst
             last' = case newLast of
                 Just d -> Just d
                 Nothing -> lssLast st
