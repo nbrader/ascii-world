@@ -18,6 +18,7 @@ import Data.Maybe (isJust, fromMaybe)
 import Data.List.Split (splitOn)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.Environment (getArgs)
 import System.IO (hSetEncoding, stdout, utf8)
 
 type Point = (Int, Int)
@@ -33,9 +34,11 @@ data AnimFrame = AnimFrame
 main :: IO ()
 main = do
     hSetEncoding stdout utf8  -- Windows compatibility
-    contents <- loadMap
+    args <- getArgs
+    let inputType = if null args then "example" else head args
+    contents <- loadMap inputType
     let bytes = parseBytes contents
-        gridSize = 7  -- Example grid size
+        gridSize = if inputType == "data" then 71 else 7  -- Actual grid is 71x71, example is 7x7
         frames = buildFrames gridSize bytes
         total = length frames
     bracket_ hideCursor showCursor $ do
@@ -44,9 +47,15 @@ main = do
     setCursorPosition (gridSize + 10) 0
     putStrLn "RAM Run animation complete. (Part 1 path lengths + Part 2 blocking byte)"
 
-loadMap :: IO String
-loadMap = do
-    let path = "test/2024/day18 (example).csv"
+loadMap :: String -> IO String
+loadMap inputType = do
+    let dayNum = "18"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2024/day" ++ dayNum ++ "/standard/" ++ filename
     exists <- doesFileExist path
     if exists
         then readFile path
