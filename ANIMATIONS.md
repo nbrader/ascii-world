@@ -9,9 +9,9 @@ Pull the latest changes first:
 git pull
 ```
 
-Then simply **double-click** the main batch file:
+Then simply **double-click** the main batch file at the project root:
 
-- **`test/2024/curated/run_all_animations.bat`** - Interactive menu with ALL animations (17 total!)
+- **`run_animations.bat`** - Interactive menu for ALL years and animations!
 
 ### 🆕 Input Selection Feature
 
@@ -26,13 +26,14 @@ When you run an animation through the batch file, you'll be prompted to choose w
 
 For the best experience, double-click:
 ```
-test/2024/curated/run_all_animations.bat
+run_animations.bat
 ```
 
 This gives you a menu to:
-1. Choose which animation to watch (17 available!)
-2. Select which input data to use (example, actual data, or alternatives)
-3. Watch the algorithm visualized step-by-step!
+1. Choose which year (2022, 2023, or 2024)
+2. Choose which animation to watch (17 available for 2024!)
+3. Select which input data to use (example, actual data, or alternatives)
+4. Watch the algorithm visualized step-by-step!
 
 ## 🐧 Linux/macOS
 
