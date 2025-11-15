@@ -70,7 +70,7 @@ parseInput contents = (rules, updates)
     lns = lines contents
     (ruleLns, updateLns) = span (/= "") lns
     rules = [(read a, read b) | line <- ruleLns, let [a,b] = words $ map (\c -> if c == '|' then ' ' else c) line]
-    updates = [map read $ words $ map (\c -> if c == ',' then ' ' else c) line | line <- tail updateLns, not (null line)]
+    updates = [map read $ words $ map (\c -> if c == ',' then ' ' else c) line | line <- drop 1 updateLns, not (null line)]
 
 buildFrames :: [Rule] -> Update -> [(Update, Bool)]
 buildFrames rules update = [(update, isValid rules update)]
