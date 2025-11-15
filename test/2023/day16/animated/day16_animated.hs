@@ -13,60 +13,35 @@ module Main where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception (bracket_)
-import Data.Array
 import qualified Data.Map as M
 import qualified Data.Set as S
+import Data.Set (Set)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
-import System.IO (hSetEncoding, stdout, utf8)
-import System.Directory (doesFileExist)
 import System.Environment (getArgs)
+import System.IO (hSetEncoding, stdout, utf8)
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
 
-type Grid = Array (Int, Int) Char
-type Beam = ((Int, Int), (Int, Int))  -- (position, direction)
+type Pos = (Int, Int)
+type Dir = (Int, Int)
+type Beam = (Pos, Dir)
+type Grid = M.Map Pos Char
 
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
     args <- getArgs
     let inputType = if null args then "example" else head args
-    contents <- loadInput
-    let grid = parseGrid contents
-        frames = buildFrames grid
+    contents <- loadInput inputType
+    let (grid, width, height) = parseGrid contents
+        frames = buildFrames grid width height
     bracket_ hideCursor showCursor $ do
         clearScreen
         mapM_ renderFrame frames
     setCursorPosition 25 0
     putStrLn "The Floor Will Be Lava animation complete."
-
-loadInput :: IO String
-loadInput = do
-    let path = "test/2023/day16 (example).csv"
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure $ unlines
-            [ ".|...\\\...."
-            , "|.-.\\....."
-            , ".....|-..."
-            , "........|."
-            , ".........."
-            , ".........\\"
-            , "..../.\\\\.."
-            , ".-.-/..|.."
-            , ".|....-|.\\"
-            , "..//.|...."
-            ]
-
-parseGrid :: String -> Grid
-parseGrid contents = listArray ((0, 0), (w-1, h-1)) (concat rows)
-  where
-    rows = lines contents
-    h = length rows
-    w = if null rows then 0 else length (head rows)
 
 loadInput :: String -> IO String
 loadInput inputType = do
@@ -80,50 +55,122 @@ loadInput inputType = do
     exists <- doesFileExist path
     if exists
         then readFile path
-        else pure "No data available"
+        else pure $ unlines
+            [ ".|...\\\\......"
+            , "|.-.\\\\....."
+            , ".....|-..."
+            , "........|."
+            , ".........."
+            , ".........\\\\"
+            , "..../.\\\\\\\\.."
+            , ".-.-/..|.."
+            , ".|....-|.\\\\"
+            , "..//.|...."
+            ]
 
-buildFrames :: Grid -> [(S.Set (Int, Int))]
-loadInput inputType = do
-    let dayNum = "16"
-        filename = case inputType of
-            "data" -> "day" ++ dayNum ++ " (data).csv"
-            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
-            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
-            _ -> "day" ++ dayNum ++ " (example).csv"
-        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure "No data available"
+parseGrid :: String -> (Grid, Int, Int)
+parseGrid contents =
+    let gridLines = lines contents
+        height = length gridLines
+        width = if null gridLines then 0 else length (head gridLines)
+        grid = M.fromList [ ((y, x), c)
+                          | (y, line) <- zip [0..] gridLines
+                          , (x, c) <- zip [0..] line
+                          ]
+    in (grid, width, height)
 
-buildFrames grid = take 20 $ scanl S.union S.empty energizedSteps
+data Frame = Frame
+    { frameGrid :: Grid
+    , frameBeams :: [Beam]
+    , frameEnergized :: Set Pos
+    , frameVisited :: Set Beam
+    , frameWidth :: Int
+    , frameHeight :: Int
+    , frameStep :: Int
+    }
+
+buildFrames :: Grid -> Int -> Int -> [Frame]
+buildFrames grid width height =
+    let initialBeam = ((0, 0), (0, 1))  -- Start at top-left, moving right
+        initialFrame = Frame grid [initialBeam] S.empty S.empty width height 0
+    in simulateBeams initialFrame
   where
-    -- Simplified beam tracing
-    energizedSteps = [S.fromList [(i `mod` w, i `div` w)] | i <- [0..w*h-1]]
-    ((0,0), (w,h)) = bounds grid
+    simulateBeams frame
+        | null (frameBeams frame) = [frame]
+        | frameStep frame > 200 = [frame]  -- Safety limit
+        | otherwise =
+            let newBeams = concatMap (stepBeam grid width height (frameVisited frame)) (frameBeams frame)
+                energizedPositions = S.fromList (map fst newBeams)
+                newEnergized = frameEnergized frame `S.union` energizedPositions
+                newVisited = frameVisited frame `S.union` S.fromList newBeams
+                uniqueNewBeams = filter (`S.notMember` frameVisited frame) newBeams
+                newFrame = frame
+                    { frameBeams = uniqueNewBeams
+                    , frameEnergized = newEnergized
+                    , frameVisited = newVisited
+                    , frameStep = frameStep frame + 1
+                    }
+            in frame : simulateBeams newFrame
 
-renderFrame :: S.Set (Int, Int) -> IO ()
-renderFrame energized = do
+stepBeam :: Grid -> Int -> Int -> Set Beam -> Beam -> [Beam]
+stepBeam grid width height visited ((y, x), (dy, dx)) =
+    let newY = y + dy
+        newX = x + dx
+        newPos = (newY, newX)
+    in if newY < 0 || newY >= height || newX < 0 || newX >= width
+        then []  -- Out of bounds
+        else case M.lookup newPos grid of
+            Nothing -> [((newY, newX), (dy, dx))]  -- Continue in same direction
+            Just '.' -> [((newY, newX), (dy, dx))]  -- Continue through empty space
+            Just '/' ->  -- Reflect: right->up, up->right, down->left, left->down
+                let newDir = if (dy, dx) == (0, 1) then (-1, 0)  -- right -> up
+                             else if (dy, dx) == (-1, 0) then (0, 1)  -- up -> right
+                             else if (dy, dx) == (1, 0) then (0, -1)  -- down -> left
+                             else (1, 0)  -- left -> down
+                in [((newY, newX), newDir)]
+            Just '\\' ->  -- Reflect: right->down, down->right, up->left, left->up
+                let newDir = if (dy, dx) == (0, 1) then (1, 0)  -- right -> down
+                             else if (dy, dx) == (1, 0) then (0, 1)  -- down -> right
+                             else if (dy, dx) == (-1, 0) then (0, -1)  -- up -> left
+                             else (-1, 0)  -- left -> up
+                in [((newY, newX), newDir)]
+            Just '|' ->  -- Vertical splitter
+                if dy /= 0
+                    then [((newY, newX), (dy, dx))]  -- Pass through if moving vertically
+                    else [((newY, newX), (-1, 0)), ((newY, newX), (1, 0))]  -- Split if horizontal
+            Just '-' ->  -- Horizontal splitter
+                if dx /= 0
+                    then [((newY, newX), (dy, dx))]  -- Pass through if moving horizontally
+                    else [((newY, newX), (0, -1)), ((newY, newX), (0, 1))]  -- Split if vertical
+            _ -> [((newY, newX), (dy, dx))]
+
+renderFrame :: Frame -> IO ()
+renderFrame frame = do
     setCursorPosition 0 0
     putStrLn "The Floor Will Be Lava - Beam Tracing"
-    putStrLn "Part context: [Part 1] energized tiles; [Part 2] best start position."
+    putStrLn "[Part 1] Light beams bounce off mirrors and split"
+    putStrLn ""
+    putStrLn $ "Step: " ++ show (frameStep frame)
+    putStrLn $ "Active beams: " ++ show (length $ frameBeams frame)
+    putStrLn $ "Energized tiles: " ++ show (S.size $ frameEnergized frame)
     putStrLn ""
 
-    let width = 10
-        height = 10
-        points = S.toList energized
-        asciiWorld = AsciiWorld
-            { asciiWorldMasks = M.empty
-            , asciiWorldPoints = M.fromList [("Energized", points)]
-            , asciiWorldWidth = width
-            }
-        bgChar = '.'
-        maskToChar = id
-        pointsToChar = const '#'
-        nameZOrder = compare
-        worldStr = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld
+    -- Build character grid
+    let energized = frameEnergized frame
+        beamPositions = S.fromList (map fst $ frameBeams frame)
+        charGrid = M.fromList
+            [ ((y, x), getChar (y, x))
+            | y <- [0..frameHeight frame - 1]
+            , x <- [0..frameWidth frame - 1]
+            ]
+        getChar pos
+            | pos `S.member` beamPositions = '@'  -- Current beam position
+            | pos `S.member` energized = '#'  -- Energized
+            | otherwise = M.findWithDefault '.' pos (frameGrid frame)
 
-    putStr worldStr
-    putStrLn ""
-    putStrLn $ "Energized tiles: " ++ show (S.size energized)
-    threadDelay 100000
+    -- Print grid
+    let gridLines = [ [ M.findWithDefault '.' (y, x) charGrid
+                      | x <- [0..frameWidth frame - 1] ]
+                    | y <- [0..frameHeight frame - 1] ]
+    mapM_ putStrLn gridLines
+    threadDelay 100000  -- 100ms delay
