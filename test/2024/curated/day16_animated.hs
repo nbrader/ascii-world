@@ -18,6 +18,7 @@ import qualified Data.Set as S
 import Data.Maybe (fromMaybe)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.Environment (getArgs)
 import System.IO (hSetEncoding, stdout, utf8)
 
 type Point = (Int, Int)
@@ -44,7 +45,9 @@ main :: IO ()
 main = do
     -- Set UTF-8 encoding for Windows compatibility
     hSetEncoding stdout utf8
-    contents <- loadMap
+    args <- getArgs
+    let inputType = if null args then "example" else head args
+    contents <- loadMap inputType
     let maze = parseMaze contents
         frames = buildFrames maze
         total = length frames
@@ -54,9 +57,15 @@ main = do
     setCursorPosition (mdHeight maze + 8) 0
     putStrLn "Reindeer Maze pathfinding complete. (Part 1 min cost + Part 2 optimal tiles)"
 
-loadMap :: IO String
-loadMap = do
-    let path = "test/2024/day16 (example).csv"
+loadMap :: String -> IO String
+loadMap inputType = do
+    let dayNum = "16"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2024/day" ++ dayNum ++ "/standard/" ++ filename
     exists <- doesFileExist path
     if exists
         then readFile path
