@@ -19,6 +19,7 @@ import Data.Char (digitToInt, intToDigit)
 import qualified Data.Set as S
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.Environment (getArgs)
 import System.IO (hSetEncoding, stdout, utf8)
 
 type Point = (Int, Int)
@@ -32,7 +33,9 @@ data FrontFrame = FrontFrame
 main :: IO ()
 main = do
     hSetEncoding stdout utf8  -- Windows compatibility
-    contents <- loadMap
+    args <- getArgs
+    let inputType = if null args then "example" else head args
+    contents <- loadMap inputType
     let grid = parseGrid contents
         frames = buildFrames grid
         total = length frames
@@ -43,9 +46,15 @@ main = do
     setCursorPosition ((maxY + 1) * 2 + 6) 0
     putStrLn "Hoof It wave animation complete. (Part 1 scores + Part 2 ratings)"
 
-loadMap :: IO String
-loadMap = do
-    let path = "test/2024/day10 (example).csv"
+loadMap :: String -> IO String
+loadMap inputType = do
+    let dayNum = "10"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2024/day" ++ dayNum ++ "/standard/" ++ filename
     exists <- doesFileExist path
     if exists
         then readFile path

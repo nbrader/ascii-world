@@ -17,6 +17,7 @@ import Data.List (sort)
 import qualified Data.Map as M
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.Environment (getArgs)
 import System.IO (hSetEncoding, stdout, utf8)
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
@@ -25,7 +26,9 @@ import Mask (Point)
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
-    contents <- loadInput
+    args <- getArgs
+    let inputType = if null args then "example" else head args
+    contents <- loadInput inputType
     let (left, right) = parseLists contents
         sortedLeft = sort left
         sortedRight = sort right
@@ -37,9 +40,15 @@ main = do
     setCursorPosition 25 0
     putStrLn "Historian Hysteria animation complete."
 
-loadInput :: IO String
-loadInput = do
-    let path = "test/2024/day01 (example).csv"
+loadInput :: String -> IO String
+loadInput inputType = do
+    let dayNum = "01"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2024/day" ++ dayNum ++ "/standard/" ++ filename
     exists <- doesFileExist path
     if exists
         then readFile path
