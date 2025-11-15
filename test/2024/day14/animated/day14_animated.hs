@@ -89,7 +89,9 @@ parseInput contents = (robots, width, height)
     (width, height) = if length robots <= 12 then (11, 7) else (101, 103)
 
     parseLine line =
-        let cleaned = filter (\c -> c `elem` (',':'-':[]) || isDigit c) line
+        -- Replace " v=" with "," to properly separate position and velocity
+        let normalized = map (\c -> if c == ' ' then ',' else c) line
+            cleaned = filter (\c -> c `elem` (',':'-':[]) || isDigit c) normalized
             parts = map read . filter (not . null) . splitOn "," $ cleaned
         in case parts of
             [px, py, vx, vy] -> Robot (V2 px py) (V2 vx vy)
