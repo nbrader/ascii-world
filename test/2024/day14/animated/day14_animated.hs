@@ -89,9 +89,11 @@ parseInput contents = (robots, width, height)
     (width, height) = if length robots <= 12 then (11, 7) else (101, 103)
 
     parseLine line =
-        let cleaned = filter (\c -> c `elem` (',':' ':'-':'\n':[]) || isDigit c) line
-            [px, py, vx, vy] = map read . filter (not . null) . splitOn "," $ cleaned
-        in Robot (V2 px py) (V2 vx vy)
+        let cleaned = filter (\c -> c `elem` (',':'-':[]) || isDigit c) line
+            parts = map read . filter (not . null) . splitOn "," $ cleaned
+        in case parts of
+            [px, py, vx, vy] -> Robot (V2 px py) (V2 vx vy)
+            _ -> error $ "Invalid robot line (expected 4 numbers): " ++ line
 
 buildFrames :: [Robot] -> Int -> Int -> [Frame]
 buildFrames robots width height = take numFrames frames
