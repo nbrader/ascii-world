@@ -48,19 +48,6 @@ loadInput inputType = do
         else pure "No data available"
 
 buildFrames :: [Int]
-loadInput inputType = do
-    let dayNum = "12"
-        filename = case inputType of
-            "data" -> "day" ++ dayNum ++ " (data).csv"
-            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
-            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
-            _ -> "day" ++ dayNum ++ " (example).csv"
-        path = "test/2022/day" ++ dayNum ++ "/standard/" ++ filename
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure "No data available"
-
 buildFrames = [1..10]
 
 renderFrame :: Int -> IO ()

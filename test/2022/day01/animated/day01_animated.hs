@@ -48,41 +48,4 @@ loadInput inputType = do
         else pure "No data available"
 
 buildFrames :: [Int]
-loadInput inputType = do
-    let dayNum = "01"
-        filename = case inputType of
-            "data" -> "day" ++ dayNum ++ " (data).csv"
-            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
-            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
-            _ -> "day" ++ dayNum ++ " (example).csv"
-        path = "test/2022/day" ++ dayNum ++ "/standard/" ++ filename
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure "No data available"
-
 buildFrames = [1..10]
-
-renderFrame :: Int -> IO ()
-renderFrame step = do
-    setCursorPosition 0 0
-    putStrLn "AoC 2022 Day 1 - Step " ++ show step ++ "/10"
-    putStrLn "Part context: visualization in progress."
-    putStrLn ""
-
-    let width = 40
-        height = 5
-        points = [(i, 0) | i <- [0..min step 39]]
-        asciiWorld = AsciiWorld
-            { asciiWorldMasks = M.empty
-            , asciiWorldPoints = M.fromList [("Progress", points)]
-            , asciiWorldWidth = width
-            }
-        bgChar = '.'
-        maskToChar = id
-        pointsToChar = const '*'
-        nameZOrder = compare
-        worldStr = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld
-
-    putStr worldStr
-    threadDelay 200000
