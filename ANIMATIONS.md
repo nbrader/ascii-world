@@ -9,42 +9,84 @@ Pull the latest changes first:
 git pull
 ```
 
-Then simply **double-click** any batch file in the `test/2024/` directory:
+Then simply **double-click** the main batch file:
 
-- **`test/2024/run_all_animations.bat`** - Interactive menu to choose animations
-- **`test/2024/run_day06_animated.bat`** - Day 6: Guard Gallivant (Part 1 path + Part 2 loop cues)
-- **`test/2024/run_day10_animated.bat`** - Day 10: Hoof It (Parts 1 & 2 BFS wave)
-- **`test/2024/run_day16_animated.bat`** - Day 16: Reindeer Maze (Parts 1 & 2 optimal paths)
-- **`test/2024/run_day18_animated.bat`** - Day 18: RAM Run (Part 1 shortest paths, Part 2 blocker)
-- **`test/2024/run_day20_animated.bat`** - Day 20: Race Condition (Part 1 short cheats + Part 2 long cheats)
+- **`test/2024/curated/run_all_animations.bat`** - Interactive menu with ALL animations (17 total!)
+
+### 🆕 Input Selection Feature
+
+All animations now support **multiple input data sources**:
+- **Example data** - Small test data from problem statements (default)
+- **Actual puzzle data** - Your full puzzle input
+- **Additional examples** - Some days have example2, example3, etc.
+
+When you run an animation through the batch file, you'll be prompted to choose which input to use!
 
 ### Recommended: Interactive Menu
 
 For the best experience, double-click:
 ```
-test/2024/run_all_animations.bat
+test/2024/curated/run_all_animations.bat
 ```
 
-This gives you a menu to select which animation to watch!
+This gives you a menu to:
+1. Choose which animation to watch (17 available!)
+2. Select which input data to use (example, actual data, or alternatives)
+3. Watch the algorithm visualized step-by-step!
 
 ## 🐧 Linux/macOS
 
-Make scripts executable and run directly:
+Make scripts executable and run with optional input selection:
 
 ```bash
-chmod +x test/*_animated.hs
-./test/2024/day16_animated.hs
+chmod +x test/2024/curated/*_animated.hs
+
+# Run with example data (default)
+./test/2024/curated/day16_animated.hs
+
+# Run with actual puzzle data
+./test/2024/curated/day16_animated.hs data
+
+# Run with alternative example
+./test/2024/curated/day16_animated.hs example2
 ```
 
-Or use Stack:
+Or use Stack with input selection:
 ```bash
+# With example data (default)
 stack --resolver lts-21.22 runghc \
   --package containers-0.6.7 \
   --package ansi-terminal-0.11.5 \
-  test/2024/day16_animated.hs
+  test/2024/curated/day16_animated.hs
+
+# With actual puzzle data
+stack --resolver lts-21.22 runghc \
+  --package containers-0.6.7 \
+  --package ansi-terminal-0.11.5 \
+  test/2024/curated/day16_animated.hs data
 ```
 
+**Available input options**: `example` (default), `data`, `example2`, `example3`
+
 ## 📋 Available Animations
+
+All animations now support choosing between example and actual puzzle data!
+
+### Standard Animations
+- **Day 01**: Historian Hysteria - List pairing and distance calculation
+- **Day 02**: Red-Nosed Reports - Safety report validation
+- **Day 03**: Mull It Over - Finding and evaluating mul instructions
+- **Day 04**: Ceres Search - Word search puzzle visualization
+- **Day 05**: Print Queue - Page ordering validation
+- **Day 07**: Bridge Repair - Equation solving with operators
+- **Day 08**: Resonant Collinearity - Antenna antinode detection
+- **Day 09**: Disk Fragmenter - Disk block reorganization
+- **Day 11**: Plutonian Pebbles - Stone transformation rules
+- **Day 12**: Garden Groups - Region detection and perimeter
+- **Day 13**: Claw Contraption - Prize machine optimization
+- **Day 14**: Restroom Redoubt - Robot motion simulation
+
+### Curated Animations (Optimized)
 
 ### Day 6: Guard Gallivant 💂
 - Shows a guard patrolling a grid

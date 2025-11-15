@@ -22,6 +22,7 @@ import qualified Data.Map as M
 import Linear (V2(..))
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.Environment (getArgs)
 import System.IO (hSetEncoding, stdout, utf8)
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
@@ -40,7 +41,9 @@ data Frame = Frame
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
-    contents <- loadInput
+    args <- getArgs
+    let inputType = if null args then "example" else head args
+    contents <- loadInput inputType
     let (robots, width, height) = parseInput contents
         frames = buildFrames robots width height
     bracket_ hideCursor showCursor $ do
@@ -49,9 +52,15 @@ main = do
     setCursorPosition (height + 10) 0
     putStrLn "Restroom Redoubt animation complete."
 
-loadInput :: IO String
-loadInput = do
-    let path = "test/2024/day14 (example).csv"
+loadInput :: String -> IO String
+loadInput inputType = do
+    let dayNum = "14"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2024/day" ++ dayNum ++ "/standard/" ++ filename
     exists <- doesFileExist path
     if exists
         then readFile path

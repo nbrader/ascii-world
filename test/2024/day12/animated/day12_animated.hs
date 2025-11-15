@@ -21,6 +21,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import System.Console.ANSI
 import System.Directory (doesFileExist)
+import System.Environment (getArgs)
 import System.IO (hSetEncoding, stdout, utf8)
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
@@ -40,7 +41,9 @@ data Frame = Frame
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
-    contents <- loadInput
+    args <- getArgs
+    let inputType = if null args then "example" else head args
+    contents <- loadInput inputType
     let grid = parseGrid contents
         frames = buildFrames grid
     bracket_ hideCursor showCursor $ do
@@ -50,9 +53,15 @@ main = do
     setCursorPosition (maxY + 15) 0
     putStrLn "Garden Groups animation complete."
 
-loadInput :: IO String
-loadInput = do
-    let path = "test/2024/day12 (example).csv"
+loadInput :: String -> IO String
+loadInput inputType = do
+    let dayNum = "12"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2024/day" ++ dayNum ++ "/standard/" ++ filename
     exists <- doesFileExist path
     if exists
         then readFile path
