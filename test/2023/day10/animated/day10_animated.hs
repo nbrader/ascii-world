@@ -6,32 +6,41 @@
 -}
 
 -- |
--- Animated visualization for AoC 2023 Day 10.
+-- Animated visualization for AoC 2023 Day 10 (Pipe Maze).
+-- Shows following a pipe loop from the starting position.
 
 module Main where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception (bracket_)
 import qualified Data.Map as M
+import qualified Data.Set as S
+import Data.Set (Set)
+import Data.Maybe (listToMaybe, fromMaybe)
 import System.Console.ANSI
-import System.IO (hSetEncoding, stdout, utf8)
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
+import System.IO (hSetEncoding, stdout, utf8)
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
+
+type Pos = (Int, Int)
+type Grid = M.Map Pos Char
 
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
     args <- getArgs
     let inputType = if null args then "example" else head args
-    let frames = buildFrames
+    contents <- loadInput inputType
+    let (grid, start) = parseGrid contents
+        frames = buildFrames grid start
     bracket_ hideCursor showCursor $ do
         clearScreen
         mapM_ renderFrame frames
     setCursorPosition 25 0
-    putStrLn "AoC 2023 Day 10 animation complete."
+    putStrLn "Pipe Maze animation complete."
 
 loadInput :: String -> IO String
 loadInput inputType = do
@@ -45,44 +54,106 @@ loadInput inputType = do
     exists <- doesFileExist path
     if exists
         then readFile path
-        else pure "No data available"
+        else pure $ unlines
+            [ "..F7."
+            , ".FJ|."
+            , "SJ.L7"
+            , "|F--J"
+            , "LJ..."
+            ]
 
-buildFrames :: [Int]
-loadInput inputType = do
-    let dayNum = "10"
-        filename = case inputType of
-            "data" -> "day" ++ dayNum ++ " (data).csv"
-            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
-            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
-            _ -> "day" ++ dayNum ++ " (example).csv"
-        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure "No data available"
+parseGrid :: String -> (Grid, Pos)
+parseGrid contents =
+    let gridLines = lines contents
+        positions = [ ((y, x), c)
+                    | (y, line) <- zip [0..] gridLines
+                    , (x, c) <- zip [0..] line
+                    ]
+        grid = M.fromList positions
+        start = fst . head $ filter ((== 'S') . snd) positions
+    in (grid, start)
 
-buildFrames = [1..10]
+data Frame = Frame
+    { frameGrid :: Grid
+    , frameLoop :: [Pos]
+    , frameCurrent :: Maybe Pos
+    , frameStart :: Pos
+    , frameStep :: Int
+    }
 
-renderFrame :: Int -> IO ()
-renderFrame step = do
+buildFrames :: Grid -> Pos -> [Frame]
+buildFrames grid start =
+    let path = findLoop grid start
+        frames = [ Frame grid (take i path) (Just $ path !! (i-1)) start i
+                 | i <- [1..length path]
+                 ]
+    in frames
+
+findLoop :: Grid -> Pos -> [Pos]
+findLoop grid start =
+    let firstDir = head $ getConnected grid start
+        path = traverseLoop grid start firstDir [start]
+    in reverse path
+  where
+    traverseLoop grid start current visited
+        | current == start && length visited > 2 = visited
+        | otherwise =
+            let next = head $ filter (`notElem` visited) (getConnected grid current)
+            in traverseLoop grid start next (current : visited)
+
+getConnected :: Grid -> Pos -> [Pos]
+getConnected grid (y, x) =
+    case M.lookup (y, x) grid of
+        Just '|' -> [(y-1, x), (y+1, x)]
+        Just '-' -> [(y, x-1), (y, x+1)]
+        Just 'L' -> [(y-1, x), (y, x+1)]
+        Just 'J' -> [(y-1, x), (y, x-1)]
+        Just '7' -> [(y+1, x), (y, x-1)]
+        Just 'F' -> [(y+1, x), (y, x+1)]
+        Just 'S' -> findStartConnections grid (y, x)
+        _ -> []
+
+findStartConnections :: Grid -> Pos -> [Pos]
+findStartConnections grid (y, x) =
+    let candidates = [(y-1, x), (y+1, x), (y, x-1), (y, x+1)]
+    in filter (\pos -> (y, x) `elem` getConnected grid pos) candidates
+
+renderFrame :: Frame -> IO ()
+renderFrame frame = do
     setCursorPosition 0 0
-    putStrLn "AoC 2023 Day 10 - Step " ++ show step ++ "/10"
-    putStrLn "Part context: visualization in progress."
+    putStrLn "Pipe Maze - Following the Loop"
+    putStrLn "[Part 1] Trace the pipe loop to find the farthest point"
+    putStrLn ""
+    putStrLn $ "Step: " ++ show (frameStep frame)
+    putStrLn $ "Loop length: " ++ show (length $ frameLoop frame)
+    if length (frameLoop frame) > 1
+        then putStrLn $ "Farthest point: " ++ show (length (frameLoop frame) `div` 2)
+        else putStrLn "Farthest point: 0"
     putStrLn ""
 
-    let width = 40
-        height = 5
-        points = [(i, 0) | i <- [0..min step 39]]
-        asciiWorld = AsciiWorld
-            { asciiWorldMasks = M.empty
-            , asciiWorldPoints = M.fromList [("Progress", points)]
-            , asciiWorldWidth = width
-            }
-        bgChar = '.'
-        maskToChar = id
-        pointsToChar = const '*'
-        nameZOrder = compare
-        worldStr = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld
+    -- Calculate bounds
+    let allPos = M.keys (frameGrid frame)
+        minY = minimum (map fst allPos)
+        maxY = maximum (map fst allPos)
+        minX = minimum (map snd allPos)
+        maxX = maximum (map snd allPos)
 
-    putStr worldStr
-    threadDelay 200000
+    -- Build character grid
+    let loopSet = S.fromList (frameLoop frame)
+        charGrid = M.fromList
+            [ ((y, x), getChar (y, x))
+            | y <- [minY..maxY]
+            , x <- [minX..maxX]
+            ]
+        getChar pos
+            | pos == frameStart frame = 'S'
+            | Just pos == frameCurrent frame = '@'
+            | pos `S.member` loopSet = '#'
+            | otherwise = M.findWithDefault '.' pos (frameGrid frame)
+
+    -- Print grid
+    let gridLines = [ [ M.findWithDefault ' ' (y, x) charGrid
+                      | x <- [minX..maxX] ]
+                    | y <- [minY..maxY] ]
+    mapM_ putStrLn gridLines
+    threadDelay 100000  -- 100ms delay

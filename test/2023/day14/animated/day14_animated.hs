@@ -3,6 +3,7 @@
    --package ascii-world
    --package containers-0.6.7
    --package ansi-terminal-0.11.5
+   --package split-0.2.3.5
 -}
 
 -- |
@@ -13,27 +14,24 @@ module Main where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception (bracket_)
-import Data.Array
-import Data.List (sort)
+import Data.List (intercalate, partition, transpose, reverse)
+import Data.List.Split (splitOn)
 import qualified Data.Map as M
 import System.Console.ANSI
 import System.Directory (doesFileExist)
-import System.IO (hSetEncoding, stdout, utf8)
-import System.Directory (doesFileExist)
 import System.Environment (getArgs)
+import System.IO (hSetEncoding, stdout, utf8)
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
-
-type Grid = Array (Int, Int) Char
 
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
     args <- getArgs
     let inputType = if null args then "example" else head args
-    contents <- loadInput
-    let grid = parseGrid contents
+    contents <- loadInput inputType
+    let grid = lines contents
         frames = buildFrames grid
     bracket_ hideCursor showCursor $ do
         clearScreen
@@ -41,9 +39,15 @@ main = do
     setCursorPosition 25 0
     putStrLn "Parabolic Reflector Dish animation complete."
 
-loadInput :: IO String
-loadInput = do
-    let path = "test/2023/day14 (example).csv"
+loadInput :: String -> IO String
+loadInput inputType = do
+    let dayNum = "14"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
     exists <- doesFileExist path
     if exists
         then readFile path
@@ -60,77 +64,70 @@ loadInput = do
             , "#OO..#...."
             ]
 
-parseGrid :: String -> Grid
-parseGrid contents = listArray ((0, 0), (w-1, h-1)) (concat rows)
+data Frame = Frame
+    { frameGrid :: [String]
+    , frameDirection :: String
+    , frameStep :: Int
+    }
+
+buildFrames :: [String] -> [Frame]
+buildFrames grid =
+    let initialFrame = Frame grid "Start" 0
+        spinCycle g = tiltEast . tiltSouth . tiltWest . tiltNorth $ g
+        frames = [Frame grid "Initial" 0]
+              ++ tiltFrames grid "North" 1
+              ++ tiltFrames (tiltNorth grid) "West" 2
+              ++ tiltFrames (tiltWest . tiltNorth $ grid) "South" 3
+              ++ tiltFrames (tiltSouth . tiltWest . tiltNorth $ grid) "East" 4
+              ++ [Frame (spinCycle grid) "Complete Cycle" 5]
+    in take 30 frames
   where
-    rows = lines contents
-    h = length rows
-    w = if null rows then 0 else length (head rows)
+    tiltFrames g dir step = [Frame g dir step]
 
-loadInput :: String -> IO String
-loadInput inputType = do
-    let dayNum = "14"
-        filename = case inputType of
-            "data" -> "day" ++ dayNum ++ " (data).csv"
-            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
-            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
-            _ -> "day" ++ dayNum ++ " (example).csv"
-        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure "No data available"
-
-buildFrames :: Grid -> [Grid]
-loadInput inputType = do
-    let dayNum = "14"
-        filename = case inputType of
-            "data" -> "day" ++ dayNum ++ " (data).csv"
-            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
-            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
-            _ -> "day" ++ dayNum ++ " (example).csv"
-        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure "No data available"
-
-buildFrames grid = take 5 $ iterate tiltNorth grid
-
-tiltNorth :: Grid -> Grid
-tiltNorth grid = grid // updates
+-- Roll rocks within each segment (between '#' cubes)
+roll :: [String] -> [String]
+roll = map rollRow
   where
-    ((0,0), (w,h)) = bounds grid
-    rocks = [(x,y) | x <- [0..w], y <- [0..h], grid ! (x,y) == 'O']
-    -- Simplified: just move rocks slightly north
-    updates = [((x,y), '.') | (x,y) <- rocks] ++
-              [((x, max 0 (y-1)), 'O') | (x,y) <- rocks, y > 0, grid ! (x, y-1) == '.']
+    rollRow = intercalate "#" . map sortSegment . splitOn "#"
+    sortSegment seg = rocks ++ spaces
+      where (rocks, spaces) = partition (== 'O') seg
 
-renderFrame :: Grid -> IO ()
-renderFrame grid = do
-    let ((0,0), (w,h)) = bounds grid
+-- Tilt in different directions
+tiltNorth :: [String] -> [String]
+tiltNorth = transpose . roll . transpose
+
+tiltSouth :: [String] -> [String]
+tiltSouth = transpose . map Data.List.reverse . roll . map Data.List.reverse . transpose
+
+tiltWest :: [String] -> [String]
+tiltWest = roll
+
+tiltEast :: [String] -> [String]
+tiltEast = map Data.List.reverse . roll . map Data.List.reverse
+
+rotateCW90 :: [String] -> [String]
+rotateCW90 = transpose . Data.List.reverse
+
+renderFrame :: Frame -> IO ()
+renderFrame frame = do
     setCursorPosition 0 0
-    putStrLn "Parabolic Reflector Dish - Tilting North"
-    putStrLn "Part context: [Part 1] tilt north; [Part 2] cycle detection."
+    putStrLn "Parabolic Reflector Dish - Rolling Rocks"
+    putStrLn "[Part 2] Spin cycle: North -> West -> South -> East"
+    putStrLn ""
+    putStrLn $ "Direction: " ++ frameDirection frame
+    putStrLn $ "Step: " ++ show (frameStep frame)
     putStrLn ""
 
-    let rocks = [(x,y) | x <- [0..w], y <- [0..h], grid ! (x,y) == 'O']
-        cubes = [(x,y) | x <- [0..w], y <- [0..h], grid ! (x,y) == '#']
-        asciiWorld = AsciiWorld
-            { asciiWorldMasks = M.empty
-            , asciiWorldPoints = M.fromList [("Rocks", rocks), ("Cubes", cubes)]
-            , asciiWorldWidth = w+1
-            }
-        bgChar = '.'
-        maskToChar = id
-        pointsToChar name = case name of
-            "Rocks" -> 'O'
-            "Cubes" -> '#'
-            _ -> '?'
-        nameZOrder = compare
-        worldStr = showAsciiWorld (h+1) bgChar maskToChar pointsToChar nameZOrder asciiWorld
-
-    putStr worldStr
+    -- Calculate load (Part 1 metric)
+    let grid = frameGrid frame
+        height = length grid
+        load = sum [ if c == 'O' then height - y else 0
+                   | (y, row) <- zip [0..] grid
+                   , c <- row
+                   ]
+    putStrLn $ "Load on north support: " ++ show load
     putStrLn ""
-    putStrLn $ "Rounded rocks: " ++ show (length rocks)
-    threadDelay 300000
+
+    -- Print grid
+    mapM_ putStrLn (frameGrid frame)
+    threadDelay 200000  -- 200ms delay
