@@ -93,7 +93,7 @@ renderFrame (report, safe) = do
             }
         bgChar = '.'
         maskToChar = id
-        pointsToChar = const if safe then 'O' else 'X'
+        pointsToChar = const (if safe then 'O' else 'X')
         nameZOrder = compare
         worldStr = showAsciiWorld 2 bgChar maskToChar pointsToChar nameZOrder asciiWorld
 
