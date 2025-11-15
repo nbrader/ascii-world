@@ -77,10 +77,13 @@ loadInput inputType = do
 parseGrid :: String -> Grid
 parseGrid contents = listArray ((0, 0), (width - 1, height - 1)) cells
   where
-    rows = filter (not . null) $ lines contents
-    height = length rows
+    -- Clean rows: remove \r characters and filter empty lines
+    rows = filter (not . null) . map (filter (/= '\r')) $ lines contents
     width = if null rows then 0 else length (head rows)
-    cells = concat rows
+    -- Ensure all rows have the same width
+    validRows = filter (\row -> length row == width) rows
+    height = length validRows
+    cells = concat validRows
 
 buildFrames :: Grid -> [Frame]
 buildFrames grid = scanRegions (S.fromList $ indices grid) [] 0
