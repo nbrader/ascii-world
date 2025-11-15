@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 cd /d "%~dp0..\.."
 echo Running Day 10 Animation: Hoof It (Parts 1 + 2 shared BFS wave)
 echo.

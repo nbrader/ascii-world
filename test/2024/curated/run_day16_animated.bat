@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 cd /d "%~dp0..\.."
 echo Running Day 16 Animation: Reindeer Maze (Part 1 min-cost + Part 2 optimal tiles)
 echo.

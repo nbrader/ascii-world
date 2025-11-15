@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 cd /d "%~dp0..\.."
 echo Running Day 20 Animation: Race Condition (Part 1 short cheats + Part 2 long cheats)
 echo.
