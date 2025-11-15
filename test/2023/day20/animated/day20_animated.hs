@@ -26,6 +26,10 @@ import Mask (Point)
 data Pulse = Low | High deriving (Show, Eq)
 type PulseEvent = (String, Pulse, String)  -- (from, pulse, to)
 
+zip4 :: [a] -> [b] -> [c] -> [d] -> [(a, b, c, d)]
+zip4 (a:as) (b:bs) (c:cs) (d:ds) = (a, b, c, d) : zip4 as bs cs ds
+zip4 _ _ _ _ = []
+
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
@@ -53,19 +57,6 @@ loadInput inputType = do
         else pure "No data available"
 
 buildFrames :: [(Int, [PulseEvent], Int, Int)]
-loadInput inputType = do
-    let dayNum = "20"
-        filename = case inputType of
-            "data" -> "day" ++ dayNum ++ " (data).csv"
-            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
-            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
-            _ -> "day" ++ dayNum ++ " (example).csv"
-        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure "No data available"
-
 buildFrames = zip4 [1..10] pulseSequences lowCounts highCounts
   where
     -- Simplified example pulse sequence

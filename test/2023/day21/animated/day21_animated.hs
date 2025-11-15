@@ -30,7 +30,7 @@ main = do
     hSetEncoding stdout utf8
     args <- getArgs
     let inputType = if null args then "example" else head args
-    contents <- loadInput
+    contents <- loadInput inputType
     let (grid, start) = parseGrid contents
         frames = buildFrames grid start 10
     bracket_ hideCursor showCursor $ do
@@ -38,26 +38,6 @@ main = do
         mapM_ renderFrame frames
     setCursorPosition 25 0
     putStrLn "Step Counter animation complete."
-
-loadInput :: IO String
-loadInput = do
-    let path = "test/2023/day21 (example).csv"
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure $ unlines
-            [ "..........."
-            , ".....###.#."
-            , ".###.##..#."
-            , "..#.#...#.."
-            , "....#.#...."
-            , ".##..S####."
-            , ".##..#...#."
-            , ".......##.."
-            , ".##.#.####."
-            , ".##..##.##."
-            , "..........."
-            ]
 
 parseGrid :: String -> (Array (Int, Int) Char, (Int, Int))
 parseGrid contents = (grid, start)
@@ -83,19 +63,6 @@ loadInput inputType = do
         else pure "No data available"
 
 buildFrames :: Array (Int, Int) Char -> (Int, Int) -> Int -> [(Int, S.Set (Int, Int))]
-loadInput inputType = do
-    let dayNum = "21"
-        filename = case inputType of
-            "data" -> "day" ++ dayNum ++ " (data).csv"
-            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
-            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
-            _ -> "day" ++ dayNum ++ " (example).csv"
-        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure "No data available"
-
 buildFrames grid start maxSteps = zip [0..maxSteps] positions
   where
     positions = take (maxSteps + 1) $ iterate (step grid) (S.singleton start)
