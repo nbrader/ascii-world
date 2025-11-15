@@ -102,17 +102,17 @@ buildMachineFrames (idx, machine) =
         Just (pressesA, pressesB) ->
             let steps = min 50 (pressesA + pressesB)
                 stepSize = max 1 ((pressesA + pressesB) `div` steps)
-                positions = takeSteps machine pressesA pressesB stepSize
+                positions = takeSteps machine pressesA pressesB stepSize steps
             in positions ++ [Frame idx machine (fst $ mPrize machine, snd $ mPrize machine) pressesA pressesB True]
   where
-    takeSteps machine totalA totalB stepSize =
+    takeSteps machine totalA totalB stepSize numSteps =
         [ let a = min totalA (i * stepSize * totalA `div` (totalA + totalB))
               b = min totalB (i * stepSize * totalB `div` (totalA + totalB))
               (ax, ay) = mButtonA machine
               (bx, by) = mButtonB machine
               pos = (a * ax + b * bx, a * ay + b * by)
           in Frame idx machine pos a b False
-        | i <- [0..steps-1]
+        | i <- [0..numSteps-1]
         ]
 
 solveMachine :: Machine -> Maybe (Int, Int)
