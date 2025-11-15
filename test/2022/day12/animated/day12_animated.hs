@@ -138,11 +138,10 @@ neighbors :: HeightMap -> Pos -> [Pos]
 neighbors heightMap (y, x) =
     let currentHeight = fromMaybe 0 $ M.lookup (y, x) heightMap
         candidates = [(y-1, x), (y+1, x), (y, x-1), (y, x+1)]
+        isValid pos = case M.lookup pos heightMap of
+            Nothing -> False
+            Just h -> h <= currentHeight + 1  -- Can climb at most 1 higher
     in filter isValid candidates
-  where
-    isValid pos = case M.lookup pos heightMap of
-        Nothing -> False
-        Just h -> h <= currentHeight + 1  -- Can climb at most 1 higher
 
 renderFrame :: Frame -> IO ()
 renderFrame frame = do

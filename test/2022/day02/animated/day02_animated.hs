@@ -53,7 +53,7 @@ buildFrames = [1..10]
 renderFrame :: Int -> IO ()
 renderFrame step = do
     setCursorPosition 0 0
-    putStrLn "AoC 2022 Day 2 - Step " ++ show step ++ "/10"
+    putStrLn $ "AoC 2022 Day 2 - Step " ++ show step ++ "/10"
     putStrLn "Part context: visualization in progress."
     putStrLn ""
 
