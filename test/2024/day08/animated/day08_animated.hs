@@ -14,7 +14,7 @@ module Main where
 import Control.Concurrent (threadDelay)
 import Control.Exception (bracket_)
 import Data.Char (isAlphaNum)
-import Data.List (group By, sort)
+import Data.List (groupBy, sort)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import System.Console.ANSI
