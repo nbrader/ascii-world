@@ -8,7 +8,7 @@ Imported from [advent-of-code-2023](https://github.com/nbrader/advent-of-code-20
 
 | Day | Title | Standard Solution | Animation Folder | Problem |
 | --- | ----- | ----------------- | ---------------- | ------- |
-| 01 | Trebuchet! | [Haskell](./day01/standard/day01.hs) | [Animated Stub](./day01/animated) | [Problem](./day01/problem.txt) |
+| 01 | Trebuchet! | [Haskell](./day01/standard/day01.hs) | [Animated walkthrough](./day01/animated) | [Problem](./day01/problem.txt) |
 | 02 | Cube Conundrum | [Haskell](./day02/standard/day02.hs) | [Animated Stub](./day02/animated) | [Problem](./day02/problem.txt) |
 | 03 | Gear Ratios | [Haskell](./day03/standard/day03.hs) | [Animated Stub](./day03/animated) | [Problem](./day03/problem.txt) |
 | 04 | Scratchcards | [Haskell](./day04/standard/day04.hs) | [Animated Stub](./day04/animated) | [Problem](./day04/problem.txt) |
