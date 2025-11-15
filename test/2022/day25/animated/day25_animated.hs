@@ -47,42 +47,102 @@ loadInput inputType = do
         then readFile path
         else pure "No data available"
 
-buildFrames :: [Int]
-loadInput inputType = do
-    let dayNum = "25"
-        filename = case inputType of
-            "data" -> "day" ++ dayNum ++ " (data).csv"
-            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
-            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
-            _ -> "day" ++ dayNum ++ " (example).csv"
-        path = "test/2022/day" ++ dayNum ++ "/standard/" ++ filename
-    exists <- doesFileExist path
-    if exists
-        then readFile path
-        else pure "No data available"
+-- SNAFU number type and conversion functions
+data SNAFUDigit = Digit2 | Digit1 | Digit0 | DigitMinus | DigitDoubleMinus deriving (Show, Eq)
+newtype SNAFU = SNAFU {snafuDigits :: [SNAFUDigit]} deriving (Show)
 
-buildFrames = [1..10]
+evalSNAFUDigit :: SNAFUDigit -> Int
+evalSNAFUDigit Digit2 = 2
+evalSNAFUDigit Digit1 = 1
+evalSNAFUDigit Digit0 = 0
+evalSNAFUDigit DigitMinus = -1
+evalSNAFUDigit DigitDoubleMinus = -2
 
-renderFrame :: Int -> IO ()
-renderFrame step = do
+snafuToInt :: SNAFU -> Int
+snafuToInt x = sum [(evalSNAFUDigit d)*5^i | (i,d) <- zip [0..] (reverse $ snafuDigits x)]
+
+readSNAFU :: String -> SNAFU
+readSNAFU = SNAFU . map readCharAsDigit
+
+readCharAsDigit :: Char -> SNAFUDigit
+readCharAsDigit '2' = Digit2
+readCharAsDigit '1' = Digit1
+readCharAsDigit '0' = Digit0
+readCharAsDigit '-' = DigitMinus
+readCharAsDigit '=' = DigitDoubleMinus
+readCharAsDigit _ = Digit0
+
+showDigit :: SNAFUDigit -> String
+showDigit Digit2 = "2"
+showDigit Digit1 = "1"
+showDigit Digit0 = "0"
+showDigit DigitMinus = "-"
+showDigit DigitDoubleMinus = "="
+
+showSNAFU :: SNAFU -> String
+showSNAFU = concatMap showDigit . snafuDigits
+
+-- Frame data type for animation
+data Frame = Frame String Int Int Int  -- SNAFU string, current position, calculated value, expected value
+
+buildFrames :: [Frame]
+buildFrames =
+    let exampleNumbers = [
+            ("1=-0-2", 1747),
+            ("12111", 906),
+            ("2=0=", 198),
+            ("21", 11),
+            ("2=01", 201),
+            ("111", 31),
+            ("20012", 1257),
+            ("112", 32),
+            ("1=-1=", 353),
+            ("1-12", 107),
+            ("12", 7),
+            ("1=", 3),
+            ("122", 37)
+          ]
+    in concatMap makeFramesForNumber (take 5 exampleNumbers)
+  where
+    makeFramesForNumber (snafuStr, expectedInt) =
+        let snafu = readSNAFU snafuStr
+            digits = snafuDigits snafu
+            positions = length digits
+            -- Create frames showing each digit being processed
+            digitFrames = [Frame snafuStr i (snafuToInt snafu) expectedInt | i <- [0..positions]]
+        in digitFrames
+
+renderFrame :: Frame -> IO ()
+renderFrame (Frame snafuStr pos calcValue expectedValue) = do
     setCursorPosition 0 0
-    putStrLn $ "AoC 2022 Day 25 - Step " ++ show step ++ "/10"
-    putStrLn "Part context: visualization in progress."
+    putStrLn "╔══════════════════════════════════════════════════════════════╗"
+    putStrLn "║        AoC 2022 Day 25 - SNAFU Number Conversion           ║"
+    putStrLn "╚══════════════════════════════════════════════════════════════╝"
+    putStrLn ""
+    putStrLn $ "SNAFU Number: " ++ snafuStr
+    putStrLn $ "              " ++ replicate pos ' ' ++ "^"
+    putStrLn ""
+    putStrLn $ "Decimal Value: " ++ show calcValue
+    putStrLn $ "Expected:      " ++ show expectedValue
     putStrLn ""
 
-    let width = 40
-        height = 5
-        points = [(i, 0) | i <- [0..min step 39]]
+    -- Visual representation using ASCII art
+    let width = 60
+        height = 8
+        -- Create points for visual display
+        barLength = min width (calcValue `div` 30)
+        points = [(i, 4) | i <- [0..barLength]]
         asciiWorld = AsciiWorld
             { asciiWorldMasks = M.empty
-            , asciiWorldPoints = M.fromList [("Progress", points)]
+            , asciiWorldPoints = M.fromList [("Value", points)]
             , asciiWorldWidth = width
             }
         bgChar = '.'
         maskToChar = id
-        pointsToChar = const '*'
+        pointsToChar = const '█'
         nameZOrder = compare
         worldStr = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld
 
     putStr worldStr
-    threadDelay 200000
+    putStrLn ""
+    threadDelay 250000

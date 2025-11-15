@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 cd /d "%~dp0..\.."
 echo Running Day 18 Animation: RAM Run (Part 1 path + Part 2 blocking byte)
 echo.
