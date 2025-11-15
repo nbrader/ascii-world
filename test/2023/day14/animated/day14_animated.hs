@@ -19,6 +19,8 @@ import qualified Data.Map as M
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.IO (hSetEncoding, stdout, utf8)
+import System.Directory (doesFileExist)
+import System.Environment (getArgs)
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
@@ -28,6 +30,8 @@ type Grid = Array (Int, Int) Char
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    args <- getArgs
+    let inputType = if null args then "example" else head args
     contents <- loadInput
     let grid = parseGrid contents
         frames = buildFrames grid
@@ -63,7 +67,34 @@ parseGrid contents = listArray ((0, 0), (w-1, h-1)) (concat rows)
     h = length rows
     w = if null rows then 0 else length (head rows)
 
+loadInput :: String -> IO String
+loadInput inputType = do
+    let dayNum = "14"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
+    exists <- doesFileExist path
+    if exists
+        then readFile path
+        else pure "No data available"
+
 buildFrames :: Grid -> [Grid]
+loadInput inputType = do
+    let dayNum = "14"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
+    exists <- doesFileExist path
+    if exists
+        then readFile path
+        else pure "No data available"
+
 buildFrames grid = take 5 $ iterate tiltNorth grid
 
 tiltNorth :: Grid -> Grid

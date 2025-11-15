@@ -17,6 +17,8 @@ import qualified Data.Map as M
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.IO (hSetEncoding, stdout, utf8)
+import System.Directory (doesFileExist)
+import System.Environment (getArgs)
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
@@ -27,6 +29,8 @@ type PulseEvent = (String, Pulse, String)  -- (from, pulse, to)
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    args <- getArgs
+    let inputType = if null args then "example" else head args
     let frames = buildFrames
     bracket_ hideCursor showCursor $ do
         clearScreen
@@ -34,7 +38,34 @@ main = do
     setCursorPosition 25 0
     putStrLn "Pulse Propagation animation complete."
 
+loadInput :: String -> IO String
+loadInput inputType = do
+    let dayNum = "20"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
+    exists <- doesFileExist path
+    if exists
+        then readFile path
+        else pure "No data available"
+
 buildFrames :: [(Int, [PulseEvent], Int, Int)]
+loadInput inputType = do
+    let dayNum = "20"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
+    exists <- doesFileExist path
+    if exists
+        then readFile path
+        else pure "No data available"
+
 buildFrames = zip4 [1..10] pulseSequences lowCounts highCounts
   where
     -- Simplified example pulse sequence
