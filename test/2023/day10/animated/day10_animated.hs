@@ -70,7 +70,9 @@ parseGrid contents =
                     , (x, c) <- zip [0..] line
                     ]
         grid = M.fromList positions
-        start = fst . head $ filter ((== 'S') . snd) positions
+        start = case filter ((== 'S') . snd) positions of
+                    ((pos, _):_) -> pos
+                    [] -> (0, 0)  -- Default to origin if no start found
     in (grid, start)
 
 data Frame = Frame
@@ -91,15 +93,16 @@ buildFrames grid start =
 
 findLoop :: Grid -> Pos -> [Pos]
 findLoop grid start =
-    let firstDir = head $ getConnected grid start
-        path = traverseLoop grid start firstDir [start]
-    in reverse path
+    case getConnected grid start of
+        [] -> [start]  -- No connections from start, return just start
+        (firstDir:_) -> reverse $ traverseLoop grid start firstDir [start]
   where
     traverseLoop grid start current visited
         | current == start && length visited > 2 = visited
         | otherwise =
-            let next = head $ filter (`notElem` visited) (getConnected grid current)
-            in traverseLoop grid start next (current : visited)
+            case filter (`notElem` visited) (getConnected grid current) of
+                [] -> visited  -- Dead end or back at start, return current path
+                (next:_) -> traverseLoop grid start next (current : visited)
 
 getConnected :: Grid -> Pos -> [Pos]
 getConnected grid (y, x) =
