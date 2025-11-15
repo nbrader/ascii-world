@@ -19,6 +19,8 @@ import qualified Data.Set as S
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.IO (hSetEncoding, stdout, utf8)
+import System.Directory (doesFileExist)
+import System.Environment (getArgs)
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
@@ -26,6 +28,8 @@ import Mask (Point)
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    args <- getArgs
+    let inputType = if null args then "example" else head args
     contents <- loadInput
     let (grid, start) = parseGrid contents
         frames = buildFrames grid start 10
@@ -64,7 +68,34 @@ parseGrid contents = (grid, start)
     grid = listArray ((0, 0), (w-1, h-1)) (concat rows)
     start = head [(x, y) | x <- [0..w-1], y <- [0..h-1], grid ! (x, y) == 'S']
 
+loadInput :: String -> IO String
+loadInput inputType = do
+    let dayNum = "21"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
+    exists <- doesFileExist path
+    if exists
+        then readFile path
+        else pure "No data available"
+
 buildFrames :: Array (Int, Int) Char -> (Int, Int) -> Int -> [(Int, S.Set (Int, Int))]
+loadInput inputType = do
+    let dayNum = "21"
+        filename = case inputType of
+            "data" -> "day" ++ dayNum ++ " (data).csv"
+            "example2" -> "day" ++ dayNum ++ " (example 2).csv"
+            "example3" -> "day" ++ dayNum ++ " (example 3).csv"
+            _ -> "day" ++ dayNum ++ " (example).csv"
+        path = "test/2023/day" ++ dayNum ++ "/standard/" ++ filename
+    exists <- doesFileExist path
+    if exists
+        then readFile path
+        else pure "No data available"
+
 buildFrames grid start maxSteps = zip [0..maxSteps] positions
   where
     positions = take (maxSteps + 1) $ iterate (step grid) (S.singleton start)
