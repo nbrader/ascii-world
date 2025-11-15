@@ -1,0 +1,782 @@
+==================================================
+Animation Testing Log - Sat Nov 15 18:33:27 GMT 2025
+==================================================
+
+
+==================================================
+YEAR 2022 - Testing 25 animations
+==================================================
+----------------------------------------
+Testing: 2022 Day 01 (Regular)
+Path: test/2022/day01/animated/day01_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2022/day01/animated/day01_animated.hs:32:15: error:
+    Variable not in scope: renderFrame :: Int -> IO b0
+   |
+32 |         mapM_ renderFrame frames
+   |               ^^^^^^^^^^^
+
+----------------------------------------
+Testing: 2022 Day 02 (Regular)
+Path: test/2022/day02/animated/day02_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 03 (Regular)
+Path: test/2022/day03/animated/day03_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 04 (Regular)
+Path: test/2022/day04/animated/day04_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 05 (Regular)
+Path: test/2022/day05/animated/day05_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 06 (Regular)
+Path: test/2022/day06/animated/day06_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 07 (Regular)
+Path: test/2022/day07/animated/day07_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 08 (Regular)
+Path: test/2022/day08/animated/day08_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 09 (Regular)
+Path: test/2022/day09/animated/day09_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 10 (Regular)
+Path: test/2022/day10/animated/day10_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 11 (Regular)
+Path: test/2022/day11/animated/day11_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 12 (Regular)
+Path: test/2022/day12/animated/day12_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 13 (Regular)
+Path: test/2022/day13/animated/day13_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 14 (Regular)
+Path: test/2022/day14/animated/day14_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 15 (Regular)
+Path: test/2022/day15/animated/day15_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 16 (Regular)
+Path: test/2022/day16/animated/day16_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 17 (Regular)
+Path: test/2022/day17/animated/day17_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 18 (Regular)
+Path: test/2022/day18/animated/day18_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 19 (Regular)
+Path: test/2022/day19/animated/day19_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 20 (Regular)
+Path: test/2022/day20/animated/day20_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 21 (Regular)
+Path: test/2022/day21/animated/day21_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2022 Day 22 (Regular)
+Path: test/2022/day22/animated/day22_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2022/day22/animated/day22_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2022/day22/animated/day22_animated.hs:37:1
+                 test/2022/day22/animated/day22_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2022 Day 23 (Regular)
+Path: test/2022/day23/animated/day23_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2022/day23/animated/day23_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2022/day23/animated/day23_animated.hs:37:1
+                 test/2022/day23/animated/day23_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2022 Day 24 (Regular)
+Path: test/2022/day24/animated/day24_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2022/day24/animated/day24_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2022/day24/animated/day24_animated.hs:37:1
+                 test/2022/day24/animated/day24_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2022 Day 25 (Regular)
+Path: test/2022/day25/animated/day25_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2022/day25/animated/day25_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2022/day25/animated/day25_animated.hs:37:1
+                 test/2022/day25/animated/day25_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+
+==================================================
+YEAR 2023 - Testing 21 animations
+==================================================
+----------------------------------------
+Testing: 2023 Day 01 (Regular)
+Path: test/2023/day01/animated/day01_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2023 Day 02 (Regular)
+Path: test/2023/day02/animated/day02_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day02/animated/day02_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day02/animated/day02_animated.hs:37:1
+                 test/2023/day02/animated/day02_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 03 (Regular)
+Path: test/2023/day03/animated/day03_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day03/animated/day03_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day03/animated/day03_animated.hs:37:1
+                 test/2023/day03/animated/day03_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 04 (Regular)
+Path: test/2023/day04/animated/day04_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day04/animated/day04_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day04/animated/day04_animated.hs:37:1
+                 test/2023/day04/animated/day04_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 05 (Regular)
+Path: test/2023/day05/animated/day05_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day05/animated/day05_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day05/animated/day05_animated.hs:37:1
+                 test/2023/day05/animated/day05_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 06 (Regular)
+Path: test/2023/day06/animated/day06_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day06/animated/day06_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day06/animated/day06_animated.hs:37:1
+                 test/2023/day06/animated/day06_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 07 (Regular)
+Path: test/2023/day07/animated/day07_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day07/animated/day07_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day07/animated/day07_animated.hs:37:1
+                 test/2023/day07/animated/day07_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 08 (Regular)
+Path: test/2023/day08/animated/day08_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day08/animated/day08_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day08/animated/day08_animated.hs:37:1
+                 test/2023/day08/animated/day08_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 09 (Regular)
+Path: test/2023/day09/animated/day09_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day09/animated/day09_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day09/animated/day09_animated.hs:37:1
+                 test/2023/day09/animated/day09_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 10 (Regular)
+Path: test/2023/day10/animated/day10_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2023 Day 11 (Regular)
+Path: test/2023/day11/animated/day11_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day11/animated/day11_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day11/animated/day11_animated.hs:37:1
+                 test/2023/day11/animated/day11_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 12 (Regular)
+Path: test/2023/day12/animated/day12_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day12/animated/day12_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day12/animated/day12_animated.hs:37:1
+                 test/2023/day12/animated/day12_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 13 (Regular)
+Path: test/2023/day13/animated/day13_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day13/animated/day13_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day13/animated/day13_animated.hs:37:1
+                 test/2023/day13/animated/day13_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 14 (Regular)
+Path: test/2023/day14/animated/day14_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2023 Day 15 (Regular)
+Path: test/2023/day15/animated/day15_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day15/animated/day15_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day15/animated/day15_animated.hs:37:1
+                 test/2023/day15/animated/day15_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 16 (Regular)
+Path: test/2023/day16/animated/day16_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2023 Day 17 (Regular)
+Path: test/2023/day17/animated/day17_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day17/animated/day17_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day17/animated/day17_animated.hs:37:1
+                 test/2023/day17/animated/day17_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 18 (Regular)
+Path: test/2023/day18/animated/day18_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day18/animated/day18_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day18/animated/day18_animated.hs:37:1
+                 test/2023/day18/animated/day18_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 19 (Regular)
+Path: test/2023/day19/animated/day19_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day19/animated/day19_animated.hs:51:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day19/animated/day19_animated.hs:37:1
+                 test/2023/day19/animated/day19_animated.hs:51:1
+   |
+51 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 20 (Regular)
+Path: test/2023/day20/animated/day20_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day20/animated/day20_animated.hs:56:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day20/animated/day20_animated.hs:42:1
+                 test/2023/day20/animated/day20_animated.hs:56:1
+   |
+56 | loadInput inputType = do
+   | ^^^^^^^^^
+
+----------------------------------------
+Testing: 2023 Day 21 (Regular)
+Path: test/2023/day21/animated/day21_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2023/day21/animated/day21_animated.hs:72:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day21/animated/day21_animated.hs:43:1
+                 test/2023/day21/animated/day21_animated.hs:72:1
+   |
+72 | loadInput inputType = do
+   | ^^^^^^^^^
+
+test/2023/day21/animated/day21_animated.hs:86:1: error:
+    Multiple declarations of ‘loadInput’
+    Declared at: test/2023/day21/animated/day21_animated.hs:43:1
+                 test/2023/day21/animated/day21_animated.hs:86:1
+   |
+86 | loadInput inputType = do
+   | ^^^^^^^^^
+
+
+==================================================
+YEAR 2024 - Testing Regular animations (days 1-16)
+==================================================
+----------------------------------------
+Testing: 2024 Day 01 (Regular)
+Path: test/2024/day01/animated/day01_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 02 (Regular)
+Path: test/2024/day02/animated/day02_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 03 (Regular)
+Path: test/2024/day03/animated/day03_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 04 (Regular)
+Path: test/2024/day04/animated/day04_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 05 (Regular)
+Path: test/2024/day05/animated/day05_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+[?25l[2J[?25hday05_animated.hs: Prelude.tail: empty list
+CallStack (from HasCallStack):
+  error, called at libraries/base/GHC/List.hs:1646:3 in base:GHC.List
+  errorEmptyList, called at libraries/base/GHC/List.hs:128:28 in base:GHC.List
+  tail, called at test/2024/day05/animated/day05_animated.hs:73:90 in main:Main
+
+----------------------------------------
+Testing: 2024 Day 06 (Regular)
+Path: test/2024/day06/animated/day06_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 07 (Regular)
+Path: test/2024/day07/animated/day07_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 08 (Regular)
+Path: test/2024/day08/animated/day08_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 09 (Regular)
+Path: test/2024/day09/animated/day09_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 10 (Regular)
+Path: test/2024/day10/animated/day10_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 11 (Regular)
+Path: test/2024/day11/animated/day11_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 12 (Regular)
+Path: test/2024/day12/animated/day12_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Part context: [Part 1] area × perimeter; [Part 2] area × sides.
+
+###..
+###..
+###*.
+###*.
+
+Current region: area=2, perimeter=6
+Completed regions: 6
+[1;1HGarden Groups - Region #8 (Plant: )
+Part context: [Part 1] area × perimeter; [Part 2] area × sides.
+
+###..
+###*.
+####.
+####.
+
+Current region: area=1, perimeter=4
+Completed regions: 7
+[?25hday12_animated.hs: (Array.!): undefined array element
+
+----------------------------------------
+Testing: 2024 Day 13 (Regular)
+Path: test/2024/day13/animated/day13_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 14 (Regular)
+Path: test/2024/day14/animated/day14_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: ERROR (exit code: 1) ❌
+Error output:
+Stack has not been tested with GHC versions above 8.10, and using 9.4.8, this may fail
+Stack has not been tested with Cabal versions above 3.2, but version 3.8.1.0 was found, this may fail
+
+test/2024/day14/animated/day14_animated.hs:22:1: error:
+    Could not find module ‘Linear’
+    Use -v (or `:set -v` in ghci) to see a list of the files searched for.
+   |
+22 | import Linear (V2(..))
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+----------------------------------------
+Testing: 2024 Day 15 (Regular)
+Path: test/2024/day15/animated/day15_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 16 (Regular)
+Path: test/2024/day16/animated/day16_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+
+==================================================
+YEAR 2024 - Testing Curated animations
+==================================================
+----------------------------------------
+Testing: 2024 Day 06 (Curated)
+Path: test/2024/curated/day06_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 10 (Curated)
+Path: test/2024/curated/day10_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 16 (Curated)
+Path: test/2024/curated/day16_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 18 (Curated)
+Path: test/2024/curated/day18_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+----------------------------------------
+Testing: 2024 Day 20 (Curated)
+Path: test/2024/curated/day20_animated.hs
+Input: example
+Running animation (timeout: 30s)...
+STATUS: COMPLETED SUCCESSFULLY ✓
+
+
+==================================================
+Testing Complete!
+==================================================
+
+Log saved to: animation_test_results.log
