@@ -4,7 +4,6 @@
    --package containers-0.6.7
    --package ansi-terminal-0.11.5
    --package split-0.2.3.5
-   --package linear
 -}
 
 -- |
@@ -19,7 +18,6 @@ import Data.Char (isDigit)
 import Data.List (foldl')
 import Data.List.Split (splitOn)
 import qualified Data.Map as M
-import Linear (V2(..))
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
@@ -28,8 +26,8 @@ import System.IO (hSetEncoding, stdout, utf8)
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
 
-type Velocity = V2 Int
-data Robot = Robot {rPos :: V2 Int, rVel :: Velocity} deriving (Show, Eq)
+type Velocity = (Int, Int)
+data Robot = Robot {rPos :: (Int, Int), rVel :: Velocity} deriving (Show, Eq)
 
 data Frame = Frame
     { fTime :: Int
@@ -94,7 +92,7 @@ parseInput contents = (robots, width, height)
             cleaned = filter (\c -> c `elem` (',':'-':[]) || isDigit c) normalized
             parts = map read . filter (not . null) . splitOn "," $ cleaned
         in case parts of
-            [px, py, vx, vy] -> Robot (V2 px py) (V2 vx vy)
+            [px, py, vx, vy] -> Robot (px, py) (vx, vy)
             _ -> error $ "Invalid robot line (expected 4 numbers): " ++ line
 
 buildFrames :: [Robot] -> Int -> Int -> [Frame]
@@ -107,14 +105,14 @@ simulateRobots :: Int -> [Robot] -> Int -> Int -> [Robot]
 simulateRobots time robots width height = map (moveRobot time width height) robots
 
 moveRobot :: Int -> Int -> Int -> Robot -> Robot
-moveRobot time width height (Robot (V2 px py) vel@(V2 vx vy)) =
-    Robot (V2 newX newY) vel
+moveRobot time width height (Robot (px, py) vel@(vx, vy)) =
+    Robot (newX, newY) vel
   where
     newX = (px + vx * time) `mod` width
     newY = (py + vy * time) `mod` height
 
-toPoint :: V2 Int -> Point
-toPoint (V2 x y) = (x, y)
+toPoint :: (Int, Int) -> Point
+toPoint (x, y) = (x, y)
 
 renderFrame :: Int -> Int -> (Int, Frame) -> IO ()
 renderFrame width height (idx, Frame time robots w h) = do
@@ -156,7 +154,7 @@ countQuadrants robots width height = (length q1, length q2, length q3, length q4
   where
     midX = width `div` 2
     midY = height `div` 2
-    q1 = [r | r@(Robot (V2 x y) _) <- robots, x < midX && y < midY]
-    q2 = [r | r@(Robot (V2 x y) _) <- robots, x > midX && y < midY]
-    q3 = [r | r@(Robot (V2 x y) _) <- robots, x < midX && y > midY]
-    q4 = [r | r@(Robot (V2 x y) _) <- robots, x > midX && y > midY]
+    q1 = [r | r@(Robot (x, y) _) <- robots, x < midX && y < midY]
+    q2 = [r | r@(Robot (x, y) _) <- robots, x > midX && y < midY]
+    q3 = [r | r@(Robot (x, y) _) <- robots, x < midX && y > midY]
+    q4 = [r | r@(Robot (x, y) _) <- robots, x > midX && y > midY]
