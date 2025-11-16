@@ -89,7 +89,7 @@ renderFrame total (idx, Frame left right pairIdx totalDist currentDist) = do
     let displayCount = min 10 (length left)
         pairs = zip left right
 
-        frameContent = unlines
+        frameContent = unlines (
             [ "Historian Hysteria - Pairing Sorted Lists"
             , "Frame " ++ show (idx + 1) ++ " / " ++ show total
             , "Part context: [Part 1] sum distances; [Part 2] similarity score."
@@ -108,7 +108,7 @@ renderFrame total (idx, Frame left right pairIdx totalDist currentDist) = do
             [ ""
             , "Lists are sorted before pairing"
             , "Distance = |left - right| for each pair"
-            ]
+            ])
 
     setCursorPosition 0 0
     putStr frameContent
