@@ -51,27 +51,32 @@ Days: 22, 23, 24, 25
 
 ## 2024 Animations
 
+> **⚠️ Organizational Issue**: 2024 has animations split between two directories, causing confusion.
+> See [CURATED_DIRECTORY_ASSESSMENT.md](CURATED_DIRECTORY_ASSESSMENT.md) for detailed analysis and recommendations.
+
 ### Curated Animations (5 days) - All Real Animations
 
 Located in `test/2024/curated/`
 
-| Day | Title | Animation Type |
-|-----|-------|----------------|
-| 06 | Guard Gallivant | Guard patrolling with cycle detection (~169 lines) |
-| 10 | Hoof It | BFS wavefront expansion on heightmap |
-| 16 | Reindeer Maze | Dijkstra's pathfinding with directional state |
-| 18 | RAM Run | Bytes falling with dynamic path recalculation |
-| 20 | Race Condition | Race track with cheat detection |
+| Day | Title | Animation Type | Tech |
+|-----|-------|----------------|------|
+| 06 | Guard Gallivant | Guard patrolling with cycle detection (~169 lines) | Custom ANSI |
+| 10 | Hoof It | BFS wavefront expansion on heightmap | Custom ANSI |
+| 16 | Reindeer Maze | Dijkstra's pathfinding with directional state | Custom ANSI |
+| 18 | RAM Run | Bytes falling with dynamic path recalculation | Custom ANSI |
+| 20 | Race Condition | Race track with cheat detection | Custom ANSI |
 
 ### Standard Animations (12 days) - All Progress Bar
 
 Located in `test/2024/dayNN/animated/`
 
-Days: 01, 02, 03, 04, 05, 07, 08, 09, 11, 12, 13, 14
+| Days | Tech |
+|------|------|
+| 01, 02, 03, 04, 05, 07, 08, 09, 11, 12, 13, 14 | AsciiWorld |
 
 ### Placeholders (4 days)
 
-Days: 06, 10, 15, 16 (in standard directory - real animations are in curated)
+Days: 06, 10, 15, 16 (in standard directory - **real animations exist in curated for days 06, 10, 16**)
 
 ### No Animation
 
