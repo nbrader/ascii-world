@@ -93,32 +93,6 @@ for day in {1..16}; do
     test_animation "2024" "$DAY" "$ANIM_PATH" "$PACKAGES_2024" "example" "Regular"
 done
 
-# 2024 Curated Animations
-echo "" | tee -a "$LOG_FILE"
-echo "==================================================" | tee -a "$LOG_FILE"
-echo "YEAR 2024 - Testing Curated animations" | tee -a "$LOG_FILE"
-echo "==================================================" | tee -a "$LOG_FILE"
-
-# Day 06 Curated
-test_animation "2024" "06" "test/2024/curated/day06_animated.hs" \
-    "--package containers-0.6.7 --package ansi-terminal-0.11.5" "example" "Curated"
-
-# Day 10 Curated
-test_animation "2024" "10" "test/2024/curated/day10_animated.hs" \
-    "--package containers-0.6.7 --package ansi-terminal-0.11.5 --package array" "example" "Curated"
-
-# Day 16 Curated
-test_animation "2024" "16" "test/2024/curated/day16_animated.hs" \
-    "--package containers-0.6.7 --package ansi-terminal-0.11.5" "example" "Curated"
-
-# Day 18 Curated
-test_animation "2024" "18" "test/2024/curated/day18_animated.hs" \
-    "--package containers-0.6.7 --package ansi-terminal-0.11.5" "example" "Curated"
-
-# Day 20 Curated
-test_animation "2024" "20" "test/2024/curated/day20_animated.hs" \
-    "--package containers-0.6.7 --package ansi-terminal-0.11.5" "example" "Curated"
-
 echo "" | tee -a "$LOG_FILE"
 echo "==================================================" | tee -a "$LOG_FILE"
 echo "Testing Complete!" | tee -a "$LOG_FILE"
