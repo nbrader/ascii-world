@@ -118,7 +118,7 @@ showOp Mul = "*"
 renderFrame :: Int -> (Int, Frame) -> IO ()
 renderFrame total (idx, Frame (Equation target nums) ops steps result matches eqIdx totalEqs solved) = do
     let expr = buildExpression nums ops
-        frameContent = unlines
+        frameContent = unlines (
             [ "Bridge Repair - Equation " ++ show (eqIdx + 1) ++ " / " ++ show totalEqs
             , "Frame " ++ show (idx + 1) ++ " / " ++ show total
             , "Part context: [Part 1] + and ×; [Part 2] add concatenation ||."
@@ -127,7 +127,7 @@ renderFrame total (idx, Frame (Equation target nums) ops steps result matches eq
             , "Testing: " ++ expr
             , ""
             , "Evaluation steps:"
-            ] ++ ["  " ++ step | (step, _) <- steps] ++ unlines
+            ] ++ ["  " ++ step | (step, _) <- steps] ++
             [ ""
             , "Final result: " ++ show result
             , if matches
@@ -135,7 +135,7 @@ renderFrame total (idx, Frame (Equation target nums) ops steps result matches eq
               else "No match (continuing search...)"
             , ""
             , "Operators: + (add), * (multiply)"
-            ]
+            ])
 
     setCursorPosition 0 0
     putStr frameContent

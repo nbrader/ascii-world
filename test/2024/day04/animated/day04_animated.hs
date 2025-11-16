@@ -114,7 +114,7 @@ renderFrame grid total (idx, Frame pos foundWords currentMatch matchFound) = do
         current = S.fromList [p | (p, _) <- currentMatch]
         totalWords = length foundWords
 
-        frameContent = unlines
+        frameContent = unlines (
             [ "Ceres Search - Finding XMAS - frame " ++ show (idx + 1) ++ " / " ++ show total
             , "Part context: [Part 1] find all XMAS; [Part 2] find X-MAS patterns."
             , ""
@@ -125,7 +125,7 @@ renderFrame grid total (idx, Frame pos foundWords currentMatch matchFound) = do
             ] ++ gridRows grid w h pos allFound current ++
             [ ""
             , "Legend: @ = scanning, # = found word, * = current match"
-            ]
+            ])
 
     setCursorPosition 0 0
     putStr frameContent
