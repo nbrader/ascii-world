@@ -20,7 +20,7 @@ import qualified Data.Map as M
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
@@ -28,6 +28,7 @@ import Mask (Point)
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadInput inputType
@@ -110,14 +111,6 @@ rotateCW90 = transpose . Data.List.reverse
 
 renderFrame :: Frame -> IO ()
 renderFrame frame = do
-    setCursorPosition 0 0
-    putStrLn "Parabolic Reflector Dish - Rolling Rocks"
-    putStrLn "[Part 2] Spin cycle: North -> West -> South -> East"
-    putStrLn ""
-    putStrLn $ "Direction: " ++ frameDirection frame
-    putStrLn $ "Step: " ++ show (frameStep frame)
-    putStrLn ""
-
     -- Calculate load (Part 1 metric)
     let grid = frameGrid frame
         height = length grid
@@ -125,9 +118,19 @@ renderFrame frame = do
                    | (y, row) <- zip [0..] grid
                    , c <- row
                    ]
-    putStrLn $ "Load on north support: " ++ show load
-    putStrLn ""
 
-    -- Print grid
-    mapM_ putStrLn (frameGrid frame)
+    -- Build entire frame as single string and output atomically
+    let frameContent = unlines
+            [ "Parabolic Reflector Dish - Rolling Rocks"
+            , "[Part 2] Spin cycle: North -> West -> South -> East"
+            , ""
+            , "Direction: " ++ frameDirection frame
+            , "Step: " ++ show (frameStep frame)
+            , ""
+            , "Load on north support: " ++ show load
+            , ""
+            ] ++ unlines (frameGrid frame)
+
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 200000  -- 200ms delay

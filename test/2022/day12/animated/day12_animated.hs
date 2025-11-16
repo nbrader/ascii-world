@@ -22,7 +22,7 @@ import Data.Maybe (listToMaybe, fromMaybe)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
@@ -33,6 +33,7 @@ type HeightMap = M.Map Pos Int
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadInput inputType
@@ -145,18 +146,6 @@ neighbors heightMap (y, x) =
 
 renderFrame :: Frame -> IO ()
 renderFrame frame = do
-    setCursorPosition 0 0
-    putStrLn "Hill Climbing Algorithm - Pathfinding"
-    putStrLn "[Part 1] Find path from S to E, climbing at most +1 per step"
-    putStrLn ""
-    putStrLn $ "Step: " ++ show (frameStep frame)
-    putStrLn $ "Visited: " ++ show (S.size $ frameVisited frame)
-    putStrLn $ "Frontier: " ++ show (S.size $ frameFrontier frame)
-    if frameFound frame
-        then putStrLn $ "Path found! Length: " ++ show (length $ framePath frame)
-        else putStrLn "Searching..."
-    putStrLn ""
-
     -- Calculate bounds
     let allPos = M.keys (frameHeightMap frame)
         minY = minimum (map fst allPos)
@@ -185,9 +174,26 @@ renderFrame frame = do
             | h <= 22 = '#'
             | otherwise = '%'
 
-    -- Print grid
+    -- Build grid lines
     let gridLines = [ [ M.findWithDefault ' ' (y, x) charGrid
                       | x <- [minX..maxX] ]
                     | y <- [minY..maxY] ]
-    mapM_ putStrLn gridLines
+
+    -- Build entire frame as single string and output atomically
+    let statusLine = if frameFound frame
+            then "Path found! Length: " ++ show (length $ framePath frame)
+            else "Searching..."
+        frameContent = unlines
+            [ "Hill Climbing Algorithm - Pathfinding"
+            , "[Part 1] Find path from S to E, climbing at most +1 per step"
+            , ""
+            , "Step: " ++ show (frameStep frame)
+            , "Visited: " ++ show (S.size $ frameVisited frame)
+            , "Frontier: " ++ show (S.size $ frameFrontier frame)
+            , statusLine
+            , ""
+            ] ++ unlines gridLines
+
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 100000  -- 100ms delay

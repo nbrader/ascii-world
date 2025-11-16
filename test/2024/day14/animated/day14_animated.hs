@@ -21,7 +21,7 @@ import qualified Data.Map as M
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
@@ -39,6 +39,7 @@ data Frame = Frame
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadInput inputType
@@ -116,11 +117,6 @@ toPoint (x, y) = (x, y)
 
 renderFrame :: Int -> Int -> (Int, Frame) -> IO ()
 renderFrame width height (idx, Frame time robots w h) = do
-    setCursorPosition 0 0
-    putStrLn $ "Restroom Redoubt - Time: " ++ show time ++ "s (frame " ++ show (idx + 1) ++ ")"
-    putStrLn "Part context: [Part 1] safety factor after 100s; [Part 2] find Christmas tree pattern."
-    putStrLn ""
-
     -- Create AsciiWorld with robot positions
     let robotPoints = map (toPoint . rPos) robots
         asciiWorld = AsciiWorld
@@ -134,16 +130,27 @@ renderFrame width height (idx, Frame time robots w h) = do
         nameZOrder = compare
         worldStr = showAsciiWorld h bgChar maskToChar pointsToChar nameZOrder asciiWorld
 
-    putStr worldStr
-    putStrLn ""
-    putStrLn $ "Total robots: " ++ show (length robots)
+        -- Build quadrant info if applicable
+        quadrantLines = if time == 100 && w == 101
+            then let (q1, q2, q3, q4) = countQuadrants robots w h
+                 in [ "Quadrants (at t=100): " ++ show [q1, q2, q3, q4]
+                    , "Safety factor: " ++ show (q1 * q2 * q3 * q4)
+                    ]
+            else []
 
-    -- Show quadrant counts at t=100
-    when (time == 100 && w == 101) $ do
-        let (q1, q2, q3, q4) = countQuadrants robots w h
-        putStrLn $ "Quadrants (at t=100): " ++ show [q1, q2, q3, q4]
-        putStrLn $ "Safety factor: " ++ show (q1 * q2 * q3 * q4)
+    -- Build entire frame as single string and output atomically
+    let frameContent = unlines
+            [ "Restroom Redoubt - Time: " ++ show time ++ "s (frame " ++ show (idx + 1) ++ ")"
+            , "Part context: [Part 1] safety factor after 100s; [Part 2] find Christmas tree pattern."
+            , ""
+            ] ++ worldStr ++ unlines
+            ( [ ""
+              , "Total robots: " ++ show (length robots)
+              ] ++ quadrantLines
+            )
 
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 100000
   where
     when True action = action

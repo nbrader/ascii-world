@@ -20,7 +20,7 @@ import qualified Data.Set as S
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 type Point = (Int, Int)
 type HeightMap = Array Point Int
@@ -33,6 +33,7 @@ data FrontFrame = FrontFrame
 main :: IO ()
 main = do
     hSetEncoding stdout utf8  -- Windows compatibility
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadMap inputType
@@ -110,13 +111,18 @@ buildFrames grid = zipWith FrontFrame [0 .. 9] levelSets
 renderFrame :: HeightMap -> Int -> (Int, FrontFrame) -> IO ()
 renderFrame grid total (idx, FrontFrame level active) = do
     let (_, (maxX, maxY)) = bounds grid
+        -- Build entire frame as single string and output atomically
+        frameContent = unlines
+            [ "Hoof It - height " ++ show level ++ " (" ++ show (idx + 1) ++ " / " ++ show total ++ ")"
+            , "Part context: [Part 1] counts trailhead scores; [Part 2] uses the same wave for ratings."
+            ] ++ unlines (renderRows maxX maxY active) ++ unlines
+            [ ""
+            , "Active cells at this height: " ++ show (S.size active)
+            , "Legend: digits show heights, [d] marks the current wavefront"
+            ]
+
     setCursorPosition 0 0
-    putStrLn $ "Hoof It - height " ++ show level ++ " (" ++ show (idx + 1) ++ " / " ++ show total ++ ")"
-    putStrLn "Part context: [Part 1] counts trailhead scores; [Part 2] uses the same wave for ratings."
-    mapM_ putStrLn (renderRows maxX maxY active)
-    putStrLn ""
-    putStrLn $ "Active cells at this height: " ++ show (S.size active)
-    putStrLn "Legend: digits show heights, [d] marks the current wavefront"
+    putStr frameContent
     threadDelay 150000
   where
     renderRows maxX maxY active =

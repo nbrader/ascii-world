@@ -17,7 +17,7 @@ import qualified Data.Set as S
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 type Point = (Int, Int)
 type Direction = (Int, Int)
@@ -34,6 +34,7 @@ data Frame = Frame
 main :: IO ()
 main = do
     hSetEncoding stdout utf8  -- Windows compatibility
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadMap inputType
@@ -132,13 +133,18 @@ inBounds width height (x, y) = x >= 0 && x < width && y >= 0 && y < height
 
 renderFrame :: Int -> Int -> S.Set Point -> Int -> (Int, Frame) -> IO ()
 renderFrame width height obstacles total (idx, Frame (pos, dir) visited tag) = do
+    -- Build entire frame as single string and output atomically
+    let frameContent = unlines
+            [ "Guard Gallivant animation - frame " ++ show (idx + 1) ++ " / " ++ show total
+            , "Part context: [Part 1] Follow the guard's route; [Part 2] watch for loop warnings."
+            ] ++ unlines (gridRows width height pos dir visited obstacles) ++ unlines
+            [ ""
+            , "Status: " ++ describe tag
+            , "Legend: ^v<> guard, # obstacle, . visited path"
+            ]
+
     setCursorPosition 0 0
-    putStrLn $ "Guard Gallivant animation - frame " ++ show (idx + 1) ++ " / " ++ show total
-    putStrLn "Part context: [Part 1] Follow the guard's route; [Part 2] watch for loop warnings."
-    mapM_ putStrLn (gridRows width height pos dir visited obstacles)
-    putStrLn ""
-    putStrLn $ "Status: " ++ describe tag
-    putStrLn "Legend: ^v<> guard, # obstacle, . visited path"
+    putStr frameContent
     threadDelay 120000
 
 gridRows :: Int -> Int -> Point -> Direction -> S.Set Point -> S.Set Point -> [String]

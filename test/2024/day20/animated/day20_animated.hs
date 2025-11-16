@@ -19,7 +19,7 @@ import Data.Maybe (fromMaybe)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 type Point = (Int, Int)
 type Path = [Point]
@@ -34,6 +34,7 @@ data AnimFrame
 main :: IO ()
 main = do
     hSetEncoding stdout utf8  -- Windows compatibility
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadMap inputType
@@ -157,26 +158,33 @@ buildFrames path shortCheats longCheats =
 
 renderFrame :: Int -> Int -> S.Set Point -> Path -> (Int, AnimFrame) -> IO ()
 renderFrame width height walls path (idx, frame) = do
-    setCursorPosition 0 0
-    putStrLn $ "Race Condition - Track Analysis"
-    case frame of
-        PathFrame step currentPos -> do
-            putStrLn "[Part 1] Tracing the main path"
-            putStrLn $ "Step " ++ show step ++ " / " ++ show (length path - 1)
-            putStrLn $ "Position: " ++ show currentPos
-            putStrLn ""
-            let pathSoFar = S.fromList $ take (step + 1) path
-            mapM_ putStrLn (renderRows width height walls pathSoFar Nothing Nothing)
-            threadDelay 30000  -- 30ms per step
+    -- Build frame content based on frame type
+    let (frameContent, delay) = case frame of
+            PathFrame step currentPos ->
+                let pathSoFar = S.fromList $ take (step + 1) path
+                    content = unlines
+                        [ "Race Condition - Track Analysis"
+                        , "[Part 1] Tracing the main path"
+                        , "Step " ++ show step ++ " / " ++ show (length path - 1)
+                        , "Position: " ++ show currentPos
+                        , ""
+                        ] ++ unlines (renderRows width height walls pathSoFar Nothing Nothing)
+                in (content, 30000)  -- 30ms per step
 
-        CheatFrame partTag cheatStart cheatEnd timeSaved -> do
-            putStrLn $ partLabel partTag ++ " Showing cheat shortcut"
-            putStrLn $ "From: " ++ show cheatStart ++ " To: " ++ show cheatEnd
-            putStrLn $ "Time saved: " ++ show timeSaved ++ " picoseconds"
-            putStrLn ""
-            let pathSet = S.fromList path
-            mapM_ putStrLn (renderRows width height walls pathSet (Just cheatStart) (Just cheatEnd))
-            threadDelay 200000  -- 200ms per cheat
+            CheatFrame partTag cheatStart cheatEnd timeSaved ->
+                let pathSet = S.fromList path
+                    content = unlines
+                        [ "Race Condition - Track Analysis"
+                        , partLabel partTag ++ " Showing cheat shortcut"
+                        , "From: " ++ show cheatStart ++ " To: " ++ show cheatEnd
+                        , "Time saved: " ++ show timeSaved ++ " picoseconds"
+                        , ""
+                        ] ++ unlines (renderRows width height walls pathSet (Just cheatStart) (Just cheatEnd))
+                in (content, 200000)  -- 200ms per cheat
+
+    setCursorPosition 0 0
+    putStr frameContent
+    threadDelay delay
 
 partLabel :: PartTag -> String
 partLabel Part1Tag = "[Part 1]"

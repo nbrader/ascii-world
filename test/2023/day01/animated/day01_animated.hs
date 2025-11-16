@@ -330,17 +330,18 @@ framesForLine allLines processedBefore totalsBefore lineIdx lineText =
 
 renderFrame :: AnimationDimensions -> Int -> (Int, Frame) -> IO ()
 renderFrame dims totalFrames (frameIdx, frame) = do
-    setCursorPosition 0 0
-    putStrLn "AoC 2023 Day 01 - Trebuchet!"
-    putStrLn $ "Frame " ++ show frameIdx ++ " / " ++ show totalFrames
-    putStrLn $ describeStage dims frame
-    putStrLn $ describeTotals frame
-    putStrLn ""
     let world = frameToWorld dims frame
         ascii = showAsciiWorld (adHeight dims) ' ' maskToChar pointsToChar indexZOrder world
-    putStr ascii
-    putStrLn ""
-    mapM_ putStrLn (detailLines dims frame)
+        frameContent = unlines
+            [ "AoC 2023 Day 01 - Trebuchet!"
+            , "Frame " ++ show frameIdx ++ " / " ++ show totalFrames
+            , describeStage dims frame
+            , describeTotals frame
+            , ""
+            ] ++ ascii ++ "\n" ++ unlines (detailLines dims frame)
+
+    setCursorPosition 0 0
+    putStr frameContent
     clearFromCursorToScreenEnd
     threadDelay frameDelayMicros
 

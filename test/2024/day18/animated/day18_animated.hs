@@ -137,7 +137,7 @@ renderFrame gridSize total (idx, frame) = do
         Just (x, y) -> putStrLn $ "New byte at: (" ++ show x ++ "," ++ show y ++ ")"
         Nothing -> putStrLn "Initial state"
     putStrLn ""
-    mapM_ putStrLn (renderRows gridSize frame)
+    putStr (unlines (renderRows gridSize frame))
     putStrLn ""
     case afPath frame of
         Just path -> putStrLn $ "[Part 1] Path exists! Length: " ++ show (length path - 1)

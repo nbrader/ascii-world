@@ -19,7 +19,7 @@ import Data.Set (Set)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
@@ -32,6 +32,7 @@ type Grid = M.Map Pos Char
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadInput inputType
@@ -146,15 +147,6 @@ stepBeam grid width height visited ((y, x), (dy, dx)) =
 
 renderFrame :: Frame -> IO ()
 renderFrame frame = do
-    setCursorPosition 0 0
-    putStrLn "The Floor Will Be Lava - Beam Tracing"
-    putStrLn "[Part 1] Light beams bounce off mirrors and split"
-    putStrLn ""
-    putStrLn $ "Step: " ++ show (frameStep frame)
-    putStrLn $ "Active beams: " ++ show (length $ frameBeams frame)
-    putStrLn $ "Energized tiles: " ++ show (S.size $ frameEnergized frame)
-    putStrLn ""
-
     -- Build character grid
     let energized = frameEnergized frame
         beamPositions = S.fromList (map fst $ frameBeams frame)
@@ -168,9 +160,22 @@ renderFrame frame = do
             | pos `S.member` energized = '#'  -- Energized
             | otherwise = M.findWithDefault '.' pos (frameGrid frame)
 
-    -- Print grid
+    -- Build grid lines
     let gridLines = [ [ M.findWithDefault '.' (y, x) charGrid
                       | x <- [0..frameWidth frame - 1] ]
                     | y <- [0..frameHeight frame - 1] ]
-    mapM_ putStrLn gridLines
+
+    -- Build entire frame as single string and output atomically
+    let frameContent = unlines
+            [ "The Floor Will Be Lava - Beam Tracing"
+            , "[Part 1] Light beams bounce off mirrors and split"
+            , ""
+            , "Step: " ++ show (frameStep frame)
+            , "Active beams: " ++ show (length $ frameBeams frame)
+            , "Energized tiles: " ++ show (S.size $ frameEnergized frame)
+            , ""
+            ] ++ unlines gridLines
+
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 100000  -- 100ms delay

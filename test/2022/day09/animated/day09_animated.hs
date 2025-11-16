@@ -22,7 +22,7 @@ import Data.List.Split (splitOn)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
@@ -33,6 +33,7 @@ type Rope = [Pos]  -- Head is first, tail segments follow
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadInput inputType
@@ -128,15 +129,6 @@ followHead (hx, hy) (tx, ty) =
 
 renderFrame :: Frame -> IO ()
 renderFrame frame = do
-    setCursorPosition 0 0
-    putStrLn "Rope Bridge - Rope Physics Simulation"
-    putStrLn "[Part 2] 10-knot rope: H + tails 1-9"
-    putStrLn ""
-    putStrLn $ "Command: " ++ frameCommand frame
-    putStrLn $ "Step: " ++ show (frameStep frame)
-    putStrLn $ "Tail visited positions: " ++ show (S.size $ frameVisited frame)
-    putStrLn ""
-
     -- Calculate bounds
     let rope = frameRope frame
         visited = S.toList $ frameVisited frame
@@ -161,11 +153,24 @@ renderFrame frame = do
             | pos `S.member` frameVisited frame = '#'  -- Visited by tail
             | otherwise = '.'
 
-    -- Print grid
+    -- Build grid lines
     let gridLines = [ [ M.findWithDefault '.' (x, y) charGrid
                       | x <- [0..width-1] ]
                     | y <- [0..height-1] ]
-    mapM_ putStrLn gridLines
+
+    -- Build entire frame as single string and output atomically
+    let frameContent = unlines
+            [ "Rope Bridge - Rope Physics Simulation"
+            , "[Part 2] 10-knot rope: H + tails 1-9"
+            , ""
+            , "Command: " ++ frameCommand frame
+            , "Step: " ++ show (frameStep frame)
+            , "Tail visited positions: " ++ show (S.size $ frameVisited frame)
+            , ""
+            ] ++ unlines gridLines
+
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 100000  -- 100ms delay
 
 addV2 :: (Int, Int) -> (Int, Int) -> (Int, Int)
