@@ -1,13 +1,12 @@
 #!/usr/bin/env stack
 {- stack --resolver lts-21.22 runghc
-   --package ascii-world
    --package containers-0.6.7
    --package ansi-terminal-0.11.5
 -}
 
 -- |
 -- Animated visualization for AoC 2024 Day 07 ("Bridge Repair").
--- Shows equation solving with different operators.
+-- Shows equation solving with step-by-step operator testing.
 
 module Main where
 
@@ -15,30 +14,40 @@ import Control.Concurrent (threadDelay)
 import Control.Exception (bracket_)
 import Data.Char (isDigit)
 import Data.List (intersperse)
-import qualified Data.Map as M
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
-
-import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
-import Mask (Point)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 data Equation = Equation { eqTarget :: Int, eqNumbers :: [Int] } deriving (Show)
 data Operator = Add | Mul deriving (Show, Eq)
 
+data Frame = Frame
+    { frameEq :: Equation
+    , frameOps :: [Operator]
+    , frameSteps :: [(String, Int)]  -- Evaluation steps
+    , frameResult :: Int
+    , frameMatches :: Bool
+    , frameEqIndex :: Int
+    , frameTotalEqs :: Int
+    , frameSolved :: Bool  -- Whether this equation was solved
+    }
+
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadInput inputType
     let equations = parseEquations contents
-        frames = concatMap buildFramesForEq (take 3 equations)
+        totalEqs = length equations
+        frames = concatMap (buildFramesForEq totalEqs) (zip [0..] (take 5 equations))
+        total = length frames
     bracket_ hideCursor showCursor $ do
         clearScreen
-        mapM_ renderFrame frames
-    setCursorPosition 25 0
+        mapM_ (renderFrame total) (zip [0..] frames)
+    setCursorPosition 30 0
     putStrLn "Bridge Repair animation complete."
 
 loadInput :: String -> IO String
@@ -74,56 +83,63 @@ parseEquations = map parseLine . lines
         let (target:rest) = filter (not . null) $ words $ map (\c -> if c == ':' then ' ' else c) line
         in Equation (read target) (map read rest)
 
-buildFramesForEq :: Equation -> [(Equation, [Operator], Int, Bool)]
-buildFramesForEq eq@(Equation target nums) =
+buildFramesForEq :: Int -> (Int, Equation) -> [Frame]
+buildFramesForEq totalEqs (eqIdx, eq@(Equation target nums)) =
     let attempts = generateAttempts (length nums - 1)
-    in map (\ops -> (eq, ops, evaluate nums ops, evaluate nums ops == target)) attempts
+        results = map (\ops -> (ops, evaluateWithSteps nums ops)) attempts
+        solved = any (\(_, (steps, result)) -> result == target) results
+    in concatMap (\(ops, (steps, result)) ->
+        let matches = result == target
+        in [Frame eq ops steps result matches eqIdx totalEqs solved]
+        ++ if matches then [Frame eq ops steps result True eqIdx totalEqs solved] else []
+       ) results
 
 generateAttempts :: Int -> [[Operator]]
 generateAttempts 0 = [[]]
 generateAttempts n = [op:rest | op <- [Add, Mul], rest <- generateAttempts (n-1)]
 
-evaluate :: [Int] -> [Operator] -> Int
-evaluate [] _ = 0
-evaluate [n] _ = n
-evaluate (n:ns) (op:ops) =
-    let rest = evaluate ns ops
-    in case op of
-        Add -> n + rest
-        Mul -> n * rest
-evaluate _ _ = 0
+evaluateWithSteps :: [Int] -> [Operator] -> ([(String, Int)], Int)
+evaluateWithSteps nums ops = go nums ops []
+  where
+    go [n] [] steps = (reverse steps, n)
+    go (n1:n2:ns) (op:ops) steps =
+        let result = applyOp op n1 n2
+            step = show n1 ++ " " ++ showOp op ++ " " ++ show n2 ++ " = " ++ show result
+        in go (result:ns) ops ((step, result):steps)
+    go _ _ steps = (reverse steps, 0)
 
-renderFrame :: (Equation, [Operator], Int, Bool) -> IO ()
-renderFrame (Equation target nums, ops, result, solved) = do
-    setCursorPosition 0 0
-    putStrLn $ "Bridge Repair - Target: " ++ show target
-    putStrLn "Part context: [Part 1] + and ×; [Part 2] add concatenation ||."
-    putStrLn ""
+    applyOp Add a b = a + b
+    applyOp Mul a b = a * b
 
+showOp :: Operator -> String
+showOp Add = "+"
+showOp Mul = "*"
+
+renderFrame :: Int -> (Int, Frame) -> IO ()
+renderFrame total (idx, Frame (Equation target nums) ops steps result matches eqIdx totalEqs solved) = do
     let expr = buildExpression nums ops
-    putStrLn $ "Testing: " ++ expr
-    putStrLn $ "Result: " ++ show result
-    putStrLn $ "Match: " ++ if solved then "YES!" else "no"
-    putStrLn ""
+        frameContent = unlines (
+            [ "Bridge Repair - Equation " ++ show (eqIdx + 1) ++ " / " ++ show totalEqs
+            , "Frame " ++ show (idx + 1) ++ " / " ++ show total
+            , "Part context: [Part 1] + and ×; [Part 2] add concatenation ||."
+            , ""
+            , "Target: " ++ show target
+            , "Testing: " ++ expr
+            , ""
+            , "Evaluation steps:"
+            ] ++ ["  " ++ step | (step, _) <- steps] ++
+            [ ""
+            , "Final result: " ++ show result
+            , if matches
+              then "*** MATCH FOUND! ***"
+              else "No match (continuing search...)"
+            , ""
+            , "Operators: + (add), * (multiply)"
+            ])
 
-    -- Visualize as a simple grid showing success/failure
-    let width = 40
-        height = 3
-        statusPoint = if solved then [(20, 1)] else []
-        asciiWorld = AsciiWorld
-            { asciiWorldMasks = M.empty
-            , asciiWorldPoints = M.fromList [("Success", statusPoint)]
-            , asciiWorldWidth = width
-            }
-        bgChar = '.'
-        maskToChar = id
-        pointsToChar = const '√'
-        nameZOrder = compare
-        worldStr = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld
-
-    putStr worldStr
-
-    threadDelay (if solved then 500000 else 50000)
+    setCursorPosition 0 0
+    putStr frameContent
+    threadDelay (if matches then 400000 else 30000)
   where
     buildExpression :: [Int] -> [Operator] -> String
     buildExpression [] _ = ""
@@ -131,6 +147,3 @@ renderFrame (Equation target nums, ops, result, solved) = do
     buildExpression (n:ns) (op:ops) =
         show n ++ " " ++ showOp op ++ " " ++ buildExpression ns ops
     buildExpression _ _ = ""
-
-    showOp Add = "+"
-    showOp Mul = "*"
