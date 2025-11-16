@@ -121,16 +121,6 @@ buildFrames rocks maxDepth source inputType =
 
 renderFrame :: Frame -> IO ()
 renderFrame frame = do
-    setCursorPosition 0 0
-    putStrLn "Regolith Reservoir - Falling Sand"
-    putStrLn "[Part 1] Sand falls into the void below"
-    putStrLn ""
-    putStrLn $ "Sand units at rest: " ++ show (frameCount frame)
-    if frameFellOff frame
-        then putStrLn "Status: Sand falling into the abyss!"
-        else putStrLn $ "Status: " ++ maybe "Waiting..." (const "Sand falling...") (frameFalling frame)
-    putStrLn ""
-
     -- Calculate bounds
     let allPoints = frameRocks frame `S.union` frameSand frame
         allPointsList = S.toList allPoints ++ maybe [] (:[]) (frameFalling frame) ++ [(500, 0)]
@@ -154,11 +144,26 @@ renderFrame frame = do
             | pos `S.member` frameSand frame = 'o'
             | otherwise = '.'
 
-    -- Print grid directly (simpler than using AsciiWorld for this)
+    -- Build grid lines
     let gridLines = [ [ M.findWithDefault '.' (x, y) charGrid
                       | x <- [0..width-1] ]
                     | y <- [0..height-1] ]
-    putStr (unlines gridLines)
+
+    -- Build entire frame as single string and output atomically
+    let statusLine = if frameFellOff frame
+            then "Status: Sand falling into the abyss!"
+            else "Status: " ++ maybe "Waiting..." (const "Sand falling...") (frameFalling frame)
+        frameContent = unlines
+            [ "Regolith Reservoir - Falling Sand"
+            , "[Part 1] Sand falls into the void below"
+            , ""
+            , "Sand units at rest: " ++ show (frameCount frame)
+            , statusLine
+            , ""
+            ] ++ unlines gridLines
+
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 50000  -- 50ms delay
 
 addV2 :: (Int, Int) -> (Int, Int) -> (Int, Int)

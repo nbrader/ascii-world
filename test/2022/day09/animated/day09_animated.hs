@@ -128,15 +128,6 @@ followHead (hx, hy) (tx, ty) =
 
 renderFrame :: Frame -> IO ()
 renderFrame frame = do
-    setCursorPosition 0 0
-    putStrLn "Rope Bridge - Rope Physics Simulation"
-    putStrLn "[Part 2] 10-knot rope: H + tails 1-9"
-    putStrLn ""
-    putStrLn $ "Command: " ++ frameCommand frame
-    putStrLn $ "Step: " ++ show (frameStep frame)
-    putStrLn $ "Tail visited positions: " ++ show (S.size $ frameVisited frame)
-    putStrLn ""
-
     -- Calculate bounds
     let rope = frameRope frame
         visited = S.toList $ frameVisited frame
@@ -161,11 +152,24 @@ renderFrame frame = do
             | pos `S.member` frameVisited frame = '#'  -- Visited by tail
             | otherwise = '.'
 
-    -- Print grid
+    -- Build grid lines
     let gridLines = [ [ M.findWithDefault '.' (x, y) charGrid
                       | x <- [0..width-1] ]
                     | y <- [0..height-1] ]
-    putStr (unlines gridLines)
+
+    -- Build entire frame as single string and output atomically
+    let frameContent = unlines
+            [ "Rope Bridge - Rope Physics Simulation"
+            , "[Part 2] 10-knot rope: H + tails 1-9"
+            , ""
+            , "Command: " ++ frameCommand frame
+            , "Step: " ++ show (frameStep frame)
+            , "Tail visited positions: " ++ show (S.size $ frameVisited frame)
+            , ""
+            ] ++ unlines gridLines
+
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 100000  -- 100ms delay
 
 addV2 :: (Int, Int) -> (Int, Int) -> (Int, Int)

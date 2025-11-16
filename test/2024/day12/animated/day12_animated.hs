@@ -130,11 +130,6 @@ renderFrame (Frame grid current completed plant regionNum) = do
         width = maxX + 1
         height = maxY + 1
 
-    setCursorPosition 0 0
-    putStrLn $ "Garden Groups - Region #" ++ show (regionNum + 1) ++ " (Plant: " ++ [plant] ++ ")"
-    putStrLn "Part context: [Part 1] area × perimeter; [Part 2] area × sides."
-    putStrLn ""
-
     -- Build AsciiWorld visualization
     let completedPoints = concat [[("Completed-" ++ show i, S.toList region) | (i, region) <- zip [0::Int ..] completed]]
         currentPoints = if S.null current then [] else [("Current", S.toList current)]
@@ -155,14 +150,22 @@ renderFrame (Frame grid current completed plant regionNum) = do
             _ -> compare a b
         worldStr = showAsciiWorld height bgChar maskToChar pointsToChar nameZOrder asciiWorld
 
-    putStr worldStr
-    putStrLn ""
-
-    let area = S.size current
+        area = S.size current
         perimeter = calculatePerimeter grid current
-    putStrLn $ "Current region: area=" ++ show area ++ ", perimeter=" ++ show perimeter
-    putStrLn $ "Completed regions: " ++ show (length completed)
 
+    -- Build entire frame as single string and output atomically
+    let frameContent = unlines
+            [ "Garden Groups - Region #" ++ show (regionNum + 1) ++ " (Plant: " ++ [plant] ++ ")"
+            , "Part context: [Part 1] area × perimeter; [Part 2] area × sides."
+            , ""
+            ] ++ worldStr ++ unlines
+            [ ""
+            , "Current region: area=" ++ show area ++ ", perimeter=" ++ show perimeter
+            , "Completed regions: " ++ show (length completed)
+            ]
+
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 50000
   where
     isPrefixOf = isPrefix

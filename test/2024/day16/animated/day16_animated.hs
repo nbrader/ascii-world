@@ -187,18 +187,23 @@ inBounds width height (x, y) =
 
 renderFrame :: MazeData -> Int -> (Int, SearchFrame) -> IO ()
 renderFrame maze total (idx, frame) = do
-    setCursorPosition 0 0
     let (pos, dir) = sfState frame
-    putStrLn $ "Reindeer Maze - Dijkstra's Algorithm"
-    putStrLn $ "Frame " ++ show (idx + 1) ++ " / " ++ show total
-    putStrLn "Part context: [Part 1] track the best cost; [Part 2] count tiles that stay on optimal routes."
-    putStrLn $ "Cost: " ++ show (sfCost frame)
-    putStrLn $ "Position: " ++ show pos ++ " facing " ++ showDir dir
-    putStrLn ""
-    putStr (unlines (renderRows maze frame))
-    putStrLn ""
-    putStrLn $ "Visited: " ++ show (S.size $ sfVisited frame) ++ " positions"
-    putStrLn $ "Frontier: " ++ show (S.size $ sfFrontier frame) ++ " positions"
+        -- Build entire frame as single string and output atomically
+        frameContent = unlines
+            [ "Reindeer Maze - Dijkstra's Algorithm"
+            , "Frame " ++ show (idx + 1) ++ " / " ++ show total
+            , "Part context: [Part 1] track the best cost; [Part 2] count tiles that stay on optimal routes."
+            , "Cost: " ++ show (sfCost frame)
+            , "Position: " ++ show pos ++ " facing " ++ showDir dir
+            , ""
+            ] ++ unlines (renderRows maze frame) ++ unlines
+            [ ""
+            , "Visited: " ++ show (S.size $ sfVisited frame) ++ " positions"
+            , "Frontier: " ++ show (S.size $ sfFrontier frame) ++ " positions"
+            ]
+
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 50000  -- 50ms per frame
   where
     showDir (1, 0)  = "East  >"

@@ -123,17 +123,6 @@ findStartConnections grid (y, x) =
 
 renderFrame :: Frame -> IO ()
 renderFrame frame = do
-    setCursorPosition 0 0
-    putStrLn "Pipe Maze - Following the Loop"
-    putStrLn "[Part 1] Trace the pipe loop to find the farthest point"
-    putStrLn ""
-    putStrLn $ "Step: " ++ show (frameStep frame)
-    putStrLn $ "Loop length: " ++ show (length $ frameLoop frame)
-    if length (frameLoop frame) > 1
-        then putStrLn $ "Farthest point: " ++ show (length (frameLoop frame) `div` 2)
-        else putStrLn "Farthest point: 0"
-    putStrLn ""
-
     -- Calculate bounds
     let allPos = M.keys (frameGrid frame)
         minY = minimum (map fst allPos)
@@ -154,9 +143,25 @@ renderFrame frame = do
             | pos `S.member` loopSet = '#'
             | otherwise = M.findWithDefault '.' pos (frameGrid frame)
 
-    -- Print grid
+    -- Build grid lines
     let gridLines = [ [ M.findWithDefault ' ' (y, x) charGrid
                       | x <- [minX..maxX] ]
                     | y <- [minY..maxY] ]
-    putStr (unlines gridLines)
+
+    -- Build entire frame as single string and output atomically
+    let farthestLine = if length (frameLoop frame) > 1
+            then "Farthest point: " ++ show (length (frameLoop frame) `div` 2)
+            else "Farthest point: 0"
+        frameContent = unlines
+            [ "Pipe Maze - Following the Loop"
+            , "[Part 1] Trace the pipe loop to find the farthest point"
+            , ""
+            , "Step: " ++ show (frameStep frame)
+            , "Loop length: " ++ show (length $ frameLoop frame)
+            , farthestLine
+            , ""
+            ] ++ unlines gridLines
+
+    setCursorPosition 0 0
+    putStr frameContent
     threadDelay 100000  -- 100ms delay

@@ -110,13 +110,18 @@ buildFrames grid = zipWith FrontFrame [0 .. 9] levelSets
 renderFrame :: HeightMap -> Int -> (Int, FrontFrame) -> IO ()
 renderFrame grid total (idx, FrontFrame level active) = do
     let (_, (maxX, maxY)) = bounds grid
+        -- Build entire frame as single string and output atomically
+        frameContent = unlines
+            [ "Hoof It - height " ++ show level ++ " (" ++ show (idx + 1) ++ " / " ++ show total ++ ")"
+            , "Part context: [Part 1] counts trailhead scores; [Part 2] uses the same wave for ratings."
+            ] ++ unlines (renderRows maxX maxY active) ++ unlines
+            [ ""
+            , "Active cells at this height: " ++ show (S.size active)
+            , "Legend: digits show heights, [d] marks the current wavefront"
+            ]
+
     setCursorPosition 0 0
-    putStrLn $ "Hoof It - height " ++ show level ++ " (" ++ show (idx + 1) ++ " / " ++ show total ++ ")"
-    putStrLn "Part context: [Part 1] counts trailhead scores; [Part 2] uses the same wave for ratings."
-    putStr (unlines (renderRows maxX maxY active))
-    putStrLn ""
-    putStrLn $ "Active cells at this height: " ++ show (S.size active)
-    putStrLn "Legend: digits show heights, [d] marks the current wavefront"
+    putStr frameContent
     threadDelay 150000
   where
     renderRows maxX maxY active =
