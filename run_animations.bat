@@ -9,17 +9,17 @@ echo   Advent of Code - All Animations
 echo ========================================
 echo.
 echo Select Year:
-echo   1. 2024 Animations (17 available)
+echo   1. 2022 Animations (25 available)
 echo   2. 2023 Animations (21 available)
-echo   3. 2022 Animations (25 available)
+echo   3. 2024 Animations (16 available)
 echo   0. Exit
 echo.
 set /p year_choice="Enter choice (0-3): "
 
 if "%year_choice%"=="0" goto end
-if "%year_choice%"=="1" goto year2024
+if "%year_choice%"=="1" goto year2022
 if "%year_choice%"=="2" goto year2023
-if "%year_choice%"=="3" goto year2022
+if "%year_choice%"=="3" goto year2024
 echo Invalid choice!
 pause
 goto main_menu
@@ -40,12 +40,12 @@ if %DAY% LSS 10 set DAY=0%day_choice%
 set ANIM_PATH=test\2024\day%DAY%\animated\day%DAY%_animated.hs
 set PACKAGES=--package ascii-world --package containers-0.6.7 --package ansi-terminal-0.11.5
 
-REM Check for curated animations
-if "%day_choice%"=="6" set ANIM_PATH=test\2024\curated\day06_animated.hs & set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5
-if "%day_choice%"=="10" set ANIM_PATH=test\2024\curated\day10_animated.hs & set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5 --package array
-if "%day_choice%"=="16" set ANIM_PATH=test\2024\curated\day16_animated.hs & set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5
-if "%day_choice%"=="18" set ANIM_PATH=test\2024\curated\day18_animated.hs & set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5
-if "%day_choice%"=="20" set ANIM_PATH=test\2024\curated\day20_animated.hs & set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5
+REM Custom package requirements for certain days (use custom ANSI, not AsciiWorld)
+if "%day_choice%"=="6" set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5
+if "%day_choice%"=="10" set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5 --package array
+if "%day_choice%"=="16" set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5
+if "%day_choice%"=="18" set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5
+if "%day_choice%"=="20" set PACKAGES=--package containers-0.6.7 --package ansi-terminal-0.11.5
 
 call :input_select
 echo.

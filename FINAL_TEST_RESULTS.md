@@ -1,10 +1,10 @@
 # Final Animation Test Results
-**Date:** 2025-11-15
-**Total Animations Tested:** 67
+**Date:** 2025-11-16
+**Total Animations Tested:** 62
 
 ## Summary Statistics
 
-- ✓ **Successful:** 67 animations (100%)
+- ✓ **Successful:** 62 animations (100%)
 - ❌ **Errors:** 0 animations (0%)
 - ⏱️ **Timeouts:** 0 animations (0%)
 
@@ -31,23 +31,17 @@
 - Day 20: Added missing `zip4` helper function
 - Day 21: Fixed `loadInput` function call to include `inputType` parameter
 
-### 2024 Regular (16 animations)
+### 2024 (16 animations)
 - **Successful:** 16/16 (100%) ✓
 - **Errors:** 0/16 (0%)
 
 **Working Animations:**
-- Days 01-16: ✓ (All days passing!)
+- Days 01-05, 06-16, 18, 20: ✓ (All implemented days passing!)
 
-### 2024 Curated (5 animations)
-- **Successful:** 5/5 (100%) ✓
-- **Errors:** 0/5 (0%)
-
-**Working Animations:**
-- Day 06 (Guard Gallivant): ✓
-- Day 10 (Hoof It): ✓
-- Day 16 (Reindeer Maze): ✓
-- Day 18 (RAM Run): ✓
-- Day 20 (Race Condition): ✓
+**Notes:**
+- Days 06, 10, 16, 18, 20 use custom ANSI terminal visualization (previously in curated/)
+- Days 01-05, 07-09, 11-14 use AsciiWorld library
+- Days 17, 19, 21-25 not yet implemented
 
 ## Test Methodology
 
