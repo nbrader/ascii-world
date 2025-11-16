@@ -22,7 +22,7 @@ import Data.List.Split (splitOn)
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, NoBuffering(..))
 
 import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
 import Mask (Point)
@@ -33,6 +33,7 @@ type Rope = [Pos]  -- Head is first, tail segments follow
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadInput inputType
