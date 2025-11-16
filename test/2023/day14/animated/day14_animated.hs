@@ -129,5 +129,5 @@ renderFrame frame = do
     putStrLn ""
 
     -- Print grid
-    mapM_ putStrLn (frameGrid frame)
+    putStr (unlines (frameGrid frame))
     threadDelay 200000  -- 200ms delay

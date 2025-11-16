@@ -135,7 +135,7 @@ renderFrame width height obstacles total (idx, Frame (pos, dir) visited tag) = d
     setCursorPosition 0 0
     putStrLn $ "Guard Gallivant animation - frame " ++ show (idx + 1) ++ " / " ++ show total
     putStrLn "Part context: [Part 1] Follow the guard's route; [Part 2] watch for loop warnings."
-    mapM_ putStrLn (gridRows width height pos dir visited obstacles)
+    putStr (unlines (gridRows width height pos dir visited obstacles))
     putStrLn ""
     putStrLn $ "Status: " ++ describe tag
     putStrLn "Legend: ^v<> guard, # obstacle, . visited path"

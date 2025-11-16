@@ -113,7 +113,7 @@ renderFrame grid total (idx, FrontFrame level active) = do
     setCursorPosition 0 0
     putStrLn $ "Hoof It - height " ++ show level ++ " (" ++ show (idx + 1) ++ " / " ++ show total ++ ")"
     putStrLn "Part context: [Part 1] counts trailhead scores; [Part 2] uses the same wave for ratings."
-    mapM_ putStrLn (renderRows maxX maxY active)
+    putStr (unlines (renderRows maxX maxY active))
     putStrLn ""
     putStrLn $ "Active cells at this height: " ++ show (S.size active)
     putStrLn "Legend: digits show heights, [d] marks the current wavefront"

@@ -166,7 +166,7 @@ renderFrame width height walls path (idx, frame) = do
             putStrLn $ "Position: " ++ show currentPos
             putStrLn ""
             let pathSoFar = S.fromList $ take (step + 1) path
-            mapM_ putStrLn (renderRows width height walls pathSoFar Nothing Nothing)
+            putStr (unlines (renderRows width height walls pathSoFar Nothing Nothing))
             threadDelay 30000  -- 30ms per step
 
         CheatFrame partTag cheatStart cheatEnd timeSaved -> do
@@ -175,7 +175,7 @@ renderFrame width height walls path (idx, frame) = do
             putStrLn $ "Time saved: " ++ show timeSaved ++ " picoseconds"
             putStrLn ""
             let pathSet = S.fromList path
-            mapM_ putStrLn (renderRows width height walls pathSet (Just cheatStart) (Just cheatEnd))
+            putStr (unlines (renderRows width height walls pathSet (Just cheatStart) (Just cheatEnd)))
             threadDelay 200000  -- 200ms per cheat
 
 partLabel :: PartTag -> String

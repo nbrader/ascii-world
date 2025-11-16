@@ -195,7 +195,7 @@ renderFrame maze total (idx, frame) = do
     putStrLn $ "Cost: " ++ show (sfCost frame)
     putStrLn $ "Position: " ++ show pos ++ " facing " ++ showDir dir
     putStrLn ""
-    mapM_ putStrLn (renderRows maze frame)
+    putStr (unlines (renderRows maze frame))
     putStrLn ""
     putStrLn $ "Visited: " ++ show (S.size $ sfVisited frame) ++ " positions"
     putStrLn $ "Frontier: " ++ show (S.size $ sfFrontier frame) ++ " positions"

@@ -165,7 +165,7 @@ renderFrame frame = do
     let gridLines = [ [ M.findWithDefault '.' (x, y) charGrid
                       | x <- [0..width-1] ]
                     | y <- [0..height-1] ]
-    mapM_ putStrLn gridLines
+    putStr (unlines gridLines)
     threadDelay 100000  -- 100ms delay
 
 addV2 :: (Int, Int) -> (Int, Int) -> (Int, Int)

@@ -340,7 +340,7 @@ renderFrame dims totalFrames (frameIdx, frame) = do
         ascii = showAsciiWorld (adHeight dims) ' ' maskToChar pointsToChar indexZOrder world
     putStr ascii
     putStrLn ""
-    mapM_ putStrLn (detailLines dims frame)
+    putStr (unlines (detailLines dims frame))
     clearFromCursorToScreenEnd
     threadDelay frameDelayMicros
 
