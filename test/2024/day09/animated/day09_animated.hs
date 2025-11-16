@@ -1,13 +1,12 @@
 #!/usr/bin/env stack
 {- stack --resolver lts-21.22 runghc
-   --package ascii-world
    --package containers-0.6.7
    --package ansi-terminal-0.11.5
 -}
 
 -- |
 -- Animated visualization for AoC 2024 Day 09 ("Disk Fragmenter").
--- Shows disk blocks being compacted.
+-- Shows disk blocks being compacted with highlighted moves.
 
 module Main where
 
@@ -16,29 +15,34 @@ import Control.Exception (bracket_)
 import Data.Char (digitToInt, isDigit)
 import Data.List (findIndex)
 import Data.Maybe (fromMaybe)
-import qualified Data.Map as M
 import System.Console.ANSI
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
-import System.IO (hSetEncoding, stdout, utf8)
-
-import AsciiWorld (AsciiWorld(..), showAsciiWorld, MaskOrPointsIndex(..))
-import Mask (Point)
+import System.IO (hSetEncoding, hSetBuffering, stdout, utf8, BufferMode(NoBuffering))
 
 type DiskMap = [Maybe Int]  -- Nothing = free space, Just n = file ID
+
+data Frame = Frame
+    { frameDisk :: DiskMap
+    , frameFromIdx :: Maybe Int
+    , frameToIdx :: Maybe Int
+    , frameMoves :: Int
+    }
 
 main :: IO ()
 main = do
     hSetEncoding stdout utf8
+    hSetBuffering stdout NoBuffering
     args <- getArgs
     let inputType = if null args then "example" else head args
     contents <- loadInput inputType
     let disk = parseDisk contents
         frames = buildFrames disk
+        total = length frames
     bracket_ hideCursor showCursor $ do
         clearScreen
-        mapM_ renderFrame frames
-    setCursorPosition 25 0
+        mapM_ (renderFrame total) (zip [0..] frames)
+    setCursorPosition 30 0
     putStrLn "Disk Fragmenter animation complete."
 
 loadInput :: String -> IO String
@@ -62,17 +66,21 @@ parseDisk input = concat $ zipWith expand [0..] (map digitToInt $ filter isDigit
         | even idx  = replicate len (Just (idx `div` 2))  -- File
         | otherwise = replicate len Nothing                -- Free space
 
-buildFrames :: DiskMap -> [DiskMap]
-buildFrames disk = takeWhile (not . isCompacted) $ iterate compactStep disk
-
-compactStep :: DiskMap -> DiskMap
-compactStep disk =
-    case (findIndex (== Nothing) disk, findLastFile disk) of
-        (Just freeIdx, Just fileIdx) | freeIdx < fileIdx ->
-            let val = disk !! fileIdx
-            in take freeIdx disk ++ [val] ++ take (fileIdx - freeIdx - 1) (drop (freeIdx + 1) disk) ++ [Nothing] ++ drop (fileIdx + 1) disk
-        _ -> disk
+buildFrames :: DiskMap -> [Frame]
+buildFrames disk = Frame disk Nothing Nothing 0 : go disk 0
   where
+    go d moves
+        | isCompacted d = []
+        | otherwise =
+            case (findIndex (== Nothing) d, findLastFile d) of
+                (Just freeIdx, Just fileIdx) | freeIdx < fileIdx ->
+                    let val = d !! fileIdx
+                        newDisk = take freeIdx d ++ [val] ++ take (fileIdx - freeIdx - 1) (drop (freeIdx + 1) d) ++ [Nothing] ++ drop (fileIdx + 1) d
+                    in Frame d (Just fileIdx) (Just freeIdx) moves :
+                       Frame newDisk Nothing Nothing (moves + 1) :
+                       go newDisk (moves + 1)
+                _ -> []
+
     findLastFile d = findIndex (/= Nothing) (reverse d) >>= \i -> Just (length d - 1 - i)
 
 isCompacted :: DiskMap -> Bool
@@ -83,40 +91,42 @@ isCompacted disk =
   where
     findLastFile d = findIndex (/= Nothing) (reverse d) >>= \i -> Just (length d - 1 - i)
 
-renderFrame :: DiskMap -> IO ()
-renderFrame disk = do
+renderFrame :: Int -> (Int, Frame) -> IO ()
+renderFrame total (idx, Frame disk fromIdx toIdx moves) = do
+    let displayLen = min 70 (length disk)
+        diskStr = concatMap showBlock (take displayLen disk) ++ if length disk > displayLen then "..." else ""
+
+        frameContent = unlines
+            [ "Disk Fragmenter - Compaction Progress - frame " ++ show (idx + 1) ++ " / " ++ show total
+            , "Part context: [Part 1] compact blocks; [Part 2] compact whole files."
+            , ""
+            , "Moves completed: " ++ show moves
+            , case (fromIdx, toIdx) of
+                (Just from, Just to) -> "Moving block from position " ++ show from ++ " to " ++ show to
+                _ -> "Finding next block to move..."
+            , ""
+            , "Disk state:"
+            , diskStr
+            , case (fromIdx, toIdx) of
+                (Just from, Just to) | from < displayLen && to < displayLen ->
+                    replicate to ' ' ++ "^" ++ replicate (from - to - 1) ' ' ++ "^"
+                (Just from, Just to) | from < displayLen ->
+                    replicate to ' ' ++ "^"
+                (Just from, Just to) | to < displayLen ->
+                    replicate (from - displayLen) ' ' ++ "^"
+                _ -> ""
+            , case (fromIdx, toIdx) of
+                (Just from, Just to) | from < displayLen && to < displayLen ->
+                    replicate to ' ' ++ "to" ++ replicate (from - to - 2) ' ' ++ "from"
+                _ -> ""
+            , ""
+            , "Legend: . = free space, 0-9 = file ID"
+            , "Compaction complete when all files are left-aligned"
+            ]
+
     setCursorPosition 0 0
-    putStrLn "Disk Fragmenter - Compaction Progress"
-    putStrLn "Part context: [Part 1] compact blocks; [Part 2] compact whole files."
-    putStrLn ""
-
-    -- Show disk as points
-    let displayLen = min 80 (length disk)
-        filePoints = [(i, 0) | (i, Just _) <- zip [0..displayLen-1] disk]
-        freePoints = [(i, 1) | (i, Nothing) <- zip [0..displayLen-1] disk]
-        asciiWorld = AsciiWorld
-            { asciiWorldMasks = M.empty
-            , asciiWorldPoints = M.fromList [("Files", filePoints), ("Free", freePoints)]
-            , asciiWorldWidth = displayLen
-            }
-        bgChar = '.'
-        maskToChar = id
-        pointsToChar name = case name of
-            "Files" -> '#'
-            "Free" -> '.'
-            _ -> '?'
-        nameZOrder = compare
-        worldStr = showAsciiWorld 3 bgChar maskToChar pointsToChar nameZOrder asciiWorld
-
-    putStr worldStr
-    putStrLn ""
-
-    let fileCount = length $ filter (/= Nothing) disk
-        freeCount = length $ filter (== Nothing) disk
-    putStrLn $ "Blocks: " ++ show fileCount ++ " files, " ++ show freeCount ++ " free"
-    putStrLn $ "Preview: " ++ concatMap showBlock (take 40 disk) ++ if length disk > 40 then "..." else ""
-
-    threadDelay 100000
+    putStr frameContent
+    threadDelay (if fromIdx /= Nothing then 200000 else 100000)
   where
     showBlock Nothing = "."
     showBlock (Just n) = show (n `mod` 10)
