@@ -99,9 +99,14 @@ function simulate(params) {
     queuedCommands += params.renderCommands;
     const bufferSnapshot = queuedCommands;
 
-    frame.gpuStart = Math.max(frame.renderEnd, prevGpuEnd);
-    frame.gpuIdle = Math.max(0, frame.renderEnd - prevGpuEnd);
-    frame.gpuWait = Math.max(0, prevGpuEnd - frame.renderEnd);
+    const gpuIdle = Math.max(0, frame.renderEnd - prevGpuEnd);
+    // Only show a GPU wait when the CPU wasn't already stalled by queue/buffer limits;
+    // otherwise we'd double-count the same backpressure the CPU already absorbed.
+    const gpuWait = frame.waitMax > 0 || frame.waitBuffer > 0 ? 0 : Math.max(0, prevGpuEnd - frame.renderEnd);
+
+    frame.gpuStart = frame.renderEnd + gpuWait;
+    frame.gpuIdle = gpuIdle;
+    frame.gpuWait = gpuWait;
     frame.gpuEnd = frame.gpuStart + gpuDuration;
     frame.gpuDuration = gpuDuration;
     frame.bufferUse = bufferSnapshot;
