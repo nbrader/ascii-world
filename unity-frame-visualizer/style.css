@@ -171,7 +171,7 @@ h1 {
 
 .lane-track {
   position: relative;
-  height: 120px;
+  height: 180px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.02);
@@ -226,6 +226,6 @@ h1 {
     grid-template-columns: 1fr;
   }
   .lane-track {
-    height: 160px;
+    height: 210px;
   }
 }

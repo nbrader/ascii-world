@@ -66,19 +66,23 @@ function simulate(params) {
 
     let start = prevRenderEnd;
     let waitMax = 0;
+    let waitMaxStart = 0;
     let waitBuffer = 0;
+    let waitBufferStart = 0;
 
     settleReleases(start);
 
     if (i - params.maxQueued >= 0 && frames[i - params.maxQueued]) {
       const gateTime = frames[i - params.maxQueued].gpuEnd;
       if (gateTime > start) {
+        waitMaxStart = start;
         waitMax = gateTime - start;
         start = gateTime;
         settleReleases(start);
       }
     }
 
+    const bufferWaitStart = start;
     while (queuedCommands + params.renderCommands > params.bufferSize) {
       const nextRelease = releases.length ? Math.min(...releases.map((r) => r.time)) : Infinity;
       if (!Number.isFinite(nextRelease)) break;
@@ -87,9 +91,14 @@ function simulate(params) {
       start = waitUntil;
       settleReleases(start);
     }
+    if (waitBuffer > 0) {
+      waitBufferStart = bufferWaitStart;
+    }
 
     frame.waitMax = waitMax;
+    frame.waitMaxStart = waitMaxStart;
     frame.waitBuffer = waitBuffer;
+    frame.waitBufferStart = waitBufferStart;
     frame.scriptStart = start;
     frame.scriptEnd = frame.scriptStart + script;
     frame.renderStart = frame.scriptEnd;
@@ -158,12 +167,12 @@ function renderTimeline(frames, params) {
   }
 
   frames.forEach((frame) => {
-    const yIndex = frame.index % 5;
+    const yIndex = frame.index % 6;
     if (frame.waitMax > 0) {
       createBar({
         lane: cpuLane,
-        start: scale(frame.scriptStart - frame.waitMax),
-        end: scale(frame.scriptStart),
+        start: scale(frame.waitMaxStart),
+        end: scale(frame.waitMaxStart + frame.waitMax),
         label: 'CPU Wait (Max Frames)',
         type: 'wait',
         frameIndex: yIndex,
@@ -172,8 +181,8 @@ function renderTimeline(frames, params) {
     if (frame.waitBuffer > 0) {
       createBar({
         lane: cpuLane,
-        start: scale(frame.scriptStart - frame.waitBuffer),
-        end: scale(frame.scriptStart),
+        start: scale(frame.waitBufferStart),
+        end: scale(frame.waitBufferStart + frame.waitBuffer),
         label: 'CPU Wait (Buffer Full)',
         type: 'wait',
         frameIndex: yIndex,
@@ -209,17 +218,6 @@ function renderTimeline(frames, params) {
       });
     }
 
-    if (frame.gpuWait > 0) {
-      createBar({
-        lane: gpuLane,
-        start: scale(frame.gpuStart - frame.gpuWait),
-        end: scale(frame.gpuStart),
-        label: 'GPU Wait',
-        type: 'wait',
-        frameIndex: yIndex,
-      });
-    }
-
     createBar({
       lane: gpuLane,
       start: scale(frame.gpuStart),
@@ -236,6 +234,8 @@ function renderTimeline(frames, params) {
 
 
 function computeMetrics(frames, params) {
+  if (frames.length < 2) return;
+
   const last = frames[frames.length - 1];
   const prev = frames[frames.length - 2];
   const frameTime = last.gpuEnd - prev.gpuEnd;
