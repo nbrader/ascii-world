@@ -323,6 +323,9 @@ function readParams() {
   };
 }
 
+let skipRenderCommandsUpdate = false;
+let skipBufferSizeUpdate = false;
+
 function update() {
   updateValueLabels();
   const params = readParams();
@@ -334,22 +337,34 @@ function update() {
 
 // Add event listeners with two-way constraint enforcement
 controls.renderCommands.addEventListener('input', () => {
+  if (skipRenderCommandsUpdate) {
+    skipRenderCommandsUpdate = false;
+    return;
+  }
+
   const renderCommands = Number(controls.renderCommands.value);
   const bufferSize = Number(controls.bufferSize.value);
 
   // If render commands exceed buffer, expand buffer to match
   if (renderCommands > bufferSize) {
+    skipBufferSizeUpdate = true;
     controls.bufferSize.value = renderCommands;
   }
   update();
 });
 
 controls.bufferSize.addEventListener('input', () => {
+  if (skipBufferSizeUpdate) {
+    skipBufferSizeUpdate = false;
+    return;
+  }
+
   const renderCommands = Number(controls.renderCommands.value);
   const bufferSize = Number(controls.bufferSize.value);
 
   // If buffer is smaller than render commands, reduce render commands to match
   if (bufferSize < renderCommands) {
+    skipRenderCommandsUpdate = true;
     controls.renderCommands.value = bufferSize;
   }
   update();
