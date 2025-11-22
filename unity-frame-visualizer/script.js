@@ -306,7 +306,7 @@ function computeMetrics(frames, params) {
 function updateExplanation(params) {
   const text = [
     `Scripts take ${params.scriptTime} ms, generating ${params.renderCommands} commands in ${(params.renderCommands * params.genFactor).toFixed(2)} ms on the CPU.`,
-    `The GPU processes commands in ${(params.renderCommands * params.procFactor).toFixed(2)} ms while the buffer can hold ${params.bufferSize} commands.`,
+    `The GPU processes commands in ${(params.renderCommands * params.procFactor).toFixed(2)} ms while the buffer can hold ${params.bufferSize} commands (minimum: ${params.renderCommands}).`,
     `The CPU is limited to ${params.maxQueued} queued frames; additional frames wait for GPU completion or buffer space.`,
   ];
   explanationText.textContent = text.join(' ');
@@ -332,7 +332,31 @@ function update() {
   updateExplanation(params);
 }
 
-Object.values(controls).forEach((input) => {
+// Add event listeners with two-way constraint enforcement
+controls.renderCommands.addEventListener('input', () => {
+  const renderCommands = Number(controls.renderCommands.value);
+  const bufferSize = Number(controls.bufferSize.value);
+
+  // If render commands exceed buffer, expand buffer to match
+  if (renderCommands > bufferSize) {
+    controls.bufferSize.value = renderCommands;
+  }
+  update();
+});
+
+controls.bufferSize.addEventListener('input', () => {
+  const renderCommands = Number(controls.renderCommands.value);
+  const bufferSize = Number(controls.bufferSize.value);
+
+  // If buffer is smaller than render commands, reduce render commands to match
+  if (bufferSize < renderCommands) {
+    controls.renderCommands.value = bufferSize;
+  }
+  update();
+});
+
+// Add standard event listeners for other controls
+[controls.scriptTime, controls.genFactor, controls.procFactor, controls.maxQueued].forEach((input) => {
   input.addEventListener('input', update);
 });
 
