@@ -124,13 +124,14 @@ function simulate(params) {
   return frames;
 }
 
-function createBar({ lane, start, end, label, type, row, frameIndex }) {
+function createBar({ lane, start, end, label, type, row, frameIndex, verticalOffset }) {
   const bar = document.createElement('div');
   bar.className = `bar ${type}`;
   bar.textContent = label;
   bar.style.left = `${start}%`;
   bar.style.width = `${Math.max(0.5, end - start)}%`;
-  bar.style.top = `${frameIndex * 24 + (type === 'gpu' ? 40 : 8)}px`;
+  const defaultOffset = type === 'gpu' ? 16 : 8;
+  bar.style.top = `${frameIndex * 24 + (verticalOffset !== undefined ? verticalOffset : defaultOffset)}px`;
   lane.appendChild(bar);
   return bar;
 }
@@ -215,6 +216,18 @@ function renderTimeline(frames, params) {
         label: 'GPU Idle',
         type: 'wait',
         frameIndex: yIndex,
+      });
+    }
+
+    if (frame.gpuWait > 0) {
+      createBar({
+        lane: gpuLane,
+        start: scale(frame.gpuStart - frame.gpuWait),
+        end: scale(frame.gpuStart),
+        label: 'GPU Wait',
+        type: 'wait',
+        frameIndex: yIndex,
+        verticalOffset: 12,
       });
     }
 
