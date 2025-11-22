@@ -155,16 +155,43 @@ function renderTimeline(frames, params) {
   const lastGpuEnd = Math.max(...frames.map((f) => f.gpuEnd));
   const scale = (value) => (value / lastGpuEnd) * 100;
 
-  const ticks = 8;
-  for (let i = 0; i <= ticks; i++) {
-    const pos = (i / ticks) * 100;
+  // Calculate nice interval based on powers of 10
+  // Aim for 5-10 ticks to avoid overlap
+  const targetTicks = 8;
+  const roughInterval = lastGpuEnd / targetTicks;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(roughInterval)));
+
+  // Choose best multiplier (1, 2, 5, or 10) of the magnitude
+  const candidates = [magnitude, 2 * magnitude, 5 * magnitude, 10 * magnitude];
+  let interval = candidates[0];
+  let bestDiff = Math.abs(candidates[0] - roughInterval);
+
+  for (const candidate of candidates) {
+    const diff = Math.abs(candidate - roughInterval);
+    if (diff < bestDiff) {
+      interval = candidate;
+      bestDiff = diff;
+    }
+  }
+
+  // Generate ticks at multiples of the interval
+  let tickIndex = 0;
+  for (let time = 0; time <= lastGpuEnd; time += interval) {
+    const pos = scale(time);
     const tick = document.createElement('div');
     tick.className = 'tick';
     tick.style.left = `${pos}%`;
     const label = document.createElement('span');
-    label.textContent = `${(lastGpuEnd * (i / ticks)).toFixed(1)} ms`;
+    // Format with appropriate precision based on magnitude
+    const decimals = interval < 1 ? 2 : interval < 10 ? 1 : 0;
+    label.textContent = `${time.toFixed(decimals)} ms`;
+    // Left-align the first tick label so it starts at 0
+    if (tickIndex === 0) {
+      label.style.transform = 'translateX(0)';
+    }
     tick.appendChild(label);
     timeAxis.appendChild(tick);
+    tickIndex++;
   }
 
   frames.forEach((frame) => {
